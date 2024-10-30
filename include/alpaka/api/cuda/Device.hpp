@@ -117,7 +117,7 @@ namespace alpaka
                     device.getSharedPtr(),
                     ptr,
                     extents,
-                    Vec{sizeof(T_Type)},
+                    T_Extents{sizeof(T_Type)},
                     deleter);
                 return alpaka::Buffer<std::decay_t<decltype(data)>, T_Extents>(data);
             }

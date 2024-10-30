@@ -326,6 +326,15 @@ namespace alpaka
             return !((*this) == rhs);
         }
 
+        template<typename T_OtherStorage>
+        constexpr auto min(Vec<T_Type, T_dim, T_OtherStorage> const& rhs) const
+        {
+            Vec result{};
+            for(uint32_t d = 0u; d < T_dim; d++)
+                result[d] = std::min((*this)[d], rhs[d]);
+            return result;
+        }
+
         /** create string out of the vector
          *
          * @param separator string to separate components of the vector

@@ -50,7 +50,7 @@ struct PrintIdx
                 "blockIdx = %u threadIdx = %u globalIdx = %u\n",
                 acc[layer::block].idx().x(),
                 acc[layer::thread].idx().x(),
-                i);
+                i.x());
 #else
             std::cout << "blockIdx = " << acc[layer::block].idx() << " threadIdx = " << acc[layer::thread].idx()
                       << " value = " << i << std::endl;
@@ -102,18 +102,19 @@ struct IotaKernel
         auto numThreads = (acc[layer::thread].count() * acc[layer::block].count()).x();
         for(uint32_t i = globalIdx; i < outSize; i += numThreads)
             out[i] = i;
-#endif
-        for(uint32_t i : IndependentDataIter{acc})
+#else
+        for(auto i : IndependentDataIter{acc})
         {
-            out[i] = i;
+            out[i.x()] = i.x();
         }
+#endif
     }
 };
 
 void runIota(auto mapping, auto device)
 {
     Queue queue = device.makeQueue();
-    constexpr Vec extent = Vec{128lu};
+    constexpr Vec extent = Vec{128u};
     std::cout << "mapping=" << core::demangledName(mapping) << std::endl;
     auto dBuff = alpaka::alloc<uint32_t>(device, extent);
 
@@ -122,7 +123,7 @@ void runIota(auto mapping, auto device)
     auto hBuff = alpaka::alloc<uint32_t>(cpuDevice, extent);
 
     wait(queue);
-    constexpr auto frameSize = 4lu;
+    constexpr auto frameSize = 4u;
     alpaka::enqueue(
         queue,
         mapping,
