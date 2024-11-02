@@ -178,12 +178,48 @@ namespace alpaka
             }
         };
 
+        struct DataBlockExtent
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+            {
+                return acc[frame::block];
+            }
+        };
+
+        struct DataFrameExtent
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+                {
+                    return acc[frame::block];
+    }
+        };
+
         struct GlobalThreadIdx
         {
             template<typename T_Acc>
             constexpr auto operator()(T_Acc const& acc)
             {
                 return acc[layer::thread].count() * acc[layer::block].idx() + acc[layer::thread].idx();
+            }
+        };
+
+        struct GlobalThreadBlockIdx
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+            {
+                return acc[layer::block].idx();
+            }
+        };
+
+        struct GlobalNumThreadBlocks
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+            {
+                return acc[layer::block].count();
             }
         };
 
@@ -195,11 +231,37 @@ namespace alpaka
                 return acc[layer::block].count() * acc[layer::thread].count();
             }
         };
+
+        struct NumThreadsInBlock
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+            {
+                return acc[layer::thread].count();
+            }
+        };
+
+        struct ThreadIdxInBlock
+        {
+            template<typename T_Acc>
+            constexpr auto operator()(T_Acc const& acc)
+            {
+                return acc[layer::thread].idx();
+            }
+        };
     } // namespace idxTrait
 
     template<typename T_Acc>
     using IndependentDataIter
         = IndexContainer<T_Acc, idxTrait::DataExtent, idxTrait::GlobalNumThreads, idxTrait::GlobalThreadIdx>;
+
+    template<typename T_Acc>
+    using DataBlockIter
+        = IndexContainer<T_Acc, idxTrait::DataBlockExtent, idxTrait::GlobalNumThreadBlocks, idxTrait::GlobalThreadBlockIdx>;
+
+    template<typename T_Acc>
+    using DataFrameIter
+        = IndexContainer<T_Acc, idxTrait::DataFrameExtent, idxTrait::NumThreadsInBlock, idxTrait::ThreadIdxInBlock>;
 
     template<typename T_Acc>
     using IndependentGridThreadIter
