@@ -95,7 +95,7 @@ TEST_CASE("enqueue hallo idx", "")
 
 struct IotaKernel
 {
-    ALPAKA_FN_ACC void operator()(auto const& acc, auto* out, uint32_t outSize) const
+    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, uint32_t outSize) const
     {
 #if 0
         auto globalIdx = (acc[layer::thread].count() * acc[layer::block].idx() + acc[layer::thread].idx()).x();
@@ -128,7 +128,7 @@ void runIota(auto mapping, auto device)
         queue,
         mapping,
         alpaka::DataBlocking{extent / frameSize, Vec{frameSize}},
-        KernelBundle{IotaKernel{}, alpaka::data(dBuff), extent.x()});
+        KernelBundle{IotaKernel{}, dBuff.getMdSpan(), extent.x()});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
     auto* ptr = alpaka::data(hBuff);

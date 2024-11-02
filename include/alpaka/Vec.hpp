@@ -21,7 +21,7 @@ namespace alpaka
      * array as default storage without this wrapper.
      */
     template<typename T_Type, uint32_t T_dim>
-    struct ArrayStorage : private std::array<T_Type, T_dim>
+    struct ArrayStorage : protected std::array<T_Type, T_dim>
     {
         using BaseType = std::array<T_Type, T_dim>;
         using BaseType::operator[];
@@ -42,6 +42,15 @@ namespace alpaka
         using Storage = T_Storage;
         using type = T_Type;
         using ParamType = type;
+
+        using index_type = T_Type;
+        using size_type = uint32_t;
+        using rank_type = uint32_t;
+
+        constexpr auto toStdArray() const requires std::same_as<ArrayStorage<T_Type, T_dim>, T_Storage>
+        {
+            return static_cast<std::array<T_Type, T_dim>>(*this);
+        }
 
         /*Vecs without elements are not allowed*/
         static_assert(T_dim > 0u);
