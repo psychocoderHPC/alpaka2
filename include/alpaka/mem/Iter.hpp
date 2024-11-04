@@ -174,16 +174,16 @@ namespace alpaka
             template<typename T_Acc>
             constexpr auto operator()(T_Acc const& acc)
             {
-                return acc[frame::block] * acc[frame::thread];
+                return acc[frame::count] * acc[frame::extent];
             }
         };
 
-        struct DataBlockExtent
+        struct DataFrameCount
         {
             template<typename T_Acc>
             constexpr auto operator()(T_Acc const& acc)
             {
-                return acc[frame::block];
+                return acc[frame::count];
             }
         };
 
@@ -191,9 +191,9 @@ namespace alpaka
         {
             template<typename T_Acc>
             constexpr auto operator()(T_Acc const& acc)
-                {
-                    return acc[frame::block];
-    }
+            {
+                return acc[frame::extent];
+            }
         };
 
         struct GlobalThreadIdx
@@ -256,8 +256,11 @@ namespace alpaka
         = IndexContainer<T_Acc, idxTrait::DataExtent, idxTrait::GlobalNumThreads, idxTrait::GlobalThreadIdx>;
 
     template<typename T_Acc>
-    using DataBlockIter
-        = IndexContainer<T_Acc, idxTrait::DataBlockExtent, idxTrait::GlobalNumThreadBlocks, idxTrait::GlobalThreadBlockIdx>;
+    using DataBlockIter = IndexContainer<
+        T_Acc,
+        idxTrait::DataFrameCount,
+        idxTrait::GlobalNumThreadBlocks,
+        idxTrait::GlobalThreadBlockIdx>;
 
     template<typename T_Acc>
     using DataFrameIter

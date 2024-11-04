@@ -205,6 +205,9 @@
 // CUDA
 #if !defined(ALPAKA_OMP)
 #    if defined(_OPENMP)
+#        include <omp.h>
+#    endif
+#    if defined(_OPENMP)
 #        define ALPAKA_OMP ALPAKA_YYYYMM_TO_VERSION(_OPENMP)
 #    else
 #        define ALPAKA_OMP ALPAKA_VERSION_NUMBER_NOT_AVAILABLE

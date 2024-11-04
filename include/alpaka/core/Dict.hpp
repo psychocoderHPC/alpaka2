@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/core/common.hpp"
+#include "alpaka/core/util.hpp"
 
 #include <cstdio>
 #include <tuple>
@@ -59,12 +60,12 @@ namespace alpaka
     }
 
     template<typename T_Key, typename T_Tuple>
-    inline constexpr auto& getTag(T_Tuple&& t, T_Key const& key = T_Key{})
+    inline constexpr decltype(auto) getTag(T_Tuple&& t, T_Key const& key = T_Key{})
     {
         constexpr auto idx = Idx<T_Key, std::decay_t<T_Tuple>>::value;
         static_assert(idx != -1, "Member in dict missing!");
         static_assert(idx < std::tuple_size_v<std::decay_t<T_Tuple>>, "index out of range!");
-        return std::get<idx>(std::forward<T_Tuple>(t)).value;
+        return unWrapp(std::get<idx>(std::forward<T_Tuple>(t)).value);
     }
 
     template<typename T_Key, typename T_Value>
@@ -115,11 +116,13 @@ namespace alpaka
         constexpr Dict(Dict const&) = default;
         constexpr Dict(Dict&&) = default;
 
+        ALPAKA_NO_HOST_ACC_WARNING
         constexpr decltype(auto) operator[](auto const tag) const
         {
             return getTag(*this, tag);
         }
 
+        ALPAKA_NO_HOST_ACC_WARNING
         constexpr decltype(auto) operator[](auto const tag)
         {
             return getTag(*this, tag);
@@ -164,7 +167,7 @@ namespace alpaka
     }
 
     template<typename... T_Entries0, typename... T_Entries1>
-    constexpr auto joinDict(Dict<T_Entries0...> dict0, Dict<T_Entries1...> dict1)
+    constexpr auto joinDict(Dict<T_Entries0...> const& dict0, Dict<T_Entries1...> const& dict1)
     {
         return joinDictHelper(
             std::index_sequence_for<T_Entries0...>{},

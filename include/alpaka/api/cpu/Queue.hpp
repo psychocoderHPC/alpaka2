@@ -5,8 +5,10 @@
 #pragma once
 
 #include "alpaka/HostApiTraits.hpp"
-#include "alpaka/acc/makeAcc.hpp"
 #include "alpaka/api/cpu/Api.hpp"
+#include "alpaka/api/cpu/mapping/OmpBlocks.hpp"
+#include "alpaka/api/cpu/mapping/OmpThreads.hpp"
+#include "alpaka/api/cpu/mapping/Serial.hpp"
 #include "alpaka/core/CallbackThread.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/hostApi.hpp"
@@ -98,10 +100,10 @@ namespace alpaka
                     [=, kernel = std::move(kernelBundle)]()
                     {
                         auto moreLayer = Dict{
-                            DictEntry(frame::block, dataBlocking.m_numBlocks),
-                            DictEntry(frame::thread, dataBlocking.m_blockSize)};
-                        Acc acc = makeAcc(mapping, threadBlocking, moreLayer);
-                        acc(std::move(kernel));
+                            DictEntry(frame::count, dataBlocking.m_numBlocks),
+                            DictEntry(frame::extent, dataBlocking.m_blockSize)};
+                        Acc acc = makeAcc(mapping, threadBlocking);
+                        acc(std::move(kernel), moreLayer);
                     });
             }
 

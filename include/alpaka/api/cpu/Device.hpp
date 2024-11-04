@@ -95,20 +95,26 @@ namespace alpaka
 
     namespace trait
     {
+#if 1
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<mapping::CpuBlockSerialThreadOne, cpu::Device<T_Platform>> : std::true_type
         {
         };
+#endif
+#if 1
+
 
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<mapping::CpuBlockOmpThreadOmp, cpu::Device<T_Platform>> : std::true_type
         {
         };
-
+#endif
+#if 1
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<mapping::CpuBlockOmpThreadOne, cpu::Device<T_Platform>> : std::true_type
         {
         };
+#endif
     } // namespace trait
 
     namespace internal
@@ -119,7 +125,7 @@ namespace alpaka
             auto operator()(cpu::Device<T_Platform>& device, T_Extents const& extents) const
             {
                 auto* ptr = new T_Type[extents.x()];
-                auto deleter = [](T_Type* ptr) { delete(ptr); };
+                auto deleter = [](T_Type* ptr) { delete[](ptr); };
                 auto data = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
                     device.getSharedPtr(),
                     ptr,

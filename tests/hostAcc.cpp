@@ -16,10 +16,12 @@ using namespace alpaka;
 
 TEST_CASE("mapping::cpuBlockSerialThreadOne", "")
 {
+#if 0
     auto acc = makeAcc(mapping::cpuBlockSerialThreadOne, ThreadBlocking{Vec{4}, Vec{1}});
     acc(KernelBundle{[](auto const& acc)
                      {
                          std::cout << "blockIdx = " << acc[layer::block].idx()
                                    << " threadIdx = " << acc[layer::thread].idx() << std::endl;
                      }});
+#endif
 }

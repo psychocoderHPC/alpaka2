@@ -72,6 +72,7 @@ namespace alpaka::meta
     template<typename TExtentVec, typename TFnObj>
     auto ndLoopIncIdx(TExtentVec& idx, TExtentVec const& extent, TFnObj const& f) -> void
     {
+        idx = TExtentVec::create(0);
         ndLoop(std::make_index_sequence<TExtentVec::dim()>(), idx, extent, f);
     }
 } // namespace alpaka::meta

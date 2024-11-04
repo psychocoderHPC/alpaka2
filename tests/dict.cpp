@@ -45,7 +45,7 @@ TEST_CASE("dict mutate entry", "")
     Dict dictionary2 = {entry0, DictEntry(b_, bValue)};
     CHECK(getTag(dictionary2, a_) == 43);
 
-    Dict dictionary4 = Dict{std::make_tuple(DictEntry(a_, aValue), DictEntry(b_, bValue))};
+    Dict dictionary4 = Dict{std::make_tuple(DictEntry(a_, std::ref(aValue)), DictEntry(b_, bValue))};
     dictionary4[a_] = 1;
     CHECK(dictionary4[a_] == 1);
 

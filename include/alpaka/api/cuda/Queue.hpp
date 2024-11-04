@@ -12,6 +12,7 @@
 #if ALPAKA_LANG_CUDA
 #    include "alpaka/acc/Cuda.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
+#    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
 #    include "alpaka/core/CallbackThread.hpp"
 #    include "alpaka/core/DemangleTypeNames.hpp"
@@ -130,28 +131,29 @@ namespace alpaka
             T_FrameSize const& framesSize)
         {
             auto acc = Acc{
-                std::make_tuple(layer::block, layer::thread, internal_layer::threadCommand),
                 Dict{
                     DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
+
                     DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(internal_layer::threadCommand, ThreadCommand{}),
-                    DictEntry(frame::block, numFrames),
-                    DictEntry(frame::thread, framesSize)},
+                    DictEntry(layer::shared, cuda::StaticShared{}),
+                    DictEntry(frame::count, numFrames),
+                    DictEntry(frame::extent, framesSize),
+                    DictEntry(action::sync, cuda::Sync{})},
             };
-            acc(std::move(kernelBundle));
+            kernelBundle(acc);
         }
 
         template<typename T_IdxType, uint32_t T_dim, typename TKernelBundle>
         __global__ void gpuKernel(TKernelBundle const kernelBundle)
         {
             auto acc = Acc{
-                std::make_tuple(layer::block, layer::thread, internal_layer::threadCommand),
                 Dict{
                     DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
+                    DictEntry(layer::shared, cuda::StaticShared{}),
                     DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(internal_layer::threadCommand, ThreadCommand{})},
+                    DictEntry(action::sync, cuda::Sync{})},
             };
-            acc(std::move(kernelBundle));
+            kernelBundle(acc);
         }
 
         template<typename TIdx, uint32_t T_dim>
