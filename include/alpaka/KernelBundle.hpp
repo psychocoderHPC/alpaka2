@@ -39,6 +39,13 @@ namespace alpaka
 
         constexpr KernelBundle(KernelBundle&& b) = default;
 
+        constexpr auto operator()(auto const& acc) const
+        {
+            std::apply(
+                [&](auto const&... args) constexpr { m_kernelFn(acc, args...); },
+                m_args);
+        }
+
         KernelFn const m_kernelFn;
         ArgTuple const m_args; // Store the argument types without const and reference
     };

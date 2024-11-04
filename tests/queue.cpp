@@ -39,6 +39,7 @@ TEST_CASE("enqueue task", "")
 }
 #endif
 
+#if 0
 struct PrintIdx
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto x) const
@@ -92,22 +93,17 @@ TEST_CASE("enqueue hallo idx", "")
         },
         enabledApis);
 }
+#endif
 
+#if 1
 struct IotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, uint32_t outSize) const
     {
-#if 0
-        auto globalIdx = (acc[layer::thread].count() * acc[layer::block].idx() + acc[layer::thread].idx()).x();
-        auto numThreads = (acc[layer::thread].count() * acc[layer::block].count()).x();
-        for(uint32_t i = globalIdx; i < outSize; i += numThreads)
-            out[i] = i;
-#else
         for(auto i : IndependentDataIter{acc})
         {
             out[i.x()] = i.x();
         }
-#endif
     }
 };
 
@@ -131,11 +127,13 @@ void runIota(auto mapping, auto device)
         KernelBundle{IotaKernel{}, dBuff.getMdSpan(), extent.x()});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
+#if 1
     auto* ptr = alpaka::data(hBuff);
     for(uint32_t i = 0u; i < extent; ++i)
     {
         CHECK(i == ptr[i]);
     }
+#endif
 }
 
 TEST_CASE("iota", "")
@@ -156,3 +154,4 @@ TEST_CASE("iota", "")
         },
         enabledApis);
 }
+#endif

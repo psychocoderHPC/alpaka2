@@ -1,7 +1,6 @@
 /* Copyright 2024 René Widera
  * SPDX-License-Identifier: MPL-2.0
  */
-
 #if 1
 #include <alpaka/alpaka.hpp>
 #include <alpaka/example/executeForEach.hpp>
@@ -15,29 +14,48 @@
 
 using namespace alpaka;
 
-struct BlockIotaKernel
+
+
+constexpr void blockSync(auto const& acc)
 {
-    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numBlocks) const
+    acc[action::sync]();
+}
+
+template<uint32_t T_blockSize>
+struct SharedBlockIotaKernel
+{
+
+    template<typename T>
+    ALPAKA_FN_ACC void operator()(T const& acc, auto out, auto numBlocks) const
     {
+        //auto& shared = acc[layer::shared].template allocVar<uint32_t[T_blockSize]>();
+        auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
+
         for(auto blockIdx : DataBlockIter{acc, numBlocks})
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
             for(auto inBlockOffset : DataFrameIter{acc})
             {
-                out[blockOffset + inBlockOffset] = (blockOffset + inBlockOffset).x();
+                uint32_t id = (T_blockSize - 1u - inBlockOffset).x();
+                shared[id] = id;
+            }
+            acc.sync();
+            for(auto inBlockOffset : DataFrameIter{acc})
+            {
+                out[blockOffset + inBlockOffset] =  (blockOffset + shared[inBlockOffset.x()]).x();
             }
         }
     }
 };
 
-void runBlockIota(auto mapping, auto device)
+void runSharedBlockIota(auto mapping, auto device)
 {
     Queue queue = device.makeQueue();
-    constexpr Vec numBlocks = Vec{256u};
+    constexpr Vec numBlocks = Vec{2u};
     constexpr Vec blockExtent = Vec{128u};
     constexpr Vec dataExtent = numBlocks * blockExtent;
-    std::cout << "block iota mapping=" << core::demangledName(mapping) << std::endl;
+    std::cout << "block shared iota mapping=" << core::demangledName(mapping) << std::endl;
     auto dBuff = alpaka::alloc<uint32_t>(device, dataExtent);
 
     Platform cpuPlatform = makePlatform(api::cpu);
@@ -49,7 +67,7 @@ void runBlockIota(auto mapping, auto device)
         queue,
         mapping,
         alpaka::DataBlocking{numBlocks / 2u, blockExtent},
-        KernelBundle{BlockIotaKernel{}, dBuff.getMdSpan(), numBlocks.x()});
+        KernelBundle{SharedBlockIotaKernel<blockExtent.x()>{}, dBuff.getMdSpan(), numBlocks.x()});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
 
@@ -60,7 +78,7 @@ void runBlockIota(auto mapping, auto device)
     }
 }
 
-TEST_CASE("block iota", "")
+TEST_CASE("block shared iota", "")
 {
     executeForEachNoReturn(
         [](auto api)
@@ -74,7 +92,7 @@ TEST_CASE("block iota", "")
 
             std::cout << "all mappings" << std::endl;
             auto possibleMappings = supportedMappings(device);
-            executeForEachNoReturn([&](auto mapping) { runBlockIota(mapping, device); }, possibleMappings);
+            executeForEachNoReturn([&](auto mapping) { runSharedBlockIota(mapping, device); }, possibleMappings);
         },
         enabledApis);
 }

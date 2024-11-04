@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/core/Tag.hpp"
+#include "alpaka/core/util.hpp"
 
 #include <cassert>
 #include <tuple>
@@ -16,21 +17,62 @@ namespace alpaka
     {
         ALPAKA_TAG(thread);
         ALPAKA_TAG(block);
+        ALPAKA_TAG(shared);
     } // namespace layer
 
     namespace frame
     {
-        ALPAKA_TAG(thread);
-        ALPAKA_TAG(block);
+        ALPAKA_TAG(count);
+        ALPAKA_TAG(extent);
     } // namespace frame
 
-    namespace internal_layer
+    namespace action
     {
-        ALPAKA_TAG(threadCommand);
-    } // namespace internal_layer
+        ALPAKA_TAG(sync);
+    } // namespace action
 
     namespace mapping
     {
+        template<typename IndexVecType>
+        struct OneLayer
+        {
+            constexpr OneLayer() = default;
+
+            constexpr auto idx() const
+            {
+                return IndexVecType::create(0);
+            }
+
+            constexpr auto count() const
+            {
+                return IndexVecType::create(1);
+            }
+        };
+
+        template<typename T_Idx, typename T_Count>
+        struct GenericLayer
+        {
+            constexpr GenericLayer(T_Idx idx, T_Count count) : m_idx(idx), m_count(count)
+            {
+            }
+
+            constexpr decltype(auto) idx() const
+            {
+                return unWrapp(m_idx);
+            }
+
+            constexpr decltype(auto) count() const
+            {
+                return unWrapp(m_count);
+            }
+
+            T_Idx m_idx;
+            T_Count m_count;
+        };
+
+        struct Empty
+        {
+        };
 
         struct CpuBlockSerialThreadOne
         {

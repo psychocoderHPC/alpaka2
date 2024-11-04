@@ -16,21 +16,10 @@
 
 namespace alpaka
 {
-    struct ThreadCommand
-    {
-        constexpr ThreadCommand() = default;
-
-        template<uint32_t T_idx>
-        ALPAKA_FN_ACC void call(auto const& acc, auto const& kernelBundle) const
-        {
-            std::apply(kernelBundle.m_kernelFn, std::tuple_cat(std::tie(acc), kernelBundle.m_args));
-        }
-    };
-
-    template<typename T_IdxLayers, typename T_Storage>
+    template<typename T_Storage>
     struct Acc : T_Storage
     {
-        constexpr Acc(T_IdxLayers const&, T_Storage const& storage) : T_Storage{storage}
+        constexpr Acc(T_Storage const& storage) : T_Storage{storage}
         {
         }
 
@@ -38,25 +27,16 @@ namespace alpaka
         constexpr Acc(Acc const&&) = delete;
         constexpr Acc& operator=(Acc const&) = delete;
 
-        ALPAKA_FN_ACC void operator()(auto kernelBundle)
+        template<typename T>
+        constexpr decltype(auto) allocVar() const
         {
-            // constexpr auto l = layer::block;
-            (*this)[layer::block].template call<1>(*this, kernelBundle);
+            return (*this)[layer::shared].template allocVar<T>();
         }
 
-        template<uint32_t T_idx>
-        constexpr decltype(auto) getLayer() const
+        constexpr void sync() const
         {
-            return (*this)[std::get<T_idx>(IdxLayer{})];
+            (*this)[action::sync]();
         }
-
-        template<uint32_t T_idx>
-        constexpr decltype(auto) getLayer()
-        {
-            return (*this)[std::get<T_idx>(IdxLayer{})];
-        }
-
-        using IdxLayer = T_IdxLayers;
-        using IdxType = decltype(std::declval<Acc>()[layer::block].count());
     };
+
 } // namespace alpaka
