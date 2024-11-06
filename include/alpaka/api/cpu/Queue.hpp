@@ -6,9 +6,9 @@
 
 #include "alpaka/HostApiTraits.hpp"
 #include "alpaka/api/cpu/Api.hpp"
-#include "alpaka/api/cpu/mapping/OmpBlocks.hpp"
-#include "alpaka/api/cpu/mapping/OmpThreads.hpp"
-#include "alpaka/api/cpu/mapping/Serial.hpp"
+#include "alpaka/api/cpu/exec/OmpBlocks.hpp"
+#include "alpaka/api/cpu/exec/OmpThreads.hpp"
+#include "alpaka/api/cpu/exec/Serial.hpp"
 #include "alpaka/core/CallbackThread.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/hostApi.hpp"

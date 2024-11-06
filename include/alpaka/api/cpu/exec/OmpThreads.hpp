@@ -7,12 +7,12 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
+#    include "alpaka/Acc.hpp"
 #    include "alpaka/Blocking.hpp"
+#    include "alpaka/Tags.hpp"
 #    include "alpaka/Vec.hpp"
-#    include "alpaka/acc/Acc.hpp"
-#    include "alpaka/acc/Layer.hpp"
-#    include "alpaka/api/cpu/blockSync/Omp.hpp"
-#    include "alpaka/api/cpu/mem/OmpStaticShared.hpp"
+#    include "alpaka/api/cpu/block/mem/OmpStaticShared.hpp"
+#    include "alpaka/api/cpu/block/sync/Omp.hpp"
 #    include "alpaka/core/Dict.hpp"
 #    include "alpaka/meta/NdLoop.hpp"
 
@@ -62,7 +62,7 @@ namespace alpaka
 
                         auto const blockLayerEntry = DictEntry{
                             layer::block,
-                            alpaka::mapping::GenericLayer{std::cref(blockIdx), std::cref(blockCountND)}};
+                            alpaka::cpu::GenericLayer{std::cref(blockIdx), std::cref(blockCountND)}};
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                         auto const blockSyncEntry = DictEntry{action::sync, cpu::OmpSync{}};
 
@@ -81,7 +81,7 @@ namespace alpaka
 
                                 auto const threadLayerEntry = DictEntry{
                                     layer::thread,
-                                    alpaka::mapping::GenericLayer{std::cref(threadIdx), std::cref(threadCountND)}};
+                                    alpaka::cpu::GenericLayer{std::cref(threadIdx), std::cref(threadCountND)}};
                                 auto acc = Acc(joinDict(
                                     Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry},
                                     dict));

@@ -6,7 +6,7 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/api/cpu/mem/SingleThreadStaticShared.hpp"
+#    include "SingleThreadStaticShared.hpp"
 
 namespace alpaka
 {

@@ -31,11 +31,11 @@ TEST_CASE("enqueue task", "")
                   << " value = " << x << std::endl;
     };
 
-    queue.enqueue(mapping::cpuBlockSerialThreadOne, Vec{3, 3}, Vec{1, 1}, fn, 42);
-    // queue.enqueue(mapping::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
-    // queue.enqueue(mapping::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
+    queue.enqueue(exec::cpuBlockSerialThreadOne, Vec{3, 3}, Vec{1, 1}, fn, 42);
+    // queue.enqueue(exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+    // queue.enqueue(exec::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
 
-     enqueue(queue, mapping::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+     enqueue(queue, exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
 }
 #endif
 
@@ -60,16 +60,16 @@ struct PrintIdx
     }
 };
 
-void runPlatformCreationTest(auto mapping, auto queue)
+void runPlatformCreationTest(auto exec, auto queue)
 {
-    std::cout << "mapping=" << core::demangledName(mapping) << std::endl;
+    std::cout << "exec=" << core::demangledName(exec) << std::endl;
     std::cout << "start enqueue" << std::endl;
-    queue.enqueue(mapping, ThreadBlocking{Vec{3, 3}, Vec{1, 1}}, PrintIdx{}, 42);
+    queue.enqueue(exec, ThreadBlocking{Vec{3, 3}, Vec{1, 1}}, PrintIdx{}, 42);
     wait(queue);
-    // queue.enqueue(mapping::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
-    // queue.enqueue(mapping::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
+    // queue.enqueue(exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+    // queue.enqueue(exec::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
 
-    enqueue(queue, mapping, DataBlocking{Vec{3, 3}, Vec{2, 2}}, KernelBundle{PrintIdx{}, 43});
+    enqueue(queue, exec, DataBlocking{Vec{3, 3}, Vec{2, 2}}, KernelBundle{PrintIdx{}, 43});
     wait(queue);
 }
 
@@ -89,7 +89,7 @@ TEST_CASE("enqueue hallo idx", "")
 
             std::cout << "all mappings" << std::endl;
             auto possibleMappings = supportedMappings(device);
-            executeForEachNoReturn([&](auto mapping) { runPlatformCreationTest(mapping, queue); }, possibleMappings);
+            executeForEachNoReturn([&](auto exec) { runPlatformCreationTest(exec, queue); }, possibleMappings);
         },
         enabledApis);
 }
@@ -111,7 +111,7 @@ void runIota(auto mapping, auto device)
 {
     Queue queue = device.makeQueue();
     constexpr Vec extent = Vec{128u};
-    std::cout << "mapping=" << core::demangledName(mapping) << std::endl;
+    std::cout << "exec=" << core::demangledName(mapping) << std::endl;
     auto dBuff = alpaka::alloc<uint32_t>(device, extent);
 
     Platform cpuPlatform = makePlatform(api::cpu);

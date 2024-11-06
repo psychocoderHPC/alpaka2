@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "alpaka/acc/Layer.hpp"
+#include "alpaka/Tags.hpp"
 #include "alpaka/core/common.hpp"
 
 #include <cstdint>

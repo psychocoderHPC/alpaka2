@@ -4,12 +4,12 @@
 
 #pragma once
 
+#include "alpaka/Acc.hpp"
 #include "alpaka/Blocking.hpp"
+#include "alpaka/Tags.hpp"
 #include "alpaka/Vec.hpp"
-#include "alpaka/acc/Acc.hpp"
-#include "alpaka/acc/Layer.hpp"
-#include "alpaka/api/cpu/blockSync/NoOp.hpp"
-#include "alpaka/api/cpu/mem/SingleThreadStaticShared.hpp"
+#include "alpaka/api/cpu/block/mem/SingleThreadStaticShared.hpp"
+#include "alpaka/api/cpu/block/sync/NoOp.hpp"
 #include "alpaka/core/Dict.hpp"
 #include "alpaka/meta/NdLoop.hpp"
 
@@ -43,8 +43,8 @@ namespace alpaka
 
                 auto const blockLayerEntry = DictEntry{
                     layer::block,
-                    alpaka::mapping::GenericLayer{std::cref(blockIdx), std::cref(m_threadBlocking.m_numBlocks)}};
-                auto const threadLayerEntry = DictEntry{layer::thread, mapping::OneLayer<IndexVecType>{}};
+                    alpaka::cpu::GenericLayer{std::cref(blockIdx), std::cref(m_threadBlocking.m_numBlocks)}};
+                auto const threadLayerEntry = DictEntry{layer::thread, cpu::OneLayer<IndexVecType>{}};
                 auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                 auto const blockSyncEntry = DictEntry{action::sync, cpu::NoOp{}};
 

@@ -14,7 +14,7 @@
 
 using namespace alpaka;
 
-TEST_CASE("mapping::cpuBlockSerialThreadOne", "")
+TEST_CASE("exec::cpuBlockSerialThreadOne", "")
 {
 #if 0
     auto acc = makeAcc(mapping::cpuBlockSerialThreadOne, ThreadBlocking{Vec{4}, Vec{1}});
