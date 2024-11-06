@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "Tags.hpp"
 #include "alpaka/Vec.hpp"
-#include "alpaka/acc/Layer.hpp"
 #include "alpaka/core/Dict.hpp"
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/common.hpp"
@@ -28,12 +28,12 @@ namespace alpaka
         constexpr Acc& operator=(Acc const&) = delete;
 
         template<typename T>
-        constexpr decltype(auto) allocVar() const
+        constexpr decltype(auto) declareSharedVar() const
         {
             return (*this)[layer::shared].template allocVar<T>();
         }
 
-        constexpr void sync() const
+        constexpr void syncBlockThreads() const
         {
             (*this)[action::sync]();
         }

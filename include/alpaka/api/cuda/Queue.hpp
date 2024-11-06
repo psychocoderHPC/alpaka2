@@ -10,8 +10,8 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
-#    include "alpaka/acc/Cuda.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
+#    include "alpaka/api/cuda/IdxLayer.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
 #    include "alpaka/core/CallbackThread.hpp"

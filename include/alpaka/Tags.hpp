@@ -33,43 +33,6 @@ namespace alpaka
 
     namespace mapping
     {
-        template<typename IndexVecType>
-        struct OneLayer
-        {
-            constexpr OneLayer() = default;
-
-            constexpr auto idx() const
-            {
-                return IndexVecType::create(0);
-            }
-
-            constexpr auto count() const
-            {
-                return IndexVecType::create(1);
-            }
-        };
-
-        template<typename T_Idx, typename T_Count>
-        struct GenericLayer
-        {
-            constexpr GenericLayer(T_Idx idx, T_Count count) : m_idx(idx), m_count(count)
-            {
-            }
-
-            constexpr decltype(auto) idx() const
-            {
-                return unWrapp(m_idx);
-            }
-
-            constexpr decltype(auto) count() const
-            {
-                return unWrapp(m_count);
-            }
-
-            T_Idx m_idx;
-            T_Count m_count;
-        };
-
         struct Empty
         {
         };
@@ -91,7 +54,6 @@ namespace alpaka
         };
 
         constexpr CpuBlockOmpThreadOmp cpuBlockOmpThreadOmp;
-
         struct Cuda
         {
         };
@@ -122,6 +84,5 @@ namespace alpaka
             template<typename T_Mapping>
             constexpr bool isSeqMapping_v = IsSeqMapping<T_Mapping>::value;
         } // namespace traits
-
-    } // namespace mapping
+    } // namespace exec
 } // namespace alpaka

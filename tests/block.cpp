@@ -37,7 +37,7 @@ void runBlockIota(auto mapping, auto device)
     constexpr Vec numBlocks = Vec{256u};
     constexpr Vec blockExtent = Vec{128u};
     constexpr Vec dataExtent = numBlocks * blockExtent;
-    std::cout << "block iota mapping=" << core::demangledName(mapping) << std::endl;
+    std::cout << "block iota exec=" << core::demangledName(mapping) << std::endl;
     auto dBuff = alpaka::alloc<uint32_t>(device, dataExtent);
 
     Platform cpuPlatform = makePlatform(api::cpu);
