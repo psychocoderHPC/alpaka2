@@ -22,7 +22,7 @@ endif()
 
 set(_TARGET_NAME "babelstream")
 #append_recursive_files_add_to_src_group("src/" "src/" "cpp" _FILES_SOURCE)
-file(GLOB_RECURSE _FILES_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE _FILES_SOURCE "./src/*.cpp")
 
 alpaka_add_executable(
     ${_TARGET_NAME}
@@ -34,9 +34,14 @@ target_include_directories(
 
 target_link_libraries(
     ${_TARGET_NAME}
-    PRIVATE common)
+    PRIVATE alpaka::alpaka)
 
+target_link_libraries(${_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER benchmarks/babelstream)
+
+if (BUILD_TESTING)
+    catch_discover_tests(${_TARGET_NAME})
+endif()
 
 #Run as a ctest
 if(alpaka_CI)

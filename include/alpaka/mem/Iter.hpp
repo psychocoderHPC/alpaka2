@@ -270,4 +270,8 @@ namespace alpaka
     using IndependentGridThreadIter
         = IndexContainer<T_Acc, idxTrait::GlobalNumThreads, idxTrait::GlobalNumThreads, idxTrait::GlobalThreadIdx>;
 
+    template<typename T_Acc>
+    using IndependentBlockThreadIter
+        = IndexContainer<T_Acc, idxTrait::NumThreadsInBlock, idxTrait::NumThreadsInBlock, idxTrait::ThreadIdxInBlock>;
+
 } // namespace alpaka

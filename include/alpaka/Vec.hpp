@@ -136,7 +136,7 @@ namespace alpaka
          * @param value Value which is set for all dimensions
          * @return new Vec<...>
          */
-        static constexpr Vec create(T_Type const& value)
+        static constexpr Vec all(T_Type const& value)
         {
             Vec result([=](uint32_t const) { return value; });
 

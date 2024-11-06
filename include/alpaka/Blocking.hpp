@@ -49,5 +49,13 @@ namespace alpaka
             , m_numThreads(blockSize)
         {
         }
+
+       // friend std::ostream& operator<<(std::ostream& os, DataBlocking<T_NumBlocks,T_BlockSize> const& d);
     };
+
+    template<typename T_NumBlocks, typename T_BlockSize>
+    std::ostream& operator<<(std::ostream& s, DataBlocking<T_NumBlocks, T_BlockSize> const& d)
+    {
+        return s << "blocks=" << d.m_numBlocks << " blockSize=" << d.m_blockSize;
+    }
 } // namespace alpaka
