@@ -162,7 +162,7 @@ namespace alpaka
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
-                auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::create(1);
+                auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
                 return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
             }
         };
