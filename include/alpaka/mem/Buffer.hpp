@@ -43,6 +43,16 @@ namespace alpaka
             return m_extents;
         }
 
+        decltype(auto) data()
+        {
+            return alpaka::data(m_data);
+        }
+
+        decltype(auto) data() const
+        {
+            return alpaka::data(m_data);
+        }
+
         auto getMdSpan() const
         {
             // import mdspan into alpaka::experimental namespace. see: https://eel.is/c++draft/mdspan.syn
@@ -57,7 +67,7 @@ namespace alpaka
             using std::experimental::full_extent;
             using std::experimental::submdspan;
 
-            auto* ptr = reinterpret_cast<std::byte*>(data(m_data));
+            auto* ptr = reinterpret_cast<std::byte*>(alpaka::data(m_data));
             auto ex = detail::makeExtents(m_extents, std::make_index_sequence<T_Extents::dim()>{});
             auto const strides = m_data->m_pitch;
             layout_stride::mapping<decltype(ex)> m{ex, strides.toStdArray()};

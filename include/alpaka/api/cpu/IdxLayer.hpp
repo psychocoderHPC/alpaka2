@@ -23,12 +23,12 @@ namespace alpaka
 
             constexpr auto idx() const
             {
-                return IndexVecType::create(0);
+                return IndexVecType::all(0);
             }
 
             constexpr auto count() const
             {
-                return IndexVecType::create(1);
+                return IndexVecType::all(1);
             }
         };
 
