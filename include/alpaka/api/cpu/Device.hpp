@@ -11,7 +11,7 @@
 #include "alpaka/api/cpu/Queue.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/hostApi.hpp"
-#include "alpaka/mem/Buffer.hpp"
+#include "alpaka/mem/View.hpp"
 #include "alpaka/mem/Data.hpp"
 
 #include <cstdint>
@@ -132,8 +132,8 @@ namespace alpaka
                     extents,
                     T_Extents{sizeof(T_Type)},
                     std::move(deleter));
-                // return std::make_shared<alpaka::Buffer<std::decay_t<decltype(data)>,T_Extents>>(data);
-                return alpaka::Buffer<std::decay_t<decltype(data)>, T_Extents>(data);
+                // return std::make_shared<alpaka::View<std::decay_t<decltype(data)>,T_Extents>>(data);
+                return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
             }
         };
 
