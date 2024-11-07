@@ -17,19 +17,19 @@
 namespace alpaka
 {
     template<typename T_Datahandle, typename T_Extents>
-    struct Buffer
+    struct View
     {
     public:
-        Buffer(T_Datahandle data, T_Extents const& extents) : m_data(std::move(data)), m_extents(extents)
+        View(T_Datahandle data, T_Extents const& extents) : m_data(std::move(data)), m_extents(extents)
         {
         }
 
-        Buffer(T_Datahandle data) : m_data(std::move(data)), m_extents(m_data->m_extents)
+        View(T_Datahandle data) : m_data(std::move(data)), m_extents(m_data->m_extents)
         {
         }
 
-        Buffer(Buffer const&) = default;
-        Buffer(Buffer&&) = default;
+        View(View const&) = default;
+        View(View&&) = default;
 
         using type = typename T_Datahandle::element_type::type;
 
@@ -91,12 +91,12 @@ namespace alpaka
     };
 
     template<typename T_Datahandle>
-    ALPAKA_FN_HOST_ACC Buffer(T_Datahandle) -> Buffer<T_Datahandle, typename T_Datahandle::element_type::ExtentType>;
+    ALPAKA_FN_HOST_ACC View(T_Datahandle) -> View<T_Datahandle, typename T_Datahandle::element_type::ExtentType>;
 
     namespace internal
     {
         template<typename... T_Args>
-        struct Data::Op<alpaka::Buffer<T_Args...>>
+        struct Data::Op<alpaka::View<T_Args...>>
         {
             decltype(auto) operator()(auto&& buffer) const
             {
@@ -105,7 +105,7 @@ namespace alpaka
         };
 
         template<typename... T_Args>
-        struct GetApi::Op<alpaka::Buffer<T_Args...>>
+        struct GetApi::Op<alpaka::View<T_Args...>>
         {
             decltype(auto) operator()(auto&& buffer) const
             {

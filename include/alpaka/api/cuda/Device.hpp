@@ -119,7 +119,7 @@ namespace alpaka
                     extents,
                     T_Extents{sizeof(T_Type)},
                     deleter);
-                return alpaka::Buffer<std::decay_t<decltype(data)>, T_Extents>(data);
+                return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
             }
         };
 
