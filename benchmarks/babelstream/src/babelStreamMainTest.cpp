@@ -63,7 +63,11 @@ struct InitKernel
     template<typename TAcc, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T* b, T* c, T initA) const
     {
+#if 1
+        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
+#else
         for(auto [i] : IndependentDataIter{acc})
+#endif
         {
             a[i] = initA;
             b[i] = static_cast<T>(0.0);
@@ -87,11 +91,16 @@ struct CopyKernel
 #if 0
         auto const [index] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
         b[index] = a[index];
-#else
-        for(auto [i] : IndependentGridThreadIter{acc})
+#elif 1
+        for(auto [i] : IndependentDataIter{acc,Vec{1024u*1024u}})
         {
             b[i] = a[i];
         }
+#else
+        auto const [index] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
+        for(uint32_t i = index; i < (1024u * acc[layer::thread].count()).x();
+            i += (256u * acc[layer::thread].count()).x())
+            b[i] = a[i];
 #endif
     }
 };
@@ -113,7 +122,7 @@ struct MultKernel
         auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
         b[i] = scalar * a[i];
 #else
-        for(auto [i] : IndependentDataIter{acc})
+        for(auto [i] : IndependentDataIter{acc, Vec{1024u*1024u}})
         {
             b[i] = scalar * a[i];
         }
@@ -134,10 +143,15 @@ struct AddKernel
     template<typename TAcc, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* c) const
     {
+#if 1
+        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
+        c[i] = a[i] + b[i];
+#else
         for(auto [i] : IndependentDataIter{acc})
         {
             c[i] = a[i] + b[i];
         }
+#endif
     }
 };
 
@@ -155,10 +169,15 @@ struct TriadKernel
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* c) const
     {
         T const scalar = static_cast<T>(scalarVal);
+#if 1
+        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
+        c[i] = a[i] + scalar * b[i];
+#else
         for(auto [i] : IndependentDataIter{acc})
         {
             c[i] = a[i] + scalar * b[i];
         }
+#endif
     }
 };
 
@@ -177,6 +196,16 @@ struct DotKernel
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* sum, auto arraySize) const
     {
         auto& tbSum = alpaka::declareSharedVar<T[blockThreadExtentMain]>(acc);
+#if 0
+        auto [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
+        auto const [local_i] = acc[layer::thread].idx();
+        auto const [totalThreads] = acc[layer::thread].count() *  acc[layer::block].count();
+
+        T threadSum = 0;
+        for(; i < arraySize; i += totalThreads)
+            threadSum += a[i] * b[i];
+        tbSum[local_i] = threadSum;
+#else
 
         T threadSum = 0;
         for(auto [i] : IndependentDataIter{acc, arraySize})
@@ -187,15 +216,19 @@ struct DotKernel
         {
             tbSum[local_i] = threadSum;
         }
-#if 0
-        auto const blockSize = alpaka::getWorkDiv<alpaka::Block, alpaka::Threads>(acc)[0];
-        for(Idx offset = blockSize / 2; offset > 0; offset /= 2)
+#endif
+#if 1
+        auto const [local_i] = acc[layer::thread].idx();
+        auto const [blockSize] = acc[layer::thread].count();
+        for(auto offset = blockSize / 2; offset > 0; offset /= 2)
         {
             alpaka::syncBlockThreads(acc);
             if(local_i < offset)
                 tbSum[local_i] += tbSum[local_i + offset];
         }
-#endif
+        if(local_i == 0)
+            sum[acc[layer::block].idx().x()] = tbSum[local_i];
+#else
         if(acc[layer::thread].idx().x() == 0)
         {
             auto registerSum = tbSum[0];
@@ -203,6 +236,7 @@ struct DotKernel
                 registerSum += tbSum[i];
             sum[acc[layer::block].idx().x()] = registerSum;
         }
+#endif
     }
 };
 
@@ -316,14 +350,17 @@ void testKernels(auto api)
         },
         "InitKernel");
 
+    auto dataBlockingCopy = DataBlocking{Vec{static_cast<Idx>(256)}, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+
     // Test the copy-kernel. Copy A one by one to B.
     measureKernelExec(
-        [&]() { queue.enqueue(mapping, dataBlocking, CopyKernel(), bufAccInputAPtr, bufAccInputBPtr); },
+        [&]() { queue.enqueue(mapping, dataBlockingCopy, CopyKernel(), bufAccInputAPtr, bufAccInputBPtr); },
         "CopyKernel");
 
+    auto dataBlockingMult = DataBlocking{Vec{static_cast<Idx>(256)}, Vec{static_cast<Idx>(blockThreadExtentMain)}};
     // Test the scaling-kernel. Calculate B=scalar*A.
     measureKernelExec(
-        [&]() { queue.enqueue(mapping, dataBlocking, MultKernel(), bufAccInputAPtr, bufAccInputBPtr); },
+        [&]() { queue.enqueue(mapping, dataBlockingMult, MultKernel(), bufAccInputAPtr, bufAccInputBPtr); },
         "MultKernel");
 
     // Test the addition-kernel. Calculate C=A+B. Where B=scalar*A.
@@ -374,12 +411,14 @@ void testKernels(auto api)
     auto bufAccSumPerBlock = alpaka::alloc<DataType>(devAcc, dataBlocking.m_numBlocks);
     auto bufHostSumPerBlock = alpaka::alloc<DataType>(devHost, dataBlocking.m_numBlocks);
 
+    auto dataBlockingDot = DataBlocking{Vec{static_cast<Idx>(256)}, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+
     measureKernelExec(
         [&]()
         {
             queue.enqueue(
                 mapping,
-                dataBlocking,
+                dataBlockingDot,
                 DotKernel(), // Dot kernel
                 std::data(bufAccInputA),
                 std::data(bufAccInputB),
@@ -430,9 +469,9 @@ void testKernels(auto api)
 
 
     metaData.setItem(BMInfoDataType::WorkDivInit, dataBlocking);
-    metaData.setItem(BMInfoDataType::WorkDivCopy, dataBlocking);
+    metaData.setItem(BMInfoDataType::WorkDivCopy, dataBlockingCopy);
     metaData.setItem(BMInfoDataType::WorkDivAdd, dataBlocking);
-    metaData.setItem(BMInfoDataType::WorkDivMult, dataBlocking);
+    metaData.setItem(BMInfoDataType::WorkDivMult, dataBlockingMult);
     metaData.setItem(BMInfoDataType::WorkDivTriad, dataBlocking);
 
     // Device and accelerator

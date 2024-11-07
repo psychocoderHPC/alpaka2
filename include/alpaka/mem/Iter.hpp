@@ -104,13 +104,15 @@ namespace alpaka
                 {
                     uint32_t const idx = dim - 1u - d;
                     m_current[idx] += m_stride[idx];
-                    if(m_current[idx] >= m_extent[idx])
+                    if constexpr(dim != 1u)
                     {
-                        if(idx >= 1u)
+                        if(idx >= 1u && m_current[idx] >= m_extent[idx])
+                        {
                             m_current[idx] = m_first[idx];
+                        }
+                        else
+                            break;
                     }
-                    else
-                        break;
                 }
                 return *this;
             }

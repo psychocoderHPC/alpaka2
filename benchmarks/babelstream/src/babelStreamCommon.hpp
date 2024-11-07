@@ -111,7 +111,10 @@ namespace
     {
         if constexpr(std::is_floating_point_v<T>)
         {
-            return std::fabs(a - b) < std::numeric_limits<T>::epsilon() * static_cast<T>(100.0);
+            bool res = std::fabs(a - b) < std::numeric_limits<T>::epsilon() * static_cast<T>(100.0);
+            if(!res)
+                std::cout<<a<<" != "<<b<<std::endl;
+            return res;
         }
         else if constexpr(std::is_integral_v<T>)
         {

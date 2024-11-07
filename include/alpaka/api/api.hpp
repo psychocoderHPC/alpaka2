@@ -14,7 +14,8 @@
 
 namespace alpaka
 {
-    constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
+    constexpr auto apis = std::make_tuple( api::cuda);
+    //constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
 
 
     constexpr auto enabledApis = meta::filter([](auto api) { return isPlatformAvaiable(api); }, apis);

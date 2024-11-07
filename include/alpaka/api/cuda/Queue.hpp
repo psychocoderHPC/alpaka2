@@ -194,10 +194,11 @@ namespace alpaka
                     convertVecToUniformCudaHipDim(threadBlocking.m_numThreads),
                     static_cast<std::size_t>(0),
                     queue.getNativeHandle()>>>(kernelBundle, args...);
-
+#if 0
                 auto const msg
                     = std::string{"execution of kernel '" + core::demangledName<T_KernelBundle>() + "' failed with"};
                 ::alpaka::uniform_cuda_hip::detail::rtCheckLastError<TApi, true>(msg.c_str(), __FILE__, __LINE__);
+#endif
             }
         };
     } // namespace cuda
@@ -229,7 +230,6 @@ namespace alpaka
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle kernelBundle) const
             {
-                std::cout << "enqueu cuda overload data blocking" << std::endl;
                 auto threadBlocking
                     = internal::adjustThreadBlocking(*queue.m_device.get(), mapping, dataBlocking, kernelBundle);
                 cuda::CallKernel{}(
@@ -247,7 +247,6 @@ namespace alpaka
             void operator()(cuda::Queue<T_Device>& queue, T_Dest dest, T_Source const source) const
             {
                 internal::Wait::wait(queue);
-                std::cout << "cuda memcpy" << std::endl;
                 using TApi = typename cuda::Queue<T_Device>::TApi;
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(alpaka::getNativeHandle(queue.m_device)));
                 // Initiate the memory copy.
