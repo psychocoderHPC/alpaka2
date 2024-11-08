@@ -110,14 +110,48 @@ namespace alpaka
             {
                 using TApi = typename cuda::Device<T_Platform>::TApi;
                 T_Type* ptr = nullptr;
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
-                    TApi::malloc((void**) &ptr, static_cast<std::size_t>(extents.x()) * sizeof(T_Type)));
+                auto pitches = T_Extents::all(sizeof(T_Type));
+
+                using Idx = typename T_Extents::type;
+
+                constexpr auto dim = extents.dim();
+                if constexpr(dim == 1u)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                        TApi::malloc((void**) &ptr, static_cast<std::size_t>(extents.x()) * sizeof(T_Type)));
+                }
+                else if constexpr(dim == 2u)
+                {
+                    size_t rowPitchInBytes = 0u;
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::mallocPitch(
+                        (void**) &ptr,
+                        &rowPitchInBytes,
+                        static_cast<std::size_t>(extents.x()) * sizeof(T_Type),
+                        static_cast<std::size_t>(extents.y())));
+
+                    pitches = mem::calculatePitches<T_Type>(extents, static_cast<Idx>(rowPitchInBytes));
+                }
+                else if constexpr(dim == 3u)
+                {
+                    typename TApi::Extent_t const extentVal = TApi::makeExtent(
+                        static_cast<std::size_t>(extents.x()) * sizeof(T_Type),
+                        static_cast<std::size_t>(extents.y()),
+                        static_cast<std::size_t>(extents.z()));
+                    typename TApi::PitchedPtr_t pitchedPtrVal;
+                    pitchedPtrVal.ptr = nullptr;
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::malloc3D(&pitchedPtrVal, extentVal));
+
+                    ptr = reinterpret_cast<T_Type*>(pitchedPtrVal.ptr);
+                    Idx rowPitchInBytes = pitchedPtrVal.pitch;
+                    pitches = mem::calculatePitches<T_Type>(extents, static_cast<Idx>(pitchedPtrVal.pitch));
+                }
+
                 auto deleter = [](T_Type* ptr) { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(TApi::free(ptr)); };
                 auto data = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
                     device.getSharedPtr(),
                     ptr,
                     extents,
-                    T_Extents{sizeof(T_Type)},
+                    pitches,
                     deleter);
                 return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
             }

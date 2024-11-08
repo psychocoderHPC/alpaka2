@@ -11,8 +11,8 @@
 
 #if ALPAKA_LANG_CUDA
 #    include "alpaka/api/cuda/Api.hpp"
-#    include "alpaka/api/cuda/IdxLayer.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
+#    include "alpaka/api/cuda/IdxLayer.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
 #    include "alpaka/core/CallbackThread.hpp"
 #    include "alpaka/core/DemangleTypeNames.hpp"
@@ -127,8 +127,8 @@ namespace alpaka
             typename T_FrameSize>
         __global__ void gpuKernel(
             TKernelBundle const kernelBundle,
-            T_NumFrames const& numFrames,
-            T_FrameSize const& framesSize)
+            T_NumFrames const numFrames,
+            T_FrameSize const framesSize)
         {
             auto acc = Acc{
                 Dict{
@@ -194,11 +194,11 @@ namespace alpaka
                     convertVecToUniformCudaHipDim(threadBlocking.m_numThreads),
                     static_cast<std::size_t>(0),
                     queue.getNativeHandle()>>>(kernelBundle, args...);
-#if 0
+#    if 0
                 auto const msg
                     = std::string{"execution of kernel '" + core::demangledName<T_KernelBundle>() + "' failed with"};
                 ::alpaka::uniform_cuda_hip::detail::rtCheckLastError<TApi, true>(msg.c_str(), __FILE__, __LINE__);
-#endif
+#    endif
             }
         };
     } // namespace cuda
@@ -241,23 +241,67 @@ namespace alpaka
             }
         };
 
-        template<typename T_Device, typename T_Dest, typename T_Source>
-        struct Memcpy::Op<cuda::Queue<T_Device>, T_Dest, T_Source>
+        template<typename T_Device, typename T_Dest, typename T_Source, typename T_Extents>
+        struct Memcpy::Op<cuda::Queue<T_Device>, T_Dest, T_Source, T_Extents>
         {
-            void operator()(cuda::Queue<T_Device>& queue, T_Dest dest, T_Source const source) const
+            void operator()(cuda::Queue<T_Device>& queue, T_Dest dest, T_Source const source, T_Extents const& extents)
+                const
             {
-                internal::Wait::wait(queue);
                 using TApi = typename cuda::Queue<T_Device>::TApi;
+
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(alpaka::getNativeHandle(queue.m_device)));
-                // Initiate the memory copy.
+
+                auto* destPtr = (void*) alpaka::data(dest);
+                auto* const srcPtr = (void*) alpaka::data(source);
+
                 auto copyKind
                     = cuda::Memcpy<ALPAKA_TYPE(internal::getApi(dest)), ALPAKA_TYPE(internal::getApi(source))>::kind;
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memcpyAsync(
-                    (void*) alpaka::data(dest),
-                    (void*) alpaka::data(source),
-                    dest.getExtent().x() * sizeof(typename T_Dest::type),
-                    copyKind,
-                    internal::getNativeHandle(queue)));
+
+                constexpr auto dim = extents.dim();
+                if constexpr(dim == 1u)
+                {
+                    // Initiate the memory copy.
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memcpyAsync(
+                        destPtr,
+                        srcPtr,
+                        extents.x() * sizeof(typename T_Dest::type),
+                        copyKind,
+                        internal::getNativeHandle(queue)));
+                }
+                else if constexpr(dim == 2u)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memcpy2DAsync(
+                        destPtr,
+                        dest.getPitches().y(),
+                        srcPtr,
+                        source.getPitches().y(),
+                        extents.x() * sizeof(typename T_Dest::type),
+                        extents.y(),
+                        copyKind,
+                        internal::getNativeHandle(queue)));
+                }
+                else if constexpr(dim == 3u)
+                {
+                    // zero-init required per CUDA documentation
+                    typename TApi::Memcpy3DParms_t memCpy3DParms{};
+
+                    memCpy3DParms.srcPtr = TApi::makePitchedPtr(
+                        srcPtr,
+                        source.getPitches().y(),
+                        source.getExtents().x(),
+                        source.getExtents().y());
+                    memCpy3DParms.dstPtr = TApi::makePitchedPtr(
+                        destPtr,
+                        dest.getPitches().y(),
+                        dest.getExtents().x(),
+                        dest.getExtents().y());
+                    memCpy3DParms.extent
+                        = TApi::makeExtent(extents.x() * sizeof(typename T_Dest::type), extents.y(), extents.z());
+                    memCpy3DParms.kind = copyKind;
+
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                        TApi::memcpy3DAsync(&memCpy3DParms, internal::getNativeHandle(queue)));
+                }
             }
         };
     } // namespace internal

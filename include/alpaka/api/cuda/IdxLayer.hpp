@@ -8,8 +8,8 @@
 
 #if ALPAKA_LANG_CUDA
 
-#    include "alpaka/Vec.hpp"
 #    include "alpaka/Tags.hpp"
+#    include "alpaka/Vec.hpp"
 
 #    include <stdexcept>
 #    include <tuple>

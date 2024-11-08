@@ -66,18 +66,18 @@ namespace alpaka
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                         auto const blockSyncEntry = DictEntry{action::sync, cpu::OmpSync{}};
 
-#        pragma omp for
+#    pragma omp for
                         for(IndexType i = 0; i < blockCountND.product(); ++i)
                         {
                             blockIdx = mapToND(blockCountND, i);
-#        pragma omp parallel num_threads(threadCount)
+#    pragma omp parallel num_threads(threadCount)
                             {
                                 int x = omp_get_thread_num();
                                 IndexVecType threadIdx = mapToND(threadCountND, static_cast<IndexType>(x));
 
 
-                                //usleep(100 * x * i);
-                                //std::cout << "ompt threadIdx = " << threadIdx << std::endl;
+                                // usleep(100 * x * i);
+                                // std::cout << "ompt threadIdx = " << threadIdx << std::endl;
 
                                 auto const threadLayerEntry = DictEntry{
                                     layer::thread,
@@ -89,7 +89,7 @@ namespace alpaka
                             }
                             blockSharedMem.reset();
                         }
-#    endif
+#endif
                     }
                 }
             }

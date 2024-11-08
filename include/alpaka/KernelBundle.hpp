@@ -41,9 +41,7 @@ namespace alpaka
 
         constexpr auto operator()(auto const& acc) const
         {
-            std::apply(
-                [&](auto const&... args) constexpr { m_kernelFn(acc, args...); },
-                m_args);
+            std::apply([&](auto const&... args) constexpr { m_kernelFn(acc, args...); }, m_args);
         }
 
         KernelFn const m_kernelFn;

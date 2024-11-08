@@ -48,7 +48,8 @@ namespace alpaka
                 auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                 auto const blockSyncEntry = DictEntry{action::sync, cpu::NoOp{}};
 
-                auto acc = Acc(joinDict(Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry}, dict));
+                auto acc = Acc(
+                    joinDict(Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry}, dict));
                 meta::ndLoopIncIdx(
                     blockIdx,
                     m_threadBlocking.m_numBlocks,

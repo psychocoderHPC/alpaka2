@@ -1,4 +1,4 @@
-/* Copyright 2024 René Widera
+/* Copyright 2024 René Widera, Bernhard Manfred Gruber
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -16,6 +16,38 @@
 
 namespace alpaka
 {
+    namespace mem
+    {
+        //! Calculate the pitches purely from the extents.
+        template<typename T_Elem, typename T_Idx, uint32_t T_dim>
+        constexpr auto calculatePitchesFromExtents(Vec<T_Idx, T_dim> const& extent)
+        {
+            Vec<T_Idx, T_dim> pitchBytes{};
+            constexpr auto dim = extent.dim();
+            if constexpr(dim > 0)
+                pitchBytes.back() = static_cast<T_Idx>(sizeof(T_Elem));
+            if constexpr(dim > 1)
+                for(T_Idx i = dim - 1; i > 0; i--)
+                    pitchBytes[i - 1] = extent[i] * pitchBytes[i];
+            return pitchBytes;
+        }
+
+        //! Calculate the pitches purely from the extents.
+        template<typename T_Elem, typename T_Idx, uint32_t T_dim>
+        requires(T_dim >= 2)
+        constexpr auto calculatePitches(Vec<T_Idx, T_dim> const& extent, T_Idx const& rowPitchBytes)
+        {
+            Vec<T_Idx, T_dim> pitchBytes{};
+            constexpr auto dim = extent.dim();
+            pitchBytes.back() = static_cast<T_Idx>(sizeof(T_Elem));
+            if constexpr(dim > 1)
+                pitchBytes[T_dim - 2u] = rowPitchBytes;
+            if constexpr(dim > 2)
+                for(T_Idx i = dim - 2; i > 0; i--)
+                    pitchBytes[i - 1] = extent[i] * pitchBytes[i];
+            return pitchBytes;
+        }
+    } // namespace mem
 
     template<typename T_BaseHandle, typename T_Type, typename T_Extents>
     struct Data : std::enable_shared_from_this<Data<T_BaseHandle, T_Type, T_Extents>>
@@ -25,12 +57,12 @@ namespace alpaka
             T_BaseHandle base,
             T_Type* data,
             T_Extents const& extents,
-            T_Extents const& pitch,
+            T_Extents const& pitches,
             std::function<void(T_Type*)> deleter)
             : m_base(std::move(base))
             , m_data(data)
             , m_extents(extents)
-            , m_pitch(pitch)
+            , m_pitches(pitches)
             , m_deleter(deleter)
         {
         }
@@ -56,7 +88,7 @@ namespace alpaka
         T_BaseHandle m_base;
         T_Type* m_data;
         T_Extents m_extents;
-        T_Extents m_pitch;
+        T_Extents m_pitches;
         std::function<void(T_Type*)> m_deleter;
 
         std::shared_ptr<Data> getSharedPtr()
@@ -65,6 +97,16 @@ namespace alpaka
         }
 
         friend struct alpaka::internal::Data;
+
+        T_Extents getPitches() const
+        {
+            return m_pitches;
+        }
+
+        T_Extents getExtents() const
+        {
+            return m_extents;
+        }
 
         T_Type const* data() const
         {

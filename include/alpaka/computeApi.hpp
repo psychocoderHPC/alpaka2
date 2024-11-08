@@ -6,7 +6,6 @@
 
 #include "alpaka/ComputeApiTraits.hpp"
 
-
 namespace alpaka
 {
     constexpr void syncBlockThreads(auto const& acc)

@@ -2,28 +2,26 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 #if 1
-#include <alpaka/alpaka.hpp>
-#include <alpaka/example/executeForEach.hpp>
+#    include <alpaka/alpaka.hpp>
+#    include <alpaka/example/executeForEach.hpp>
 
-#include <catch2/catch_test_macros.hpp>
+#    include <catch2/catch_test_macros.hpp>
 
-#include <chrono>
-#include <functional>
-#include <iostream>
-#include <thread>
+#    include <chrono>
+#    include <functional>
+#    include <iostream>
+#    include <thread>
 
 using namespace alpaka;
-
 
 template<uint32_t T_blockSize>
 struct SharedBlockIotaKernel
 {
-
     template<typename T>
     ALPAKA_FN_ACC void operator()(T const& acc, auto out, auto numBlocks) const
     {
-        //auto& shared = acc[layer::shared].template allocVar<uint32_t[T_blockSize]>();
-        //auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
+        // auto& shared = acc[layer::shared].template allocVar<uint32_t[T_blockSize]>();
+        // auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
         auto& shared = declareSharedVar<uint32_t[T_blockSize]>(acc);
 
         for(auto blockIdx : DataBlockIter{acc, numBlocks})
@@ -35,11 +33,11 @@ struct SharedBlockIotaKernel
                 uint32_t id = (T_blockSize - 1u - inBlockOffset).x();
                 shared[id] = id;
             }
-            //acc.sync();
+            // acc.sync();
             syncBlockThreads(acc);
             for(auto inBlockOffset : DataFrameIter{acc})
             {
-                out[blockOffset + inBlockOffset] =  (blockOffset + shared[inBlockOffset.x()]).x();
+                out[blockOffset + inBlockOffset] = (blockOffset + shared[inBlockOffset.x()]).x();
             }
         }
     }

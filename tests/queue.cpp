@@ -46,16 +46,16 @@ struct PrintIdx
     {
         for(auto i : IndependentGridThreadIter{acc})
         {
-#if ALPAKA_LANG_CUDA && __CUDA_ARCH__
+#    if ALPAKA_LANG_CUDA && __CUDA_ARCH__
             printf(
                 "blockIdx = %u threadIdx = %u globalIdx = %u\n",
                 acc[layer::block].idx().x(),
                 acc[layer::thread].idx().x(),
                 i.x());
-#else
+#    else
             std::cout << "blockIdx = " << acc[layer::block].idx() << " threadIdx = " << acc[layer::thread].idx()
                       << " value = " << i << std::endl;
-#endif
+#    endif
         }
     }
 };
@@ -118,7 +118,6 @@ void runIota(auto mapping, auto device)
     Device cpuDevice = cpuPlatform.makeDevice(0);
     auto hBuff = alpaka::alloc<uint32_t>(cpuDevice, extent);
 
-    wait(queue);
     constexpr auto frameSize = 4u;
     alpaka::enqueue(
         queue,
@@ -127,13 +126,13 @@ void runIota(auto mapping, auto device)
         KernelBundle{IotaKernel{}, dBuff.getMdSpan(), extent.x()});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
-#if 1
+#    if 1
     auto* ptr = alpaka::data(hBuff);
     for(uint32_t i = 0u; i < extent; ++i)
     {
         CHECK(i == ptr[i]);
     }
-#endif
+#    endif
 }
 
 TEST_CASE("iota", "")
@@ -151,6 +150,120 @@ TEST_CASE("iota", "")
             std::cout << "all mappings" << std::endl;
             auto possibleMappings = supportedMappings(device);
             executeForEachNoReturn([&](auto mapping) { runIota(mapping, device); }, possibleMappings);
+        },
+        enabledApis);
+}
+#endif
+
+struct IotaKernelND
+{
+    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
+    {
+        for(auto i : IndependentDataIter{acc})
+        {
+            out[i] = i;
+        }
+    }
+};
+
+#if 1
+void runIota2D(auto mapping, auto device)
+{
+    Queue queue = device.makeQueue();
+    constexpr Vec extent = Vec{8u, 16u};
+    std::cout << "exec=" << core::demangledName(mapping) << std::endl;
+    auto dBuff = alpaka::alloc<Vec<uint32_t, 2u>>(device, extent);
+
+    Platform cpuPlatform = makePlatform(api::cpu);
+    Device cpuDevice = cpuPlatform.makeDevice(0);
+    auto hBuff = alpaka::alloc<Vec<uint32_t, 2u>>(cpuDevice, extent);
+
+    wait(queue);
+    constexpr auto frameSize = Vec{2u, 4u};
+    alpaka::enqueue(
+        queue,
+        mapping,
+        alpaka::DataBlocking{extent / frameSize, frameSize},
+        KernelBundle{IotaKernelND{}, dBuff.getMdSpan(), extent});
+    alpaka::memcpy(queue, hBuff, dBuff);
+    wait(queue);
+#    if 1
+    auto mdSpan = hBuff.getMdSpan();
+    for(uint32_t j = 0u; j < extent.y(); ++j)
+        for(uint32_t i = 0u; i < extent.x(); ++i)
+        {
+            CHECK(Vec{j, i} == mdSpan[Vec{j, i}]);
+        }
+#    endif
+}
+
+TEST_CASE("iota2D", "")
+{
+    executeForEachNoReturn(
+        [](auto api)
+        {
+            std::cout << api.getName() << std::endl;
+
+            Platform platform = makePlatform(api);
+            Device device = platform.makeDevice(0);
+
+            std::cout << getName(platform) << " " << device.getName() << std::endl;
+
+            std::cout << "all mappings" << std::endl;
+            auto possibleMappings = supportedMappings(device);
+            executeForEachNoReturn([&](auto mapping) { runIota2D(mapping, device); }, possibleMappings);
+        },
+        enabledApis);
+}
+#endif
+
+#if 1
+void runIota3D(auto mapping, auto device)
+{
+    Queue queue = device.makeQueue();
+    constexpr Vec extent = Vec{4u, 8u, 16u};
+    std::cout << "exec=" << core::demangledName(mapping) << std::endl;
+    auto dBuff = alpaka::alloc<Vec<uint32_t, 3u>>(device, extent);
+
+    Platform cpuPlatform = makePlatform(api::cpu);
+    Device cpuDevice = cpuPlatform.makeDevice(0);
+    auto hBuff = alpaka::alloc<Vec<uint32_t, 3u>>(cpuDevice, extent);
+
+    wait(queue);
+    constexpr auto frameSize = Vec{2u, 4u, 8u};
+    alpaka::enqueue(
+        queue,
+        mapping,
+        alpaka::DataBlocking{extent / frameSize, frameSize},
+        KernelBundle{IotaKernelND{}, dBuff.getMdSpan(), extent});
+    alpaka::memcpy(queue, hBuff, dBuff);
+    wait(queue);
+#    if 1
+    auto mdSpan = hBuff.getMdSpan();
+    for(uint32_t k = 0u; k < extent.z(); ++k)
+        for(uint32_t j = 0u; j < extent.y(); ++j)
+            for(uint32_t i = 0u; i < extent.x(); ++i)
+            {
+                CHECK(Vec{k, j, i} == mdSpan[Vec{k, j, i}]);
+            }
+#    endif
+}
+
+TEST_CASE("iota3D", "")
+{
+    executeForEachNoReturn(
+        [](auto api)
+        {
+            std::cout << api.getName() << std::endl;
+
+            Platform platform = makePlatform(api);
+            Device device = platform.makeDevice(0);
+
+            std::cout << getName(platform) << " " << device.getName() << std::endl;
+
+            std::cout << "all mappings" << std::endl;
+            auto possibleMappings = supportedMappings(device);
+            executeForEachNoReturn([&](auto mapping) { runIota3D(mapping, device); }, possibleMappings);
         },
         enabledApis);
 }

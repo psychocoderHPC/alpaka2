@@ -94,12 +94,17 @@ namespace alpaka
             extents);
     }
 
+    inline auto memcpy(concepts::QueueHandle auto& queue, auto& dest, auto const& source, auto const& extents)
+    {
+        return internal::Memcpy::Op<
+            std::decay_t<decltype(*queue.get())>,
+            std::decay_t<decltype(dest)>,
+            std::decay_t<decltype(source)>,
+            std::decay_t<decltype(extents)>>{}(*queue.get(), dest, source, extents);
+    }
+
     inline auto memcpy(concepts::QueueHandle auto& queue, auto& dest, auto const& source)
     {
-        return internal::Memcpy::
-            Op<std::decay_t<decltype(*queue.get())>, std::decay_t<decltype(dest)>, std::decay_t<decltype(source)>>{}(
-                *queue.get(),
-                dest,
-                source);
+        return memcpy(queue, dest, source, dest.getExtents());
     }
 } // namespace alpaka

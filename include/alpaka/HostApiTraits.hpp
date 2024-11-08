@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "alpaka/KernelBundle.hpp"
 #include "alpaka/Blocking.hpp"
+#include "alpaka/KernelBundle.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/core/common.hpp"
 
@@ -144,12 +144,12 @@ namespace alpaka
                     queue.enqueue(std::move(task));
                 }
             };
-
-            static void enqueue(auto& queue, auto task)
-            {
-                Task<std::decay_t<decltype(queue)>, std::decay_t<decltype(task)>>{}(queue, std::move(task));
-            }
         };
+
+        inline void enqueue(auto& queue, auto task)
+        {
+            Enqueue::Task<std::decay_t<decltype(queue)>, std::decay_t<decltype(task)>>{}(queue, std::move(task));
+        }
 
         template<typename TKernelFn, typename... TArgs>
         inline void enqueue(
@@ -240,10 +240,10 @@ namespace alpaka
 
         struct Memcpy
         {
-            template<typename T_Queue, typename T_Dest, typename T_Source>
+            template<typename T_Queue, typename T_Dest, typename T_Source, typename T_Extents>
             struct Op
             {
-                void operator()(T_Queue& queue, T_Dest&, T_Source const&) const;
+                void operator()(T_Queue& queue, T_Dest&, T_Source const&, T_Extents const&) const;
             };
         };
     } // namespace internal
