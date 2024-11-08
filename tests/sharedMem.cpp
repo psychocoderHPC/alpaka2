@@ -4,7 +4,9 @@
 #if 1
 #    include <alpaka/alpaka.hpp>
 #    include <alpaka/example/executeForEach.hpp>
+#    include <alpaka/example/executors.hpp>
 
+#    include <catch2/catch_template_test_macros.hpp>
 #    include <catch2/catch_test_macros.hpp>
 
 #    include <chrono>
@@ -13,6 +15,8 @@
 #    include <thread>
 
 using namespace alpaka;
+
+using TestApis = std::decay_t<decltype(allExecutorsAndApis(enabledApis))>;
 
 template<uint32_t T_blockSize>
 struct SharedBlockIotaKernel
@@ -43,13 +47,24 @@ struct SharedBlockIotaKernel
     }
 };
 
-void runSharedBlockIota(auto mapping, auto device)
+TEMPLATE_LIST_TEST_CASE("block shared iota", "", TestApis)
 {
+    auto cfg = TestType::makeDict();
+    auto api = cfg[object::api];
+    auto exec = cfg[object::exec];
+
+    std::cout << api.getName() << std::endl;
+
+    Platform platform = makePlatform(api);
+    Device device = platform.makeDevice(0);
+
+    std::cout << getName(platform) << " " << device.getName() << std::endl;
+
     Queue queue = device.makeQueue();
     constexpr Vec numBlocks = Vec{2u};
     constexpr Vec blockExtent = Vec{128u};
     constexpr Vec dataExtent = numBlocks * blockExtent;
-    std::cout << "block shared iota exec=" << core::demangledName(mapping) << std::endl;
+    std::cout << "block shared iota exec=" << core::demangledName(exec) << std::endl;
     auto dBuff = alpaka::alloc<uint32_t>(device, dataExtent);
 
     Platform cpuPlatform = makePlatform(api::cpu);
@@ -59,7 +74,7 @@ void runSharedBlockIota(auto mapping, auto device)
 
     alpaka::enqueue(
         queue,
-        mapping,
+        exec,
         alpaka::DataBlocking{numBlocks / 2u, blockExtent},
         KernelBundle{SharedBlockIotaKernel<blockExtent.x()>{}, dBuff.getMdSpan(), numBlocks.x()});
     alpaka::memcpy(queue, hBuff, dBuff);
@@ -70,25 +85,6 @@ void runSharedBlockIota(auto mapping, auto device)
     {
         CHECK(i == ptr[i]);
     }
-}
-
-TEST_CASE("block shared iota", "")
-{
-    executeForEachNoReturn(
-        [](auto api)
-        {
-            std::cout << api.getName() << std::endl;
-
-            Platform platform = makePlatform(api);
-            Device device = platform.makeDevice(0);
-
-            std::cout << getName(platform) << " " << device.getName() << std::endl;
-
-            std::cout << "all mappings" << std::endl;
-            auto possibleMappings = supportedMappings(device);
-            executeForEachNoReturn([&](auto mapping) { runSharedBlockIota(mapping, device); }, possibleMappings);
-        },
-        enabledApis);
 }
 
 #endif

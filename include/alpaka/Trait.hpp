@@ -45,7 +45,7 @@ namespace alpaka
         return trait::IsPlatformAvailable::Op<std::decay_t<decltype(api)>>::value;
     }
 
-    inline auto supportedMappings(concepts::DeviceHandle auto deviceHandle)
+    constexpr auto supportedMappings(concepts::DeviceHandle auto deviceHandle)
     {
         return meta::filter(
             [&](auto mapping) constexpr
