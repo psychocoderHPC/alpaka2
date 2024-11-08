@@ -59,7 +59,7 @@ auto validateSolution(
 template<typename TBuffer>
 auto initalizeBuffer(TBuffer& buffer, double const dx, double const dy) -> void
 {
-    auto extents = alpaka::getExtents(buffer);
+    auto extents = buffer.getExtents();
     // Apply initial conditions for the test problem
     for(uint32_t j = 0; j < extents[0]; ++j)
     {

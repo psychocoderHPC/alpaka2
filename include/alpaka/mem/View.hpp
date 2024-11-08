@@ -31,6 +31,8 @@ namespace alpaka
         View(View const&) = default;
         View(View&&) = default;
 
+        View& operator=(View const&) = default;
+
         using type = typename T_Datahandle::element_type::type;
 
         consteval uint32_t dim() const

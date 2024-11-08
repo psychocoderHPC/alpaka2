@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Acc.hpp"
+#include "Tags.hpp"
 #include "alpaka/Device.hpp"
 #include "alpaka/Platform.hpp"
 #include "alpaka/Queue.hpp"
@@ -16,6 +17,7 @@
 #include "alpaka/math/constants.hpp"
 #include "alpaka/core/DemangleTypeNames.hpp"
 #include "alpaka/core/Dict.hpp"
+#include "alpaka/core/Utility.hpp"
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/config.hpp"

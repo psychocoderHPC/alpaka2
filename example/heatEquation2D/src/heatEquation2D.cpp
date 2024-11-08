@@ -7,6 +7,9 @@
 #include "StencilKernel.hpp"
 #include "analyticalSolution.hpp"
 
+#include <alpaka/example/executeForEach.hpp>
+#include <alpaka/example/executors.hpp>
+
 #ifdef PNGWRITER_ENABLED
 #    include "writeImage.hpp"
 #endif
@@ -32,29 +35,33 @@
 //! Instead, a single accelerator is selected once from the active accelerators and the kernels are executed with the
 //! selected accelerator only. If you use the example as the starting point for your project, you can rename the
 //! example() function to main() and move the accelerator tag to the function body.
-template<alpaka::concepts::Tag TAccTag>
-auto example(TAccTag const&) -> int
+template<typename T_Cfg>
+auto example(T_Cfg const& cfg) -> int
 {
-    // Set Dim and Idx type
-    using Dim = alpaka::DimInt<2u>;
-    using Idx = uint32_t;
+    using namespace alpaka;
 
-    // Define the accelerator
-    using Acc = alpaka::TagToAcc<TAccTag, Dim, Idx>;
-    std::cout << "Using alpaka accelerator: " << alpaka::getAccName<Acc>() << std::endl;
+    using Idx = uint32_t;
+    using IdxVec = alpaka::Vec<Idx, 2u>;
+
+    auto api = cfg[object::api];
+    auto exec = cfg[object::exec];
+
+    std::cout << api.getName() << std::endl;
+
+    std::cout << "Using alpaka accelerator: " << core::demangledName(exec) << " for " << api.getName() << std::endl;
 
     // Select specific devices
-    auto const platformHost = alpaka::PlatformCpu{};
-    auto const devHost = alpaka::getDevByIdx(platformHost, 0);
-    auto const platformAcc = alpaka::Platform<Acc>{};
-    // get suitable device for this Acc
-    auto const devAcc = alpaka::getDevByIdx(platformAcc, 0);
+    Platform platformHost = makePlatform(api::cpu);
+    Device devHost = platformHost.makeDevice(0);
+
+    Platform platformAcc = makePlatform(api);
+    Device devAcc = platformAcc.makeDevice(0);
 
     // simulation defines
     // {Y, X}
-    constexpr alpaka::Vec<Dim, Idx> numNodes{64, 64};
-    constexpr alpaka::Vec<Dim, Idx> haloSize{2, 2};
-    constexpr alpaka::Vec<Dim, Idx> extent = numNodes + haloSize;
+    constexpr IdxVec numNodes{64, 64};
+    constexpr IdxVec haloSize{2, 2};
+    constexpr IdxVec extent = numNodes + haloSize;
 
     constexpr uint32_t numTimeSteps = 4000;
     constexpr double tMax = 0.1;
@@ -75,39 +82,34 @@ auto example(TAccTag const&) -> int
 
     // Initialize host-buffer
     // This buffer will hold the current values (used for the next step)
-    auto uBufHost = alpaka::allocBuf<double, Idx>(devHost, extent);
+    auto uBufHost = alpaka::alloc<double>(devHost, extent);
 
     // Accelerator buffer
-    auto uCurrBufAcc = alpaka::allocBuf<double, Idx>(devAcc, extent);
-    auto uNextBufAcc = alpaka::allocBuf<double, Idx>(devAcc, extent);
+    auto uCurrBufAcc = alpaka::alloc<double>(devAcc, extent);
+    auto uNextBufAcc = alpaka::alloc<double>(devAcc, extent);
 
-    auto const pitchCurrAcc{alpaka::getPitchesInBytes(uCurrBufAcc)};
-    auto const pitchNextAcc{alpaka::getPitchesInBytes(uNextBufAcc)};
+    auto const pitchCurrAcc{uCurrBufAcc.getPitches()};
+    auto const pitchNextAcc{uNextBufAcc.getPitches()};
 
     // Set buffer to initial conditions
     initalizeBuffer(uBufHost, dx, dy);
 
     // Select queue
-    using QueueProperty = alpaka::NonBlocking;
-    using QueueAcc = alpaka::Queue<Acc, QueueProperty>;
-    QueueAcc dumpQueue{devAcc};
-    QueueAcc computeQueue{devAcc};
+    Queue dumpQueue = devAcc.makeQueue();
+    Queue computeQueue = devAcc.makeQueue();
 
     // Copy host -> device
     alpaka::memcpy(computeQueue, uCurrBufAcc, uBufHost);
     alpaka::wait(computeQueue);
 
-    // Define a workdiv for the given problem
-    constexpr alpaka::Vec<Dim, Idx> elemPerThread{1, 1};
-
     // Appropriate chunk size to split your problem for your Acc
     constexpr Idx xSize = 16u;
     constexpr Idx ySize = 16u;
     constexpr Idx halo = 2u;
-    constexpr alpaka::Vec<Dim, Idx> chunkSize{ySize, xSize};
+    constexpr IdxVec chunkSize{ySize, xSize};
     constexpr auto sharedMemSize = (ySize + halo) * (xSize + halo);
 
-    constexpr alpaka::Vec<Dim, Idx> numChunks{
+    constexpr IdxVec numChunks{
         alpaka::core::divCeil(numNodes[0], chunkSize[0]),
         alpaka::core::divCeil(numNodes[1], chunkSize[1]),
     };
@@ -119,54 +121,32 @@ auto example(TAccTag const&) -> int
     StencilKernel<sharedMemSize> stencilKernel;
     BoundaryKernel boundaryKernel;
 
-    // Get max threads that can be run in a block for this kernel
-    auto const kernelFunctionAttributes = alpaka::getFunctionAttributes<Acc>(
-        devAcc,
-        stencilKernel,
-        uCurrBufAcc.data(),
-        uNextBufAcc.data(),
-        chunkSize,
-        pitchCurrAcc,
-        pitchNextAcc,
-        dx,
-        dy,
-        dt);
-    auto const maxThreadsPerBlock = kernelFunctionAttributes.maxThreadsPerBlock;
-
-    auto const threadsPerBlock
-        = maxThreadsPerBlock < chunkSize.prod() ? alpaka::Vec<Dim, Idx>{maxThreadsPerBlock, 1} : chunkSize;
-
-    alpaka::WorkDivMembers<Dim, Idx> workDiv_manual{numChunks, threadsPerBlock, elemPerThread};
+    auto dataBlocking = alpaka::DataBlocking{numChunks, chunkSize};
 
     // Simulate
     for(uint32_t step = 1; step <= numTimeSteps; ++step)
     {
         // Compute next values
-        alpaka::exec<Acc>(
+        alpaka::enqueue(
             computeQueue,
-            workDiv_manual,
-            stencilKernel,
-            uCurrBufAcc.data(),
-            uNextBufAcc.data(),
-            chunkSize,
-            pitchCurrAcc,
-            pitchNextAcc,
-            dx,
-            dy,
-            dt);
-
+            exec,
+            dataBlocking,
+            KernelBundle{
+                stencilKernel,
+                uCurrBufAcc.data(),
+                uNextBufAcc.data(),
+                chunkSize,
+                pitchCurrAcc,
+                pitchNextAcc,
+                dx,
+                dy,
+                dt});
         // Apply boundaries
-        alpaka::exec<Acc>(
+        alpaka::enqueue(
             computeQueue,
-            workDiv_manual,
-            boundaryKernel,
-            uNextBufAcc.data(),
-            chunkSize,
-            pitchNextAcc,
-            step,
-            dx,
-            dy,
-            dt);
+            exec,
+            dataBlocking,
+            KernelBundle{boundaryKernel, uNextBufAcc.data(), chunkSize, pitchNextAcc, step, dx, dy, dt});
 
 #ifdef PNGWRITER_ENABLED
         if((step - 1) % 100 == 0)
@@ -205,6 +185,7 @@ auto example(TAccTag const&) -> int
 
 auto main() -> int
 {
+    using namespace alpaka;
     // Execute the example once for each enabled accelerator.
     // If you would like to execute it for a single accelerator only you can use the following code.
     //  \code{.cpp}
@@ -216,5 +197,5 @@ auto main() -> int
     //   TagCpuSerial, TagGpuHipRt, TagGpuCudaRt, TagCpuOmp2Blocks, TagCpuTbbBlocks,
     //   TagCpuOmp2Threads, TagCpuSycl, TagCpuTbbBlocks, TagCpuThreads,
     //   TagFpgaSyclIntel, TagGenericSycl, TagGpuSyclIntel
-    return alpaka::executeForEachAccTag([=](auto const& tag) { return example(tag); });
+    return executeForEach([=](auto const& tag) { return example(tag); }, allExecutorsAndApis(enabledApis));
 }
