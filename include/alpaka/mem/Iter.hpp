@@ -14,6 +14,37 @@
 
 namespace alpaka
 {
+    namespace iter::detail
+    {
+        /** Store reduced vector
+         *
+         * The first index can be reduced by on dimension because the slowest dimension must never set to zero after the initialization.
+         */
+        template<typename T_Type, uint32_t T_dim>
+        struct ReducedVector
+        {
+            constexpr ReducedVector(Vec<T_Type, T_dim> const& first) : m_first{first.template shrink<T_dim - 1u>()}
+            {
+            }
+
+            constexpr decltype(auto) operator[](T_Type idx) const
+            {
+                return m_first[idx - 1u];
+            }
+
+        private:
+            Vec<T_Type, T_dim - 1u> m_first;
+        };
+
+        template<typename T_Type>
+        struct ReducedVector<T_Type, 1u>
+        {
+            constexpr ReducedVector(Vec<T_Type, 1u> const&)
+            {
+            }
+        };
+    } // namespace iter::detail
+
     template<typename T_Acc, typename T_ExtentFn, typename T_StrideFn, typename T_StartIdxFn>
     class IndexContainer
     {
@@ -79,16 +110,20 @@ namespace alpaka
 
             ALPAKA_FN_ACC inline const_iterator(IdxVecType stride, IdxVecType extent, IdxVecType first)
                 : m_stride{stride}
-                , m_first{first}
                 , m_extent{extent}
                 , m_current{first}
+                , m_first(first)
             {
-                // invalidate current if one dimension is out of range.
-                bool isIndexValid = true;
-                for(uint32_t d = 1u; d < dim; ++d)
-                    isIndexValid = isIndexValid && (first[d] < extent[d]);
-                if(!isIndexValid)
-                    m_current[0] = m_extent[0];
+                // range check required for 1 dimensional iterators
+                if constexpr(dim > 1u)
+                {
+                    // invalidate current if one dimension is out of range.
+                    bool isIndexValid = true;
+                    for(uint32_t d = 1u; d < dim; ++d)
+                        isIndexValid = isIndexValid && (first[d] < extent[d]);
+                    if(!isIndexValid)
+                        m_current[0] = m_extent[0];
+                }
             }
 
         public:
@@ -148,10 +183,10 @@ namespace alpaka
         private:
             // non-const to support iterator copy and assignment
             IdxVecType m_stride;
-            IdxVecType m_first;
             IdxVecType m_extent;
             // modified by the pre/post-increment operator
             IdxVecType m_current;
+            iter::detail::ReducedVector<IdxType, dim> m_first;
         };
 
         ALPAKA_FN_ACC inline const_iterator begin() const
