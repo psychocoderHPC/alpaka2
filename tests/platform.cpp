@@ -4,6 +4,7 @@
 
 #include <alpaka/alpaka.hpp>
 #include <alpaka/example/executeForEach.hpp>
+#include <alpaka/example/executors.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -22,20 +23,22 @@ TEST_CASE("cpu api creation", "")
     CHECK(device.getNativeHandle() == device2.getNativeHandle());
 }
 
-void runPlatformCreationTest(auto api)
-{
-    Platform platform = makePlatform(api);
-    auto numDevices = platform.getDeviceCount();
-    for(uint32_t i = 0; i < numDevices; ++i)
-    {
-        Device device = platform.makeDevice(0);
-        std::cout << "api=" << platform.getName() << "device=" << device.getName() << std::endl;
-    }
-}
-
 TEST_CASE("api creation", "")
 {
-    executeForEachNoReturn([](auto api) { runPlatformCreationTest(api); }, enabledApis);
+    executeForEach(
+        [](auto api)
+        {
+            Platform platform = makePlatform(api);
+            auto numDevices = platform.getDeviceCount();
+            for(uint32_t i = 0; i < numDevices; ++i)
+            {
+                Device device = platform.makeDevice(0);
+                std::cout << "api=" << platform.getName() << "device=" << device.getName() << std::endl;
+            }
+
+            return 0;
+        },
+        enabledApis);
 }
 #if 0
 using MyTypes = std::decay_t<decltype(enabledApis)>;

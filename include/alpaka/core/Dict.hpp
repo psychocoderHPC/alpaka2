@@ -78,6 +78,8 @@ namespace alpaka
         {
         }
 
+        constexpr DictEntry() = default;
+
         T_Value value;
     };
 
@@ -115,6 +117,11 @@ namespace alpaka
 
         constexpr Dict(Dict const&) = default;
         constexpr Dict(Dict&&) = default;
+
+        static constexpr auto makeDict() requires(std::default_initializable<T_Values>, ...)
+        {
+            return Dict{std::make_tuple(DictEntry<T_Keys, T_Values>{}...)};
+        }
 
         ALPAKA_NO_HOST_ACC_WARNING
         constexpr decltype(auto) operator[](auto const tag) const

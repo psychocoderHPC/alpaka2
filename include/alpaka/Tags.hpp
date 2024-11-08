@@ -12,6 +12,16 @@
 
 namespace alpaka
 {
+    namespace object
+    {
+        struct Api
+        {
+        };
+
+        constexpr Api api;
+
+        ALPAKA_TAG(exec);
+    } // namespace object
 
     namespace layer
     {
