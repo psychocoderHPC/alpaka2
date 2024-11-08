@@ -240,3 +240,5 @@ if (BUILD_TESTING OR alpaka_BENCHMARK)
         target_compile_definitions(bench PUBLIC CATCH_CONFIG_ENABLE_BENCHMARKING)
     endif()
 endif()
+
+add_subdirectory(example)

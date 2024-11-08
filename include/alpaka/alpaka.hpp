@@ -13,6 +13,7 @@
 #include "alpaka/api/cpu.hpp"
 #include "alpaka/api/cuda.hpp"
 #include "alpaka/computeApi.hpp"
+#include "alpaka/math/constants.hpp"
 #include "alpaka/core/DemangleTypeNames.hpp"
 #include "alpaka/core/Dict.hpp"
 #include "alpaka/core/Tag.hpp"
