@@ -12,6 +12,7 @@
 #include "alpaka/core/CallbackThread.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/hostApi.hpp"
+#include "alpaka/meta/NdLoop.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -127,35 +128,109 @@ namespace alpaka
             {
                 std::promise<void> p;
                 auto f = p.get_future();
-                Enqueue::enqueue(queue, [&p]() { p.set_value(); });
+                internal::enqueue(queue, [&p]() { p.set_value(); });
 
                 f.wait();
             }
         };
-
-        template<typename T_Device, typename T_Dest, typename T_Source>
-        struct Memcpy::Op<cpu::Queue<T_Device>, T_Dest, T_Source>
+#if 0
+        template<typename T_Device, typename T_Dest, typename T_Source, typename T_Extents>
+        struct Memcpy::Op<cpu::Queue<T_Device>, T_Dest, T_Source, T_Extents>
         {
-            void operator()(cpu::Queue<T_Device>& queue, T_Dest dest, T_Source const source) const
+            void operator()(cpu::Queue<T_Device>& queue, T_Dest dest, T_Source const source, T_Extents const& extents)
+                const
             {
                 static_assert(std::is_same_v<ALPAKA_TYPE(dest), ALPAKA_TYPE(source)>);
                 constexpr auto dim = dest.dim();
                 internal::Enqueue::enqueue(
                     queue,
-                    [l_dest = std::move(dest), l_source = std::move(source)]()
+                    [extents, l_dest = std::move(dest), l_source = std::move(source)]()
                     {
                         if constexpr(dim == 1u)
                         {
                             std::memcpy(
                                 alpaka::data(l_dest),
                                 alpaka::data(l_source),
-                                l_dest.getExtent().x() * sizeof(typename T_Dest::type));
+                                extents.x() * sizeof(typename T_Dest::type));
                         }
                         else
                         {
-                            static_assert(dim != 1u);
+                            auto const dstExtentWithoutRow = extents.template shrink<dim - 1u>(1u);
+                            if(static_cast<std::size_t>(extents.product()) != 0u)
+                            {
+                                auto const destPitchBytesWithoutRow = l_dest.getPitches().template shrink<dim - 1u>(1u);
+                                auto* destPtr = alpaka::data(l_dest);
+                                auto const sourcePitchBytesWithoutRow
+                                    = l_source.getPitches().template shrink<dim - 1u>(1u);
+                                auto* sourcePtr = alpaka::data(l_source);
+
+                                std::cout << "row" << dstExtentWithoutRow << std::endl;
+                                meta::ndLoopIncIdx(
+                                    dstExtentWithoutRow,
+                                    [&](auto const& idx)
+                                    {
+                                        std::memcpy(
+                                            reinterpret_cast<std::uint8_t*>(destPtr)
+                                                + (idx * destPitchBytesWithoutRow).sum(),
+                                            reinterpret_cast<std::uint8_t*>(sourcePtr)
+                                                + (idx * sourcePitchBytesWithoutRow).sum(),
+                                            static_cast<size_t>(extents.back()) * sizeof(typename T_Dest::type));
+                                    });
+                            }
                         }
                     });
+            }
+        };
+#endif
+
+        template<typename T_Device, typename T_Dest, typename T_Source, typename T_Extents>
+        struct Memcpy::Op<cpu::Queue<T_Device>, T_Dest, T_Source, T_Extents>
+        {
+            void operator()(cpu::Queue<T_Device>& queue, T_Dest dest, T_Source const source, T_Extents const& extents)
+                const
+            {
+                static_assert(std::is_same_v<ALPAKA_TYPE(dest), ALPAKA_TYPE(source)>);
+                constexpr auto dim = dest.dim();
+                if constexpr(dim == 1u)
+                {
+                    internal::enqueue(
+                        queue,
+                        [extents, l_dest = std::move(dest), l_source = std::move(source)]() {
+                            std::memcpy(
+                                alpaka::data(l_dest),
+                                alpaka::data(l_source),
+                                extents.x() * sizeof(typename T_Dest::type));
+                        });
+                }
+
+                else
+                {
+                    internal::enqueue(
+                        queue,
+                        [extents, l_dest = std::move(dest), l_source = std::move(source)]()
+                        {
+                            auto const dstExtentWithoutColumn = extents.eraseBack();
+                            if(static_cast<std::size_t>(extents.product()) != 0u)
+                            {
+                                auto const destPitchBytesWithoutColumn = l_dest.getPitches().eraseBack();
+                                auto* destPtr = alpaka::data(l_dest);
+                                auto const sourcePitchBytesWithoutColumn = l_source.getPitches().eraseBack();
+                                auto* sourcePtr = alpaka::data(l_source);
+
+                                meta::ndLoopIncIdx(
+                                    dstExtentWithoutColumn,
+                                    [&](auto const& idx)
+                                    {
+                                        std::memcpy(
+                                            reinterpret_cast<std::uint8_t*>(destPtr)
+                                                + (idx * destPitchBytesWithoutColumn).sum(),
+                                            reinterpret_cast<std::uint8_t*>(sourcePtr)
+                                                + (idx * sourcePitchBytesWithoutColumn).sum(),
+                                            static_cast<size_t>(extents.back()) * sizeof(typename T_Dest::type));
+                                    });
+                            }
+                        });
+                }
             }
         };
 

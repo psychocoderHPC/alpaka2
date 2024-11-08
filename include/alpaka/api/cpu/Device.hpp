@@ -11,8 +11,8 @@
 #include "alpaka/api/cpu/Queue.hpp"
 #include "alpaka/core/Handle.hpp"
 #include "alpaka/hostApi.hpp"
-#include "alpaka/mem/View.hpp"
 #include "alpaka/mem/Data.hpp"
+#include "alpaka/mem/View.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -124,16 +124,34 @@ namespace alpaka
         {
             auto operator()(cpu::Device<T_Platform>& device, T_Extents const& extents) const
             {
-                auto* ptr = new T_Type[extents.x()];
-                auto deleter = [](T_Type* ptr) { delete[](ptr); };
-                auto data = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
-                    device.getSharedPtr(),
-                    ptr,
-                    extents,
-                    T_Extents{sizeof(T_Type)},
-                    std::move(deleter));
-                // return std::make_shared<alpaka::View<std::decay_t<decltype(data)>,T_Extents>>(data);
-                return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
+                constexpr auto dim = extents.dim();
+                if constexpr(dim == 1u)
+                {
+                    auto* ptr = new T_Type[extents.x()];
+                    auto deleter = [](T_Type* ptr) { delete[](ptr); };
+                    auto data
+                        = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
+                            device.getSharedPtr(),
+                            ptr,
+                            extents,
+                            T_Extents{sizeof(T_Type)},
+                            std::move(deleter));
+                    return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
+                }
+                else
+                {
+                    auto* ptr = new T_Type[extents.product()];
+                    auto deleter = [](T_Type* ptr) { delete[](ptr); };
+                    auto pitches = mem::calculatePitchesFromExtents<T_Type>(extents);
+                    auto data
+                        = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
+                            device.getSharedPtr(),
+                            ptr,
+                            extents,
+                            pitches,
+                            std::move(deleter));
+                    return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
+                }
             }
         };
 

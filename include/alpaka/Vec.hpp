@@ -227,6 +227,16 @@ namespace alpaka
 
         /** @} */
 
+        constexpr decltype(auto) back()
+        {
+            return (*this)[T_dim - 1u];
+        }
+
+        constexpr decltype(auto) back() const
+        {
+            return (*this)[T_dim - 1u];
+        }
+
         /** Shrink the number of elements of a vector.
          *
          * @tparam T_numElements New dimension of the vector.
@@ -239,6 +249,20 @@ namespace alpaka
             Vec<T_Type, T_numElements> result{};
             for(uint32_t i = 0u; i < T_numElements; i++)
                 result[T_numElements - 1u - i] = (*this)[T_dim - 1u - i];
+
+            return result;
+        }
+
+        /** Shrink the vector
+         *
+         * Removes the last value.
+         */
+        constexpr Vec<T_Type, T_dim - 1u> eraseBack() const requires(T_dim > 1u)
+        {
+            constexpr auto reducedDim = T_dim - 1u;
+            Vec<T_Type, reducedDim> result{};
+            for(uint32_t i = 0u; i < reducedDim; i++)
+                result[i] = (*this)[i];
 
             return result;
         }

@@ -74,7 +74,7 @@ struct CompileTimeKernel2D
         static_assert(vec.y() == 3 && vec.x() == 7);
         static_assert(vec == Vec{3, 7});
         static_assert(vec != Vec{7, 3});
-
+        static_assert(Vec{7} == Vec{7, 3}.eraseBack());
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;

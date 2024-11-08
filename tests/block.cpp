@@ -3,15 +3,15 @@
  */
 
 #if 1
-#include <alpaka/alpaka.hpp>
-#include <alpaka/example/executeForEach.hpp>
+#    include <alpaka/alpaka.hpp>
+#    include <alpaka/example/executeForEach.hpp>
 
-#include <catch2/catch_test_macros.hpp>
+#    include <catch2/catch_test_macros.hpp>
 
-#include <chrono>
-#include <functional>
-#include <iostream>
-#include <thread>
+#    include <chrono>
+#    include <functional>
+#    include <iostream>
+#    include <thread>
 
 using namespace alpaka;
 

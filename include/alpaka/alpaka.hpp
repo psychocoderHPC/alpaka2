@@ -19,5 +19,5 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/hostApi.hpp"
-#include "alpaka/mem/View.hpp"
 #include "alpaka/mem/Iter.hpp"
+#include "alpaka/mem/View.hpp"

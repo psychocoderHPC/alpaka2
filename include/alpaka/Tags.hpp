@@ -54,6 +54,7 @@ namespace alpaka
         };
 
         constexpr CpuBlockOmpThreadOmp cpuBlockOmpThreadOmp;
+
         struct Cuda
         {
         };
@@ -84,5 +85,5 @@ namespace alpaka
             template<typename T_Mapping>
             constexpr bool isSeqMapping_v = IsSeqMapping<T_Mapping>::value;
         } // namespace traits
-    } // namespace exec
+    } // namespace mapping
 } // namespace alpaka

@@ -38,9 +38,14 @@ namespace alpaka
             return T_Extents::dim();
         }
 
-        auto getExtent() const
+        auto getExtents() const
         {
             return m_extents;
+        }
+
+        auto getPitches() const
+        {
+            return m_data->getPitches();
         }
 
         decltype(auto) data()
@@ -69,7 +74,7 @@ namespace alpaka
 
             auto* ptr = reinterpret_cast<std::byte*>(alpaka::data(m_data));
             auto ex = detail::makeExtents(m_extents, std::make_index_sequence<T_Extents::dim()>{});
-            auto const strides = m_data->m_pitch;
+            auto const strides = m_data->getPitches();
             layout_stride::mapping<decltype(ex)> m{ex, strides.toStdArray()};
             return alpaka::MdSpan{
                 mdspan<type, decltype(ex), layout_stride, detail::ByteIndexedAccessor<type>>{ptr, m}};

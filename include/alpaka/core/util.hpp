@@ -13,7 +13,7 @@
 namespace alpaka
 {
     template<typename T>
-    constexpr decltype(auto) unWrapp(T && value)
+    constexpr decltype(auto) unWrapp(T&& value)
     {
         using WrappedType = std::unwrap_reference_t<std::decay_t<decltype(value)>>;
         return std::unwrap_reference_t<WrappedType>(std::forward<T>(value));

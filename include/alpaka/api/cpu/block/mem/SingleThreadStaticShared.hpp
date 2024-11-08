@@ -15,8 +15,8 @@ namespace alpaka
         struct SingleThreadStaticShared
         {
             static constexpr uint32_t maxMemBytes = 64u * 1024u;
-             std::array<uint8_t, maxMemBytes> m_data;
-             uint32_t m_counter = 0u;
+            std::array<uint8_t, maxMemBytes> m_data;
+            uint32_t m_counter = 0u;
 
             template<typename T>
             T& allocVar()
