@@ -297,10 +297,10 @@ namespace alpaka
         constexpr Vec<type, T_dim - 1u> remove() const
         {
             Vec<type, T_dim - 1u> result{};
-            for(uint32_t i = 0u; i < T_dim - 1u; ++i)
+            for(int i = 0u; i < static_cast<int>(T_dim - 1u); ++i)
             {
                 // skip component which must be deleted
-                int const sourceIdx = i >= dimToRemove ? i + 1 : i;
+                int const sourceIdx = i >= static_cast<int>(dimToRemove) ? i + 1 : i;
                 result[i] = (*this)[sourceIdx];
             }
             return result;
