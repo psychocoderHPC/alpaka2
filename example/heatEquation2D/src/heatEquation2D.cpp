@@ -20,11 +20,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <utility>
-#include <chrono>
 
 //! Each kernel computes the next step for one point.
 //! Therefore the number of threads should be equal to numNodesX.

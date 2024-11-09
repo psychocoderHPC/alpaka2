@@ -18,7 +18,8 @@ namespace alpaka
     {
         /** Store reduced vector
          *
-         * The first index can be reduced by on dimension because the slowest dimension must never set to zero after the initialization.
+         * The first index can be reduced by on dimension because the slowest dimension must never set to zero after
+         * the initialization.
          */
         template<typename T_Type, uint32_t T_dim>
         struct ReducedVector

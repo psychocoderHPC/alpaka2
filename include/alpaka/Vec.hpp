@@ -282,7 +282,7 @@ namespace alpaka
             static_assert(T_numElements <= T_dim);
             Vec<type, T_numElements> result;
             for(uint32_t i = 0u; i < T_numElements; i++)
-                result[T_numElements - 1u - i] = (*this)[(T_dim - startIdx + i) % T_dim];
+                result[T_numElements - 1u - i] = (*this)[(T_dim + startIdx - i) % T_dim];
             return result;
         }
 
@@ -297,11 +297,10 @@ namespace alpaka
         constexpr Vec<type, T_dim - 1u> remove() const
         {
             Vec<type, T_dim - 1u> result{};
-            // loop must be int to avoid zero comparisn compile warning
-            for(int i = 0u; i < static_cast<int>(T_dim - 1u); ++i)
+            for(uint32_t i = 0u; i < T_dim - 1u; ++i)
             {
                 // skip component which must be deleted
-                uint32_t const sourceIdx = i >= static_cast<int>(dimToRemove) ? i + 1 : i;
+                int const sourceIdx = i >= dimToRemove ? i + 1 : i;
                 result[i] = (*this)[sourceIdx];
             }
             return result;
@@ -603,10 +602,11 @@ namespace alpaka
         typename = std::enable_if_t<std::is_integral_v<T_IntegralType> && T_dim >= 2u>>
     constexpr auto mapToND(Vec<T_IntegralType, T_dim, T_Storage> const& dim, T_IntegralType linearIdx)
     {
-        Vec<T_IntegralType, T_dim - 1u> pitchExtents;
+        constexpr uint32_t reducedDim = T_dim - 1u;
+        Vec<T_IntegralType, reducedDim> pitchExtents;
         pitchExtents.back() = dim.back();
         for(uint32_t d = 1u; d < T_dim - 1u; ++d)
-            pitchExtents[T_dim - 1u - d] = dim[T_dim - 1u - d] * pitchExtents[T_dim - d];
+            pitchExtents[reducedDim - 1u - d] = dim[T_dim - 1u - d] * pitchExtents[reducedDim - d];
 
         Vec<T_IntegralType, T_dim> result;
         for(uint32_t d = 0u; d < T_dim - 1u; ++d)
