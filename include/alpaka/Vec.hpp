@@ -245,7 +245,7 @@ namespace alpaka
          * @return First T_numElements elements of the origin vector
          */
         template<uint32_t T_numElements>
-        constexpr Vec<T_Type, T_numElements> shrink() const
+        constexpr Vec<T_Type, T_numElements> rshrink() const
         {
             static_assert(T_numElements <= T_dim);
             Vec<T_Type, T_numElements> result{};
@@ -277,7 +277,7 @@ namespace alpaka
          *         Indexing will wrapp around when the begin of the origin vector is reached.
          */
         template<uint32_t T_numElements>
-        constexpr Vec<type, T_numElements> shrink(int const startIdx) const
+        constexpr Vec<type, T_numElements> rshrink(int const startIdx) const
         {
             static_assert(T_numElements <= T_dim);
             Vec<type, T_numElements> result;
@@ -568,7 +568,7 @@ namespace alpaka
         Vec<T_IntegralType, T_dim, T_Storage> const& dim,
         Vec<T_IntegralType, T_dim, T_OtherStorage> const& idx)
     {
-        return linearize(dim.template shrink<T_dim - 1u>(), idx);
+        return linearize(dim.template rshrink<T_dim - 1u>(), idx);
     }
 
     template<

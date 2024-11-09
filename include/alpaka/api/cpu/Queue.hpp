@@ -155,13 +155,13 @@ namespace alpaka
                         }
                         else
                         {
-                            auto const dstExtentWithoutRow = extents.template shrink<dim - 1u>(1u);
+                            auto const dstExtentWithoutRow = extents.template rshrink<dim - 1u>(1u);
                             if(static_cast<std::size_t>(extents.product()) != 0u)
                             {
-                                auto const destPitchBytesWithoutRow = l_dest.getPitches().template shrink<dim - 1u>(1u);
+                                auto const destPitchBytesWithoutRow = l_dest.getPitches().template rshrink<dim - 1u>(1u);
                                 auto* destPtr = alpaka::data(l_dest);
                                 auto const sourcePitchBytesWithoutRow
-                                    = l_source.getPitches().template shrink<dim - 1u>(1u);
+                                    = l_source.getPitches().template rshrink<dim - 1u>(1u);
                                 auto* sourcePtr = alpaka::data(l_source);
 
                                 std::cout << "row" << dstExtentWithoutRow << std::endl;
