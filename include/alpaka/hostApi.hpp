@@ -52,11 +52,11 @@ namespace alpaka
     template<typename TKernelFn, typename... TArgs>
     inline void enqueue(
         concepts::QueueHandle auto const& queue,
-        auto const mapping,
+        auto const executor,
         auto const& blockCfg,
         KernelBundle<TKernelFn, TArgs...> kernelBundle)
     {
-        internal::enqueue(*queue.get(), mapping, blockCfg, std::move(kernelBundle));
+        internal::enqueue(*queue.get(), executor, blockCfg, std::move(kernelBundle));
     }
 
     inline void enqueue(concepts::QueueHandle auto const& queue, auto task)

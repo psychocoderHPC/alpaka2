@@ -47,8 +47,7 @@ namespace alpaka
     {
     };
 
-
-    namespace mapping
+    namespace exec
     {
         struct CpuSerial
         {

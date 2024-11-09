@@ -96,17 +96,17 @@ namespace alpaka
     namespace trait
     {
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuSerial, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<exec::CpuSerial, cpu::Device<T_Platform>> : std::true_type
         {
         };
 
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuOmpBlocksAndThreads, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<exec::CpuOmpBlocksAndThreads, cpu::Device<T_Platform>> : std::true_type
         {
         };
 
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuOmpBlocks, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<exec::CpuOmpBlocks, cpu::Device<T_Platform>> : std::true_type
         {
         };
     } // namespace trait
@@ -164,13 +164,13 @@ namespace alpaka
             typename T_NumBlocks,
             typename T_NumThreads,
             typename T_KernelBundle>
-        requires mapping::traits::isSeqMapping_v<T_Mapping>
+        requires exec::traits::isSeqMapping_v<T_Mapping>
         struct AdjustThreadBlocking::
             Op<cpu::Device<T_Platform>, T_Mapping, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             auto operator()(
                 cpu::Device<T_Platform> const& queue,
-                T_Mapping const& mapping,
+                T_Mapping const& executor,
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {

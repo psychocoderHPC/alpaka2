@@ -48,11 +48,11 @@ namespace alpaka
     constexpr auto supportedMappings(concepts::DeviceHandle auto deviceHandle)
     {
         return meta::filter(
-            [&](auto mapping) constexpr
+            [&](auto executor) constexpr
             {
                 return trait::IsMappingSupportedBy::
-                    Op<std::decay_t<decltype(mapping)>, std::decay_t<decltype(deviceHandle)>>::value;
+                    Op<std::decay_t<decltype(executor)>, std::decay_t<decltype(deviceHandle)>>::value;
             },
-            mapping::availableMappings);
+            exec::availableMappings);
     }
 } // namespace alpaka

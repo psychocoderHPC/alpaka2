@@ -91,7 +91,7 @@ TEST_CASE("enqueue hallo idx", "")
 
             Queue queue = device.makeQueue();
 
-            std::cout << "all mappings" << std::endl;
+            std::cout << "all executors" << std::endl;
             auto possibleMappings = supportedMappings(device);
             executeForEachNoReturn([&](auto exec) { runPlatformCreationTest(exec, queue); }, possibleMappings);
         },

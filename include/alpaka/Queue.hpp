@@ -57,26 +57,26 @@ namespace alpaka
             return alpaka::wait(static_cast<Parent>(*this));
         }
 
-        void enqueue(auto const mapping, auto const& blockCfg, auto&& f, auto&&... args)
+        void enqueue(auto const executor, auto const& blockCfg, auto&& f, auto&&... args)
         {
             return alpaka::enqueue(
                 static_cast<Parent>(*this),
-                std::move(mapping),
+                std::move(executor),
                 blockCfg,
                 std::move(KernelBundle{f, args...}));
         }
 
         template<typename TKernelFn, typename... TArgs>
-        void enqueue(auto const mapping, auto const& blockCfg, KernelBundle<TKernelFn, TArgs...> kernelBundle)
+        void enqueue(auto const executor, auto const& blockCfg, KernelBundle<TKernelFn, TArgs...> kernelBundle)
         {
-            return alpaka::enqueue(static_cast<Parent>(*this), std::move(mapping), blockCfg, std::move(kernelBundle));
+            return alpaka::enqueue(static_cast<Parent>(*this), std::move(executor), blockCfg, std::move(kernelBundle));
         }
 
-        void enqueue(auto const mapping, concepts::KernelBundleWithSize auto const& kernelBundleWithSize)
+        void enqueue(auto const executor, concepts::KernelBundleWithSize auto const& kernelBundleWithSize)
         {
             return alpaka::enqueue(
                 static_cast<Parent>(*this),
-                std::move(mapping),
+                std::move(executor),
                 kernelBundleWithSize.m_numBlocks,
                 kernelBundleWithSize.m_numThreads,
                 kernelBundleWithSize.m_kernelBundle);
