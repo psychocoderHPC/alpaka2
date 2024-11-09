@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include "alpaka/core/PP.hpp"
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/util.hpp"
-#include "alpaka/core/PP.hpp"
 
 #include <cassert>
 #include <tuple>
@@ -41,7 +41,6 @@ namespace alpaka
     {
         ALPAKA_TAG(sync);
     } // namespace action
-
 
     struct Empty
     {
@@ -112,5 +111,5 @@ namespace alpaka
             template<typename T_Mapping>
             constexpr bool isSeqMapping_v = IsSeqMapping<T_Mapping>::value;
         } // namespace traits
-    } // namespace mapping
+    } // namespace exec
 } // namespace alpaka
