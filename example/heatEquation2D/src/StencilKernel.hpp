@@ -43,7 +43,7 @@ struct StencilKernel
         double const dt) const -> void
     {
         using IdxVec = alpaka::Vec<TIdx, 2u>;
-        
+
         auto& sdata = alpaka::declareSharedVar<double[T_SharedMemSize1D]>(acc);
 
         // Get extents(dimensions)
@@ -60,7 +60,7 @@ struct StencilKernel
 
         for(auto i = threadIdx1D; i < T_SharedMemSize1D; i += numThreadsPerBlock)
         {
-            auto idx2d = alpaka::mapToND( chunkSize + halo, i);
+            auto idx2d = alpaka::mapToND(chunkSize + halo, i);
             idx2d = idx2d + blockStartIdx;
             auto elem = getElementPtr(uCurrBuf, idx2d, pitchCurr);
             sdata[i] = *elem;
@@ -76,7 +76,7 @@ struct StencilKernel
         for(auto idx2D : alpaka::DataFrameIter{acc})
         {
             idx2D = idx2D + IdxVec{1, 1}; // offset for halo above and to the left
-            auto localIdx1D = alpaka::linearize(chunkSize + halo,idx2D);
+            auto localIdx1D = alpaka::linearize(chunkSize + halo, idx2D);
 
 
             auto bufIdx = idx2D + blockStartIdx;

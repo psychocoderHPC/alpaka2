@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <iostream>
 #include <utility>
+#include <chrono>
 
 //! Each kernel computes the next step for one point.
 //! Therefore the number of threads should be equal to numNodesX.
@@ -123,6 +124,8 @@ auto example(T_Cfg const& cfg) -> int
 
     auto dataBlocking = alpaka::DataBlocking{numChunks, chunkSize};
 
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     // Simulate
     for(uint32_t step = 1; step <= numTimeSteps; ++step)
     {
@@ -162,8 +165,14 @@ auto example(T_Cfg const& cfg) -> int
         std::swap(uNextBufAcc, uCurrBufAcc);
     }
 
-    // Copy device -> host
     alpaka::wait(computeQueue);
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsedTime = endTime - startTime;
+
+    std::cout << "Simulation took " << elapsedTime.count() << " seconds." << std::endl;
+
+
+    // Copy device -> host
     alpaka::memcpy(dumpQueue, uBufHost, uCurrBufAcc);
     alpaka::wait(dumpQueue);
 
