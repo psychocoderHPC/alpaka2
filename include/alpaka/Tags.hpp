@@ -6,6 +6,7 @@
 
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/util.hpp"
+#include "alpaka/core/PP.hpp"
 
 #include <cassert>
 #include <tuple>
@@ -41,39 +42,56 @@ namespace alpaka
         ALPAKA_TAG(sync);
     } // namespace action
 
+
+    struct Empty
+    {
+    };
+
+
     namespace mapping
     {
-        struct Empty
+        struct CpuSerial
         {
         };
 
-        struct CpuBlockSerialThreadOne
+        constexpr CpuSerial cpuSerial;
+
+        struct CpuOmpBlocks
         {
         };
 
-        constexpr CpuBlockSerialThreadOne cpuBlockSerialThreadOne;
+        constexpr CpuOmpBlocks cpuOmpBlocks;
 
-        struct CpuBlockOmpThreadOne
+        struct CpuOmpBlocksAndThreads
         {
         };
 
-        constexpr CpuBlockOmpThreadOne cpuBlockOmpThreadOne;
+        constexpr CpuOmpBlocksAndThreads cpuOmpBlocksAndThreads;
 
-        struct CpuBlockOmpThreadOmp
+        struct GpuCuda
         {
         };
 
-        constexpr CpuBlockOmpThreadOmp cpuBlockOmpThreadOmp;
+        constexpr GpuCuda gpuCuda;
 
-        struct Cuda
-        {
-        };
-
-        constexpr Cuda cuda;
-
-
-        constexpr auto availableMappings
-            = std::make_tuple(cpuBlockSerialThreadOne, cpuBlockOmpThreadOne, cpuBlockOmpThreadOmp, cuda);
+        constexpr auto availableMappings = std::make_tuple(ALPAKA_PP_REMOVE_FIRST_COMMA(
+#ifndef ALPAKA_DISABLE_EXEC_CpuSerial
+            ,
+            cpuSerial
+#endif
+#ifndef ALPAKA_DISABLE_EXEC_CpuOmpBlocks
+            ,
+            cpuOmpBlocks
+#endif
+#ifndef ALPAKA_DISABLE_EXEC_CpuBlockAndThreads
+            ,
+            cpuOmpBlocksAndThreads
+#endif
+#ifndef ALPAKA_DISABLE_EXEC_GpuCuda
+            ,
+            gpuCuda
+#endif
+            ));
 
         namespace traits
         {
@@ -83,12 +101,12 @@ namespace alpaka
             };
 
             template<>
-            struct IsSeqMapping<CpuBlockSerialThreadOne> : std::true_type
+            struct IsSeqMapping<CpuSerial> : std::true_type
             {
             };
 
             template<>
-            struct IsSeqMapping<CpuBlockOmpThreadOne> : std::true_type
+            struct IsSeqMapping<CpuOmpBlocks> : std::true_type
             {
             };
 

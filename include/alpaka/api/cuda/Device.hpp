@@ -170,7 +170,7 @@ namespace alpaka
     namespace trait
     {
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::Cuda, cuda::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<mapping::GpuCuda, cuda::Device<T_Platform>> : std::true_type
         {
         };
     } // namespace trait

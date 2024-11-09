@@ -208,11 +208,11 @@ namespace alpaka
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, mapping::Cuda, ThreadBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, mapping::GpuCuda, ThreadBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                mapping::Cuda const,
+                mapping::GpuCuda const,
                 ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 T_KernelBundle kernelBundle) const
             {
@@ -222,11 +222,11 @@ namespace alpaka
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, mapping::Cuda, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, mapping::GpuCuda, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                mapping::Cuda const mapping,
+                mapping::GpuCuda const mapping,
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle kernelBundle) const
             {
