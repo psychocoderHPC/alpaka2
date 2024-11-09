@@ -37,7 +37,7 @@ namespace alpaka
 
             void operator()(auto const& kernelBundle) const
             {
-                this->operator()(kernelBundle, Dict{DictEntry{alpaka::mapping::Empty{}, alpaka::mapping::Empty{}}});
+                this->operator()(kernelBundle, Dict{DictEntry{alpaka::Empty{}, alpaka::Empty{}}});
             }
 
             void operator()(auto const& kernelBundle, auto const& dict) const
@@ -98,7 +98,7 @@ namespace alpaka
         };
     } // namespace cpu
 
-    inline auto makeAcc(mapping::CpuBlockOmpThreadOmp, auto const& threadBlocking)
+    inline auto makeAcc(mapping::CpuOmpBlocksAndThreads, auto const& threadBlocking)
     {
         return cpu::OmpThreads(threadBlocking);
     }

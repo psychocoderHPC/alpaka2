@@ -95,26 +95,20 @@ namespace alpaka
 
     namespace trait
     {
-#if 1
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuBlockSerialThreadOne, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<mapping::CpuSerial, cpu::Device<T_Platform>> : std::true_type
         {
         };
-#endif
-#if 1
-
 
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuBlockOmpThreadOmp, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<mapping::CpuOmpBlocksAndThreads, cpu::Device<T_Platform>> : std::true_type
         {
         };
-#endif
-#if 1
+
         template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<mapping::CpuBlockOmpThreadOne, cpu::Device<T_Platform>> : std::true_type
+        struct IsMappingSupportedBy::Op<mapping::CpuOmpBlocks, cpu::Device<T_Platform>> : std::true_type
         {
         };
-#endif
     } // namespace trait
 
     namespace internal

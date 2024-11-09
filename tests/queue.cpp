@@ -35,11 +35,11 @@ TEST_CASE("enqueue task", "")
                   << " value = " << x << std::endl;
     };
 
-    queue.enqueue(exec::cpuBlockSerialThreadOne, Vec{3, 3}, Vec{1, 1}, fn, 42);
-    // queue.enqueue(exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
-    // queue.enqueue(exec::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
+    queue.enqueue(exec::cpuSerial, Vec{3, 3}, Vec{1, 1}, fn, 42);
+    // queue.enqueue(exec::cpuOmpBlocks, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+    // queue.enqueue(exec::cpuOmpBlocks, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
 
-     enqueue(queue, exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+     enqueue(queue, exec::cpuOmpBlocks, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
 }
 #endif
 
@@ -70,8 +70,8 @@ void runPlatformCreationTest(auto exec, auto queue)
     std::cout << "start enqueue" << std::endl;
     queue.enqueue(exec, ThreadBlocking{Vec{3, 3}, Vec{1, 1}}, PrintIdx{}, 42);
     wait(queue);
-    // queue.enqueue(exec::cpuBlockOmpThreadOne, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
-    // queue.enqueue(exec::cpuBlockOmpThreadOne, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
+    // queue.enqueue(exec::cpuOmpBlocks, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
+    // queue.enqueue(exec::cpuOmpBlocks, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
 
     enqueue(queue, exec, DataBlocking{Vec{3, 3}, Vec{2, 2}}, KernelBundle{PrintIdx{}, 43});
     wait(queue);
