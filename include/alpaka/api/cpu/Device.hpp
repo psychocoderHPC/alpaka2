@@ -178,5 +178,31 @@ namespace alpaka
                 return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
             }
         };
+
+        template<typename T_Platform, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
+        struct AdjustThreadBlocking::Op<
+            cpu::Device<T_Platform>,
+            exec::CpuOmpBlocksAndThreads,
+            DataBlocking<T_NumBlocks, T_NumThreads>,
+            T_KernelBundle>
+        {
+            auto operator()(
+                cpu::Device<T_Platform> const& queue,
+                exec::CpuOmpBlocksAndThreads const& executor,
+                DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                T_KernelBundle const& kernelBundle) const
+            {
+                if(dataBlocking.m_numThreads.product() > 4u)
+                {
+                    auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
+                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
+                }
+                else
+                {
+                    auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(2);
+                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
+                }
+            }
+        };
     } // namespace internal
 } // namespace alpaka
