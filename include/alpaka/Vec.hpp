@@ -239,6 +239,8 @@ namespace alpaka
 
         /** Shrink the number of elements of a vector.
          *
+         * Highest indices kept alive.
+         *
          * @tparam T_numElements New dimension of the vector.
          * @return First T_numElements elements of the origin vector
          */
@@ -270,17 +272,17 @@ namespace alpaka
         /** Shrink the number of elements of a vector.
          *
          * @tparam T_numElements New dimension of the vector.
-         * @param startIdx Index within the origin vector which will be the first element in the result.
+         * @param startIdx Index within the origin vector which will be the last element in the result.
          * @return T_numElements elements of the origin vector starting with the index startIdx.
-         *         Indexing will wrapp around when the end of the origin vector is reached.
+         *         Indexing will wrapp around when the begin of the origin vector is reached.
          */
         template<uint32_t T_numElements>
-        ALPAKA_FN_HOST_ACC Vec<type, T_numElements> shrink(int const startIdx) const
+        constexpr Vec<type, T_numElements> shrink(int const startIdx) const
         {
             static_assert(T_numElements <= T_dim);
             Vec<type, T_numElements> result;
             for(uint32_t i = 0u; i < T_numElements; i++)
-                result[T_numElements - 1u - i] = (*this)[(T_dim - 1u - startIdx + i) % T_dim];
+                result[T_numElements - 1u - i] = (*this)[(T_dim - startIdx + i) % T_dim];
             return result;
         }
 
@@ -292,14 +294,15 @@ namespace alpaka
          * @return vector with `T_dim - 1` elements
          */
         template<uint32_t dimToRemove, uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= 2u, int> = 0>
-        constexpr Vec<type, T_dim - 1> remove() const
+        constexpr Vec<type, T_dim - 1u> remove() const
         {
-            Vec<type, T_dim - 1> result{};
-            for(uint32_t i = 0u; i < T_dim - 1; ++i)
+            Vec<type, T_dim - 1u> result{};
+            // loop must be int to avoid zero comparisn compile warning
+            for(int i = 0u; i < static_cast<int>(T_dim - 1u); ++i)
             {
                 // skip component which must be deleted
-                int const sourceIdx = i >= dimToRemove ? i + 1 : i;
-                result[T_deferDim - 1u - i] = (*this)[T_deferDim - 1u - sourceIdx];
+                uint32_t const sourceIdx = i >= static_cast<int>(dimToRemove) ? i + 1 : i;
+                result[i] = (*this)[sourceIdx];
             }
             return result;
         }
@@ -549,9 +552,9 @@ namespace alpaka
         Vec<T_IntegralType, T_dim - 1u, T_Storage> const& dim,
         Vec<T_IntegralType, T_dim, T_OtherStorage> const& idx)
     {
-        T_IntegralType linearIdx{idx[T_dim - 1u]};
-        for(int d = T_dim - 2; d >= 0; --d)
-            linearIdx = linearIdx * dim[d] + idx[d];
+        T_IntegralType linearIdx{idx[0]};
+        for(uint32_t d = 1u; d < T_dim; ++d)
+            linearIdx = linearIdx * dim[d - 1u] + idx[d];
 
         return linearIdx;
     }
@@ -598,20 +601,20 @@ namespace alpaka
         typename T_Storage,
         uint32_t T_dim,
         typename = std::enable_if_t<std::is_integral_v<T_IntegralType> && T_dim >= 2u>>
-    ALPAKA_FN_HOST_ACC auto mapToND(Vec<T_IntegralType, T_dim, T_Storage> const& dim, T_IntegralType linearIdx)
+    constexpr auto mapToND(Vec<T_IntegralType, T_dim, T_Storage> const& dim, T_IntegralType linearIdx)
     {
         Vec<T_IntegralType, T_dim - 1u> pitchExtents;
-        pitchExtents[0] = dim[0];
+        pitchExtents.back() = dim.back();
         for(uint32_t d = 1u; d < T_dim - 1u; ++d)
-            pitchExtents[d] = dim[d] * pitchExtents[d - 1u];
+            pitchExtents[T_dim - 1u - d] = dim[T_dim - 1u - d] * pitchExtents[T_dim - d];
 
         Vec<T_IntegralType, T_dim> result;
-        for(uint32_t d = T_dim - 1u; d >= 1u; --d)
+        for(uint32_t d = 0u; d < T_dim - 1u; ++d)
         {
-            result[d] = linearIdx / pitchExtents[d - 1];
-            linearIdx -= pitchExtents[d - 1] * result[d];
+            result[d] = linearIdx / pitchExtents[d];
+            linearIdx -= pitchExtents[d] * result[d];
         }
-        result[0] = linearIdx;
+        result[T_dim - 1u] = linearIdx;
         return result;
     }
 

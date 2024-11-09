@@ -75,6 +75,22 @@ struct CompileTimeKernel2D
         static_assert(vec == Vec{3, 7});
         static_assert(vec != Vec{7, 3});
         static_assert(Vec{7} == Vec{7, 3}.eraseBack());
+
+        static_assert(Vec{3} == Vec{7, 3}.shrink<1u>());
+        static_assert(Vec{3} == Vec{7, 3}.shrink<1u>(1u));
+        static_assert(Vec{7} == Vec{7, 3}.shrink<1u>(0u));
+
+        static_assert(Vec{7} == Vec{7, 3}.remove<1u>());
+        static_assert(Vec{3} == Vec{7, 3}.remove<0u>());
+
+        static_assert(Vec{0, 1} == mapToND(Vec{3, 2}, 1));
+        static_assert(Vec{1, 0} == mapToND(Vec{3, 2}, 2));
+        static_assert(Vec{1, 1} == mapToND(Vec{3, 2}, 3));
+
+        static_assert(linearize(Vec{3, 2}, Vec{0, 1}) == 1);
+        static_assert(linearize(Vec{3, 2}, Vec{1, 0}) == 2);
+        static_assert (linearize(Vec{3, 2}, Vec{1, 1}) == 3);
+
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;
