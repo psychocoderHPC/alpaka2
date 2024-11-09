@@ -24,7 +24,7 @@ namespace alpaka
         template<typename T_Type, uint32_t T_dim>
         struct ReducedVector
         {
-            constexpr ReducedVector(Vec<T_Type, T_dim> const& first) : m_first{first.template shrink<T_dim - 1u>()}
+            constexpr ReducedVector(Vec<T_Type, T_dim> const& first) : m_first{first.template rshrink<T_dim - 1u>()}
             {
             }
 

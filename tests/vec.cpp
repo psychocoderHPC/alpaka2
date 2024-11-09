@@ -76,9 +76,9 @@ struct CompileTimeKernel2D
         static_assert(vec != Vec{7, 3});
         static_assert(Vec{7} == Vec{7, 3}.eraseBack());
 
-        static_assert(Vec{3} == Vec{7, 3}.shrink<1u>());
-        static_assert(Vec{3} == Vec{7, 3}.shrink<1u>(1u));
-        static_assert(Vec{7} == Vec{7, 3}.shrink<1u>(0u));
+        static_assert(Vec{3} == Vec{7, 3}.rshrink<1u>());
+        static_assert(Vec{3} == Vec{7, 3}.rshrink<1u>(1u));
+        static_assert(Vec{7} == Vec{7, 3}.rshrink<1u>(0u));
 
         static_assert(Vec{7} == Vec{7, 3}.remove<1u>());
         static_assert(Vec{3} == Vec{7, 3}.remove<0u>());
@@ -142,9 +142,9 @@ struct CompileTimeKernel3D
         static_assert(vec != Vec{7, 3, 5});
         static_assert(Vec{7, 3} == Vec{7, 3, 5}.eraseBack());
 
-        static_assert(Vec{3, 5} == Vec{7, 3, 5}.shrink<2u>());
-        static_assert(Vec{7, 3} == Vec{7, 3, 5}.shrink<2u>(1u));
-        static_assert(Vec{5, 7} == Vec{7, 3, 5}.shrink<2u>(0u));
+        static_assert(Vec{3, 5} == Vec{7, 3, 5}.rshrink<2u>());
+        static_assert(Vec{7, 3} == Vec{7, 3, 5}.rshrink<2u>(1u));
+        static_assert(Vec{5, 7} == Vec{7, 3, 5}.rshrink<2u>(0u));
 
         static_assert(Vec{7, 5} == Vec{7, 3, 5}.remove<1u>());
         static_assert(Vec{3, 5} == Vec{7, 3, 5}.remove<0u>());

@@ -23,12 +23,12 @@ namespace alpaka
         {
             constexpr auto idx() const
             {
-                return Vec<T_IdxType, 3u>{::blockIdx.z, ::blockIdx.y, ::blockIdx.x}.template shrink<T_dim>();
+                return Vec<T_IdxType, 3u>{::blockIdx.z, ::blockIdx.y, ::blockIdx.x}.template rshrink<T_dim>();
             }
 
             constexpr auto count() const
             {
-                return Vec<T_IdxType, 3u>{::gridDim.z, ::gridDim.y, ::gridDim.x}.template shrink<T_dim>();
+                return Vec<T_IdxType, 3u>{::gridDim.z, ::gridDim.y, ::gridDim.x}.template rshrink<T_dim>();
             }
 
             template<uint32_t T_idx>
@@ -43,12 +43,12 @@ namespace alpaka
         {
             constexpr auto idx() const
             {
-                return Vec<T_IdxType, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}.template shrink<T_dim>();
+                return Vec<T_IdxType, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}.template rshrink<T_dim>();
             }
 
             constexpr auto count() const
             {
-                return Vec<T_IdxType, 3u>{::blockDim.z, ::blockDim.y, ::blockDim.x}.template shrink<T_dim>();
+                return Vec<T_IdxType, 3u>{::blockDim.z, ::blockDim.y, ::blockDim.x}.template rshrink<T_dim>();
             }
 
             template<uint32_t T_idx>
