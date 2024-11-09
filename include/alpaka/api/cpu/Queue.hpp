@@ -77,33 +77,33 @@ namespace alpaka
 
             template<typename T_NumBlocks, typename T_NumThreads>
             void enqueue(
-                auto const mapping,
+                auto const executor,
                 ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 auto kernelBundle)
             {
                 m_workerThread.submit(
                     [=, kernel = std::move(kernelBundle)]()
                     {
-                        Acc acc = makeAcc(mapping, threadBlocking);
+                        Acc acc = makeAcc(executor, threadBlocking);
                         acc(std::move(kernel));
                     });
             }
 
             template<typename T_Mapping, typename T_NumBlocks, typename T_BlockSize>
             void enqueue(
-                T_Mapping const mapping,
+                T_Mapping const executor,
                 DataBlocking<T_NumBlocks, T_BlockSize> dataBlocking,
                 auto kernelBundle)
             {
                 auto threadBlocking
-                    = internal::adjustThreadBlocking(*m_device.get(), mapping, dataBlocking, kernelBundle);
+                    = internal::adjustThreadBlocking(*m_device.get(), executor, dataBlocking, kernelBundle);
                 m_workerThread.submit(
                     [=, kernel = std::move(kernelBundle)]()
                     {
                         auto moreLayer = Dict{
                             DictEntry(frame::count, dataBlocking.m_numBlocks),
                             DictEntry(frame::extent, dataBlocking.m_blockSize)};
-                        Acc acc = makeAcc(mapping, threadBlocking);
+                        Acc acc = makeAcc(executor, threadBlocking);
                         acc(std::move(kernel), moreLayer);
                     });
             }
@@ -267,13 +267,13 @@ namespace alpaka
         {
             void operator()(
                 Handle<cpu::Queue<T_Device>> const queue,
-                T_Mapping const mapping,
+                T_Mapping const executor,
                 T_NumBlocks const numBlocks,
                 T_NumThreads const numThreads,
                 T_KernelBundle kernelBundle) const
             {
                 std::cout << "enqueu overload" << std::endl;
-                return queue->enqueue(mapping, numBlocks, numThreads, std::move(kernelBundle));
+                return queue->enqueue(executor, numBlocks, numThreads, std::move(kernelBundle));
             }
         };
     } // namespace internal

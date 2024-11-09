@@ -64,7 +64,7 @@ namespace alpaka
         };
     } // namespace cpu
 
-    inline auto makeAcc(mapping::CpuSerial, auto const& threadBlocking)
+    inline auto makeAcc(exec::CpuSerial, auto const& threadBlocking)
     {
         return cpu::Serial(threadBlocking);
     }

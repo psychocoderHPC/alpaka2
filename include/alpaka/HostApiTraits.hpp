@@ -128,11 +128,11 @@ namespace alpaka
             {
                 void operator()(
                     T_Queue& queue,
-                    T_Mapping const mapping,
+                    T_Mapping const executor,
                     T_BlockCfg const& blockCfg,
                     T_KernelBundle kernelBundle) const
                 {
-                    queue.enqueue(mapping, blockCfg, std::move(kernelBundle));
+                    queue.enqueue(executor, blockCfg, std::move(kernelBundle));
                 }
             };
 
@@ -154,15 +154,15 @@ namespace alpaka
         template<typename TKernelFn, typename... TArgs>
         inline void enqueue(
             auto& queue,
-            auto const mapping,
+            auto const executor,
             auto const& blockCfg,
             KernelBundle<TKernelFn, TArgs...> kernelBundle)
         {
             Enqueue::Kernel<
                 std::decay_t<decltype(queue)>,
-                std::decay_t<decltype(mapping)>,
+                std::decay_t<decltype(executor)>,
                 std::decay_t<decltype(blockCfg)>,
-                KernelBundle<TKernelFn, TArgs...>>{}(queue, mapping, blockCfg, std::move(kernelBundle));
+                KernelBundle<TKernelFn, TArgs...>>{}(queue, executor, blockCfg, std::move(kernelBundle));
         }
 
         struct AdjustThreadBlocking
@@ -172,7 +172,7 @@ namespace alpaka
             {
                 auto operator()(
                     T_Device const&,
-                    T_Mapping const& mapping,
+                    T_Mapping const& executor,
                     T_DataBlocking const& blockCfg,
                     T_KernelBundle const& kernelBundle) const
                 {
@@ -184,15 +184,15 @@ namespace alpaka
         template<typename T_NumBlocks, typename T_NumThreads, typename TKernelFn, typename... TArgs>
         static auto adjustThreadBlocking(
             auto const& device,
-            auto const& mapping,
+            auto const& executor,
             DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
             KernelBundle<TKernelFn, TArgs...> const& kernelBundle)
         {
             return AdjustThreadBlocking::Op<
                 std::decay_t<decltype(device)>,
-                std::decay_t<decltype(mapping)>,
+                std::decay_t<decltype(executor)>,
                 DataBlocking<T_NumBlocks, T_NumThreads>,
-                KernelBundle<TKernelFn, TArgs...>>{}(device, mapping, dataBlocking, kernelBundle);
+                KernelBundle<TKernelFn, TArgs...>>{}(device, executor, dataBlocking, kernelBundle);
         }
 
         struct Data

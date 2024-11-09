@@ -208,11 +208,11 @@ namespace alpaka
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, mapping::GpuCuda, ThreadBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, ThreadBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                mapping::GpuCuda const,
+                exec::GpuCuda const,
                 ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 T_KernelBundle kernelBundle) const
             {
@@ -222,16 +222,16 @@ namespace alpaka
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, mapping::GpuCuda, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                mapping::GpuCuda const mapping,
+                exec::GpuCuda const executor,
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle kernelBundle) const
             {
                 auto threadBlocking
-                    = internal::adjustThreadBlocking(*queue.m_device.get(), mapping, dataBlocking, kernelBundle);
+                    = internal::adjustThreadBlocking(*queue.m_device.get(), executor, dataBlocking, kernelBundle);
                 cuda::CallKernel{}(
                     queue,
                     threadBlocking,
