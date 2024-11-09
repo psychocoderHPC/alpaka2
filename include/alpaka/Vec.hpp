@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <type_traits>
+#include <ranges>
 
 namespace alpaka
 {

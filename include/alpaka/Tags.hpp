@@ -81,7 +81,7 @@ namespace alpaka
             ,
             cpuOmpBlocks
 #endif
-#ifndef ALPAKA_DISABLE_EXEC_CpuBlockAndThreads
+#ifndef ALPAKA_DISABLE_EXEC_CpuOmpBlocksAndThreads
             ,
             cpuOmpBlocksAndThreads
 #endif

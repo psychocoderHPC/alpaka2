@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <ranges>
 #include <sstream>
 
 namespace alpaka
@@ -22,19 +23,22 @@ namespace alpaka
          * the initialization.
          */
         template<typename T_Type, uint32_t T_dim>
-        struct ReducedVector
+        struct ReducedVector : private Vec<T_Type, T_dim - 1u>
         {
-            constexpr ReducedVector(Vec<T_Type, T_dim> const& first) : m_first{first.template rshrink<T_dim - 1u>()}
+            constexpr ReducedVector(Vec<T_Type, T_dim> const& first)
+                : Vec<T_Type, T_dim - 1u>{first.template rshrink<T_dim - 1u>()}
             {
             }
 
             constexpr decltype(auto) operator[](T_Type idx) const
             {
-                return m_first[idx - 1u];
+                return Vec<T_Type, T_dim - 1u>::operator[](idx - 1u);
             }
 
-        private:
-            Vec<T_Type, T_dim - 1u> m_first;
+            constexpr decltype(auto) operator[](T_Type idx)
+            {
+                return Vec<T_Type, T_dim - 1u>::operator[](idx - 1u);
+            }
         };
 
         template<typename T_Type>
@@ -49,17 +53,29 @@ namespace alpaka
     template<typename T_Acc, typename T_ExtentFn, typename T_StrideFn, typename T_StartIdxFn>
     class IndexContainer
     {
+        void _()
+        {
+            static_assert(std::ranges::forward_range<IndexContainer>);
+        }
+
     public:
+
         using IdxVecType = decltype(T_ExtentFn{}(std::declval<T_Acc>()));
         using IdxType = typename IdxVecType::type;
 
         static constexpr uint32_t dim = IdxVecType::dim();
 
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc) : m_acc(acc), m_extent(T_ExtentFn{}(acc))
+        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc)
+            : m_extent(T_ExtentFn{}(acc))
+            , m_stride{T_StrideFn{}(acc)}
+            , m_first{T_StartIdxFn{}(acc)}
         {
         }
 
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent) : m_acc(acc), m_extent(extent)
+        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent)
+            : m_extent(extent)
+            , m_stride{T_StrideFn{}(acc)}
+            , m_first{T_StartIdxFn{}(acc)}
         {
         }
 
@@ -73,29 +89,38 @@ namespace alpaka
         class const_iterator_end
         {
             friend class IndexContainer;
-            friend class const_iterator;
+
+            void _()
+            {
+                static_assert(std::forward_iterator<const_iterator_end>);
+            }
 
             ALPAKA_FN_ACC inline const_iterator_end(IdxType extentSlowDim) : m_extentSlowDim{extentSlowDim}
             {
             }
 
+            constexpr IdxType operator*() const
+            {
+                return m_extentSlowDim;
+            }
+
         public:
-            ALPAKA_FN_ACC inline bool operator==(const_iterator_end const& other) const
+            constexpr bool operator==(const_iterator_end const& other) const
             {
                 return (m_extentSlowDim == other.m_extentSlowDim);
             }
 
-            ALPAKA_FN_ACC inline bool operator!=(const_iterator_end const& other) const
+            constexpr bool operator!=(const_iterator_end const& other) const
             {
                 return not(*this == other);
             }
 
-            ALPAKA_FN_ACC inline bool operator==(const_iterator const& other) const
+            constexpr bool operator==(const_iterator const& other) const
             {
                 return (m_extentSlowDim <= other.m_extent[0]);
             }
 
-            ALPAKA_FN_ACC inline bool operator!=(const_iterator const& other) const
+            constexpr bool operator!=(const_iterator const& other) const
             {
                 return not(*this == other);
             }
@@ -109,7 +134,12 @@ namespace alpaka
             friend class IndexContainer;
             friend class const_iterator_end;
 
-            ALPAKA_FN_ACC inline const_iterator(IdxVecType stride, IdxVecType extent, IdxVecType first)
+            void _()
+            {
+                static_assert(std::forward_iterator<const_iterator>);
+            }
+
+            constexpr const_iterator(IdxVecType stride, IdxVecType extent, IdxVecType first)
                 : m_stride{stride}
                 , m_extent{extent}
                 , m_current{first}
@@ -128,7 +158,7 @@ namespace alpaka
             }
 
         public:
-            ALPAKA_FN_ACC inline IdxVecType operator*() const
+            constexpr IdxVecType operator*() const
             {
                 return m_current;
             }
@@ -161,22 +191,22 @@ namespace alpaka
                 return old;
             }
 
-            ALPAKA_FN_ACC inline bool operator==(const_iterator const& other) const
+            constexpr bool operator==(const_iterator const& other) const
             {
                 return (m_current == other.m_current);
             }
 
-            ALPAKA_FN_ACC inline bool operator!=(const_iterator const& other) const
+            constexpr bool operator!=(const_iterator const& other) const
             {
                 return not(*this == other);
             }
 
-            ALPAKA_FN_ACC inline bool operator==(const_iterator_end const& other) const
+            constexpr bool operator==(const_iterator_end const& other) const
             {
-                return (m_current[0] >= other.m_extentSlowDim);
+                return (m_current[0] >= *other);
             }
 
-            ALPAKA_FN_ACC inline bool operator!=(const_iterator_end const& other) const
+            constexpr bool operator!=(const_iterator_end const& other) const
             {
                 return not(*this == other);
             }
@@ -192,7 +222,7 @@ namespace alpaka
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            return const_iterator(T_StrideFn{}(m_acc), m_extent, T_StartIdxFn{}(m_acc));
+            return const_iterator(m_stride, m_extent, m_first);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
@@ -201,8 +231,9 @@ namespace alpaka
         }
 
     private:
-        T_Acc const& m_acc;
-        IdxVecType const m_extent;
+        IdxVecType m_extent;
+        IdxVecType m_stride;
+        IdxVecType m_first;
     };
 
     namespace idxTrait
