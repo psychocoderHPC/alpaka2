@@ -49,6 +49,13 @@ namespace alpaka
             , m_numThreads(blockSize)
         {
         }
+
+        DataBlocking(T_NumBlocks const& numBlocks, T_BlockSize const& blockSize,T_BlockSize const& numThreads)
+            : m_numBlocks(numBlocks)
+            , m_blockSize(blockSize)
+            , m_numThreads(numThreads)
+        {
+        }
     };
 
     template<typename T_NumBlocks, typename T_BlockSize>

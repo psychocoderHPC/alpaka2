@@ -79,6 +79,13 @@ namespace alpaka
         {
         }
 
+        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent,IdxVecType const& offset)
+            : m_extent(extent + offset)
+            , m_stride{T_StrideFn{}(acc)}
+            , m_first{T_StartIdxFn{}(acc) + offset}
+        {
+        }
+
         class const_iterator;
 
         /** special implementation to define the end
