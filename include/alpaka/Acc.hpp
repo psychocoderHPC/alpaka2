@@ -37,6 +37,11 @@ namespace alpaka
         {
             (*this)[action::sync]();
         }
+
+        consteval bool hasKey(auto key) const
+        {
+            return hasTag(static_cast<T_Storage>(*this));
+        }
     };
 
 } // namespace alpaka

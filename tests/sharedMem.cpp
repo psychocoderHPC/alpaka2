@@ -28,18 +28,18 @@ struct SharedBlockIotaKernel
         // auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
         auto& shared = declareSharedVar<uint32_t[T_blockSize]>(acc);
 
-        for(auto blockIdx : DataBlockIter{acc, numBlocks})
+        for(auto blockIdx : DataBlockIter<>::get(acc, numBlocks))
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
-            for(auto inBlockOffset : DataFrameIter{acc})
+            for(auto inBlockOffset : DataFrameIter<>::get(acc))
             {
                 uint32_t id = (T_blockSize - 1u - inBlockOffset).x();
                 shared[id] = id;
             }
             // acc.sync();
             syncBlockThreads(acc);
-            for(auto inBlockOffset : DataFrameIter{acc})
+            for(auto inBlockOffset : DataFrameIter<>::get(acc))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + shared[inBlockOffset.x()]).x();
             }
@@ -76,7 +76,7 @@ TEMPLATE_LIST_TEST_CASE("block shared iota", "", TestApis)
         queue,
         exec,
         alpaka::DataBlocking{numBlocks / 2u, blockExtent},
-        KernelBundle{SharedBlockIotaKernel<blockExtent.x()>{}, dBuff.getMdSpan(), numBlocks.x()});
+        KernelBundle{SharedBlockIotaKernel<blockExtent.x()>{}, dBuff.getMdSpan(), numBlocks});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
 

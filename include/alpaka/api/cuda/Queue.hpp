@@ -133,12 +133,12 @@ namespace alpaka
             auto acc = Acc{
                 Dict{
                     DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
-
                     DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
                     DictEntry(layer::shared, cuda::StaticShared{}),
                     DictEntry(frame::count, numFrames),
                     DictEntry(frame::extent, framesSize),
-                    DictEntry(action::sync, cuda::Sync{})},
+                    DictEntry(action::sync, cuda::Sync{}),
+                    DictEntry(object::api, api::cuda)},
             };
             kernelBundle(acc);
         }
@@ -151,7 +151,8 @@ namespace alpaka
                     DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
                     DictEntry(layer::shared, cuda::StaticShared{}),
                     DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(action::sync, cuda::Sync{})},
+                    DictEntry(action::sync, cuda::Sync{}),
+                    DictEntry(object::api, api::cuda)},
             };
             kernelBundle(acc);
         }

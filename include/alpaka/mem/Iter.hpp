@@ -50,7 +50,15 @@ namespace alpaka
         };
     } // namespace iter::detail
 
-    template<typename T_Acc, typename T_ExtentFn, typename T_StrideFn, typename T_StartIdxFn>
+    struct Stride
+    {
+        auto adjust(auto const& extentVec, auto const& strideVec) const
+        {
+            return std::make_tuple(extentVec, strideVec);
+        }
+    };
+
+    template<typename T_MapperFn, typename IdxVecType, typename T_StartIdxFn, typename T_ExtentFn, typename T_StrideFn>
     class IndexContainer
     {
         void _()
@@ -59,12 +67,11 @@ namespace alpaka
         }
 
     public:
-
-        using IdxVecType = decltype(T_ExtentFn{}(std::declval<T_Acc>()));
         using IdxType = typename IdxVecType::type;
 
         static constexpr uint32_t dim = IdxVecType::dim();
 
+        template<typename T_Acc>
         ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc)
             : m_extent(T_ExtentFn{}(acc))
             , m_stride{T_StrideFn{}(acc)}
@@ -72,6 +79,7 @@ namespace alpaka
         {
         }
 
+        template<typename T_Acc>
         ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent)
             : m_extent(extent)
             , m_stride{T_StrideFn{}(acc)}
@@ -79,10 +87,12 @@ namespace alpaka
         {
         }
 
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent,IdxVecType const& offset)
-            : m_extent(extent + offset)
+        template<typename T_Acc>
+        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent, IdxVecType const& offset)
+            : m_extent(extent)
             , m_stride{T_StrideFn{}(acc)}
-            , m_first{T_StartIdxFn{}(acc) + offset}
+            , m_first{T_StartIdxFn{}(acc)}
+            , m_offset(offset)
         {
         }
 
@@ -229,18 +239,19 @@ namespace alpaka
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            return const_iterator(m_stride, m_extent, m_first);
+            return const_iterator(m_stride, m_extent + m_offset, m_first + m_offset);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            return const_iterator_end(m_extent[0]);
+            return const_iterator_end(m_extent[0] + m_offset[0]);
         }
 
     private:
         IdxVecType m_extent;
         IdxVecType m_stride;
         IdxVecType m_first;
+        IdxVecType m_offset;
     };
 
     namespace idxTrait
@@ -327,27 +338,78 @@ namespace alpaka
         };
     } // namespace idxTrait
 
-    template<typename T_Acc>
-    using IndependentDataIter
-        = IndexContainer<T_Acc, idxTrait::DataExtent, idxTrait::GlobalNumThreads, idxTrait::GlobalThreadIdx>;
+    struct Auto
+    {
+    };
 
-    template<typename T_Acc>
-    using DataBlockIter = IndexContainer<
-        T_Acc,
-        idxTrait::DataFrameCount,
-        idxTrait::GlobalNumThreadBlocks,
-        idxTrait::GlobalThreadBlockIdx>;
+    struct MakeIterator
+    {
+        template<typename T_IdxMapping, typename T_StartIdxFn, typename T_ExtentFn, typename T_StrideFn>
+        struct Create
+        {
+            template<typename T_Acc>
+            ALPAKA_FN_ACC static auto get(T_Acc const& acc)
+            {
+                using IdxVecType = decltype(T_ExtentFn{}(std::declval<T_Acc>()));
+                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                {
+                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
+                        return IndexContainer<Stride, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
+                    else
+                        return IndexContainer<Stride, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
+                }
+            }
 
-    template<typename T_Acc>
-    using DataFrameIter
-        = IndexContainer<T_Acc, idxTrait::DataFrameExtent, idxTrait::NumThreadsInBlock, idxTrait::ThreadIdxInBlock>;
+            template<typename T_Acc, typename T_IdxVec>
+            ALPAKA_FN_ACC static auto get(T_Acc const& acc, T_IdxVec const& extent)
+            {
+                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                {
+                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
+                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
+                    else
+                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
+                }
+            }
 
-    template<typename T_Acc>
-    using IndependentGridThreadIter
-        = IndexContainer<T_Acc, idxTrait::GlobalNumThreads, idxTrait::GlobalNumThreads, idxTrait::GlobalThreadIdx>;
+            template<typename T_Acc, typename T_IdxVec>
+            ALPAKA_FN_ACC static auto get(T_Acc const& acc, T_IdxVec const& offset, T_IdxVec const& extent)
+            {
+                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                {
+                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
+                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
+                            acc,
+                            extent,
+                            offset};
+                    else
+                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
+                            acc,
+                            extent,
+                            offset};
+                }
+            }
+        };
+    };
 
-    template<typename T_Acc>
-    using IndependentBlockThreadIter
-        = IndexContainer<T_Acc, idxTrait::NumThreadsInBlock, idxTrait::NumThreadsInBlock, idxTrait::ThreadIdxInBlock>;
+    template<typename T_IdxMapping = Auto>
+    using IndependentDataIter = MakeIterator::
+        Create<T_IdxMapping, idxTrait::GlobalThreadIdx, idxTrait::DataExtent, idxTrait::GlobalNumThreads>;
+
+    template<typename T_IdxMapping = Auto>
+    using DataBlockIter = MakeIterator::
+        Create<T_IdxMapping, idxTrait::GlobalThreadBlockIdx, idxTrait::DataFrameCount, idxTrait::GlobalNumThreadBlocks>;
+
+    template<typename T_IdxMapping = Auto>
+    using DataFrameIter = MakeIterator::
+        Create<T_IdxMapping, idxTrait::ThreadIdxInBlock, idxTrait::DataFrameExtent, idxTrait::NumThreadsInBlock>;
+
+    template<typename T_IdxMapping = Auto>
+    using IndependentGridThreadIter = MakeIterator::
+        Create<T_IdxMapping, idxTrait::GlobalThreadIdx, idxTrait::GlobalNumThreads, idxTrait::GlobalNumThreads>;
+
+    template<typename T_IdxMapping = Auto>
+    using IndependentBlockThreadIter = MakeIterator::
+        Create<T_IdxMapping, idxTrait::ThreadIdxInBlock, idxTrait::NumThreadsInBlock, idxTrait::NumThreadsInBlock>;
 
 } // namespace alpaka
