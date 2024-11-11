@@ -104,7 +104,7 @@ struct IotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, uint32_t outSize) const
     {
-        for(auto i : IndependentDataIter{acc})
+        for(auto i : IndependentDataIter<>::get(acc))
         {
             out[i.x()] = i.x();
         }
@@ -155,7 +155,7 @@ struct IotaKernelND
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
     {
-        for(auto i : IndependentDataIter{acc})
+        for(auto i : IndependentDataIter<>::get(acc))
         {
             out[i] = i;
         }

@@ -23,11 +23,11 @@ struct BlockIotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numBlocks) const
     {
-        for(auto blockIdx : DataBlockIter{acc, numBlocks})
+        for(auto blockIdx : DataBlockIter<>::get(acc, numBlocks))
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
-            for(auto inBlockOffset : DataFrameIter{acc})
+            for(auto inBlockOffset : DataFrameIter<>::get(acc))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + inBlockOffset).x();
             }
@@ -64,7 +64,7 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
         queue,
         exec,
         alpaka::DataBlocking{numBlocks / 2u, blockExtent},
-        KernelBundle{BlockIotaKernel{}, dBuff.getMdSpan(), numBlocks.x()});
+        KernelBundle{BlockIotaKernel{}, dBuff.getMdSpan(), numBlocks});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
 

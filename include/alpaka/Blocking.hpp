@@ -50,7 +50,7 @@ namespace alpaka
         {
         }
 
-        DataBlocking(T_NumBlocks const& numBlocks, T_BlockSize const& blockSize,T_BlockSize const& numThreads)
+        DataBlocking(T_NumBlocks const& numBlocks, T_BlockSize const& blockSize, T_BlockSize const& numThreads)
             : m_numBlocks(numBlocks)
             , m_blockSize(blockSize)
             , m_numThreads(numThreads)

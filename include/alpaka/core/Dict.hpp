@@ -53,7 +53,7 @@ namespace alpaka
     }
 
     template<typename T_Key, typename T_Tuple>
-    inline constexpr bool hasTag(T_Tuple&& t, T_Key const& key = T_Key{})
+    consteval bool hasTag(T_Tuple&& t, T_Key const& key = T_Key{})
     {
         constexpr auto idx = Idx<T_Key, std::decay_t<T_Tuple>>::value;
         return idx != -1;
