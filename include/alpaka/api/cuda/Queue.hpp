@@ -139,7 +139,7 @@ namespace alpaka
                     DictEntry(frame::extent, framesSize),
                     DictEntry(action::sync, cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
-                    DictEntry(object::exec, exec::cuda)},
+                    DictEntry(object::exec, exec::gpuCuda)},
             };
             kernelBundle(acc);
         }
@@ -154,7 +154,7 @@ namespace alpaka
                     DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
                     DictEntry(action::sync, cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
-                    DictEntry(object::exec, exec::cuda)},
+                    DictEntry(object::exec, exec::gpuCuda)},
             };
             kernelBundle(acc);
         }

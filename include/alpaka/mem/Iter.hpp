@@ -71,8 +71,43 @@ namespace alpaka
         }
     };
 
-    template<typename T_MapperFn, typename IdxVecType, typename T_StartIdxFn, typename T_ExtentFn, typename T_StrideFn>
-    class IndexContainer
+    struct Optimize
+    {
+    };
+
+    constexpr auto optimize = Optimize{};
+
+    template<typename T>
+    struct IsIdxMapping : std::false_type
+    {
+    };
+
+    template<>
+    struct IsIdxMapping<Stride> : std::true_type
+    {
+    };
+
+    template<>
+    struct IsIdxMapping<Optimize> : std::true_type
+    {
+    };
+
+    template<>
+    struct IsIdxMapping<Contigious> : std::true_type
+    {
+    };
+
+    template<typename T>
+    constexpr bool isIdxMapping_v = IsIdxMapping<T>::value;
+
+    namespace concepts
+    {
+        template<typename T>
+        concept IdxMapping = isIdxMapping_v<T>;
+    } // namespace concepts
+
+    template<typename T_IdxVecType, typename T_IdxMapperFn>
+    class IndexContainer : private T_IdxMapperFn
     {
         void _()
         {
@@ -80,32 +115,22 @@ namespace alpaka
         }
 
     public:
+        using IdxVecType = T_IdxVecType;
         using IdxType = typename IdxVecType::type;
 
         static constexpr uint32_t dim = IdxVecType::dim();
 
-        template<typename T_Acc>
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc)
-            : m_extent(T_ExtentFn{}(acc))
-            , m_stride{T_StrideFn{}(acc)}
-            , m_first{T_StartIdxFn{}(acc)}
-        {
-        }
-
-        template<typename T_Acc>
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent)
-            : m_extent(extent)
-            , m_stride{T_StrideFn{}(acc)}
-            , m_first{T_StartIdxFn{}(acc)}
-        {
-        }
-
-        template<typename T_Acc>
-        ALPAKA_FN_ACC inline IndexContainer(T_Acc const& acc, IdxVecType const& extent, IdxVecType const& offset)
-            : m_extent(extent)
-            , m_stride{T_StrideFn{}(acc)}
-            , m_first{T_StartIdxFn{}(acc)}
-            , m_offset(offset)
+        ALPAKA_FN_ACC inline IndexContainer(
+            IdxVecType const& first,
+            IdxVecType const& extent,
+            IdxVecType const& stride,
+            IdxVecType const& offset,
+            T_IdxMapperFn idxMapping)
+            : T_IdxMapperFn{std::move(idxMapping)}
+            , m_extent(extent)
+            , m_stride{stride}
+            , m_first{first}
+            , m_offset{offset}
         {
         }
 
@@ -252,13 +277,13 @@ namespace alpaka
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            auto [first, extent, stride] = T_MapperFn::adjust(m_first, m_extent, m_stride);
+            auto [first, extent, stride] = this->adjust(m_first, m_extent, m_stride);
             return const_iterator(stride, extent + m_offset, first + m_offset);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            auto [_, extent, __] = T_MapperFn::adjust(m_first, m_extent, m_stride);
+            auto [_, extent, __] = this->adjust(m_first, m_extent, m_stride);
             return const_iterator_end(extent[0] + m_offset[0]);
         }
 
@@ -353,103 +378,173 @@ namespace alpaka
         };
     } // namespace idxTrait
 
-    struct Auto
-    {
-    };
+    ALPAKA_TAG(firstFn);
+    ALPAKA_TAG(extentFn);
+    ALPAKA_TAG(strideFn);
 
-    struct AutoIndexMapping
+    namespace internal
     {
-        template<typename T_Acc, typename T_Api>
-        struct Op
+        struct AutoIndexMapping
         {
-            auto operator()(T_Acc const&, T_Api const&) const
+            template<typename T_Acc, typename T_Api>
+            struct Op
             {
-                return Stride{};
+                constexpr auto operator()(T_Acc const&, T_Api) const
+                {
+                    return Stride{};
+                }
+            };
+        };
+
+        template<typename T_Acc>
+        requires(not exec::traits::isSeqMapping_v<ALPAKA_TYPE(std::declval<T_Acc>()[object::exec])>)
+        struct AutoIndexMapping::Op<T_Acc, api::Cpu>
+        {
+            constexpr auto operator()(T_Acc const&, api::Cpu) const
+            {
+                return Contigious{};
             }
         };
-    };
 
-    template<typename T_Acc>
-    requires exec::traits::isSeqMapping_v<decltype(std::declval<T_Acc>()[object::exec])>
-    struct AutoIndexMapping::Op<T_Acc, api::Cpu>
-    {
-        auto operator()(T_Acc const&, api::Cpu const&) const
+        constexpr auto adjustMapping(auto const& acc, auto api)
         {
-            return Contigious{};
+            return internal::AutoIndexMapping::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(api)>{}(acc, api);
         }
-    };
 
-    struct MakeIterator
-    {
-        template<typename T_IdxMapping, typename T_StartIdxFn, typename T_ExtentFn, typename T_StrideFn>
-        struct Create
+        struct MakeIter
         {
-            template<typename T_Acc>
-            ALPAKA_FN_ACC static auto get(T_Acc const& acc)
+            template<typename T_Acc, typename T_RangeOps, typename T_IdxMapping>
+            struct Op
             {
-                using IdxVecType = decltype(T_ExtentFn{}(std::declval<T_Acc>()));
-                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                ALPAKA_FN_HOST_ACC constexpr auto operator()(
+                    T_Acc const& acc,
+                    T_RangeOps rangeOps,
+                    T_IdxMapping idxMapping) const
                 {
-                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Contigious, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
-                    else
-                        return IndexContainer<Stride, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
+                    return (*this)(acc, rangeOps, idxMapping, rangeOps[extentFn](acc));
                 }
-            }
 
-            template<typename T_Acc, typename T_IdxVec>
-            ALPAKA_FN_ACC static auto get(T_Acc const& acc, T_IdxVec const& extent)
-            {
-                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                ALPAKA_FN_HOST_ACC constexpr auto operator()(
+                    T_Acc const& acc,
+                    T_RangeOps rangeOps,
+                    T_IdxMapping idxMapping,
+                    concepts::Vector auto const& extent) const
                 {
-                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Contigious, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
-                    else
-                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
+                    return (*this)(acc, rangeOps, idxMapping, ALPAKA_TYPE(extent)::all(0), extent);
                 }
-            }
 
-            template<typename T_Acc, typename T_IdxVec>
-            ALPAKA_FN_ACC static auto get(T_Acc const& acc, T_IdxVec const& offset, T_IdxVec const& extent)
-            {
-                if constexpr(std::is_same_v<T_IdxMapping, Auto>)
+                ALPAKA_FN_HOST_ACC constexpr auto operator()(
+                    T_Acc const& acc,
+                    T_RangeOps rangeOps,
+                    T_IdxMapping idxMapping,
+                    concepts::Vector auto const& offset,
+                    concepts::Vector auto const& extent) const
+                    requires std::is_same_v<ALPAKA_TYPE(idxMapping), ALPAKA_TYPE(optimize)>
                 {
-                    if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Contigious, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
-                            acc,
-                            extent,
-                            offset};
-                    else
-                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
-                            acc,
-                            extent,
-                            offset};
+                    static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
+
+                    auto adjIdxMapping = adjustMapping(acc, idxMapping);
+                    return IndexContainer<ALPAKA_TYPE(extent), ALPAKA_TYPE(adjIdxMapping)>{
+                        rangeOps[firstFn](acc),
+                        extent,
+                        rangeOps[strideFn](acc),
+                        offset,
+                        adjIdxMapping};
                 }
-            }
+
+                ALPAKA_FN_HOST_ACC constexpr auto operator()(
+                    T_Acc const& acc,
+                    T_RangeOps rangeOps,
+                    T_IdxMapping idxMapping,
+                    concepts::Vector auto const& offset,
+                    concepts::Vector auto const& extent) const
+                {
+                    static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
+
+                    return IndexContainer<ALPAKA_TYPE(extent), ALPAKA_TYPE(idxMapping)>(
+                        rangeOps[firstFn](acc),
+                        extent,
+                        rangeOps[strideFn](acc),
+                        offset,
+                        idxMapping);
+                }
+            };
         };
-    };
+    } // namespace internal
 
-    template<typename T_IdxMapping = Auto>
-    using IndependentDataIter = MakeIterator::
-        Create<T_IdxMapping, idxTrait::GlobalThreadIdx, idxTrait::DataExtent, idxTrait::GlobalNumThreads>;
+    template<concepts::IdxMapping T_IdxMapping = Optimize>
+    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
+        auto const& acc,
+        auto rangeOps,
+        T_IdxMapping idxMapping = T_IdxMapping{})
+    {
+        return internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_IdxMapping>{}(
+            acc,
+            rangeOps,
+            idxMapping);
+    }
 
-    template<typename T_IdxMapping = Auto>
-    using DataBlockIter = MakeIterator::Create<
-        T_IdxMapping,
-        idxTrait::GlobalThreadBlockIdx,
-        idxTrait::DataFrameCount,
-        idxTrait::GlobalNumThreadBlocks>;
+    template<concepts::IdxMapping T_IdxMapping = Optimize>
+    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
+        auto const& acc,
+        auto rangeOps,
+        concepts::Vector auto const& extent,
+        T_IdxMapping idxMapping = T_IdxMapping{})
+    {
+        return internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_IdxMapping>{}(
+            acc,
+            rangeOps,
+            idxMapping,
+            extent);
+    }
 
-    template<typename T_IdxMapping = Auto>
-    using DataFrameIter = MakeIterator::
-        Create<T_IdxMapping, idxTrait::ThreadIdxInBlock, idxTrait::DataFrameExtent, idxTrait::NumThreadsInBlock>;
+    template<concepts::IdxMapping T_IdxMapping = Optimize>
+    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
+        auto const& acc,
+        auto rangeOps,
+        concepts::Vector auto const& offset,
+        concepts::Vector auto const& extent,
+        T_IdxMapping idxMapping = T_IdxMapping{})
+    {
+        return internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_IdxMapping>{}(
+            acc,
+            rangeOps,
+            idxMapping,
+            offset,
+            extent);
+    }
 
-    template<typename T_IdxMapping = Auto>
-    using IndependentGridThreadIter = MakeIterator::
-        Create<T_IdxMapping, idxTrait::GlobalThreadIdx, idxTrait::GlobalNumThreads, idxTrait::GlobalNumThreads>;
+    namespace iter
+    {
+        constexpr auto overDataRange = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
+            DictEntry(extentFn, idxTrait::DataExtent{}),
+            DictEntry(strideFn, idxTrait::GlobalNumThreads{}))};
 
-    template<typename T_IdxMapping = Auto>
-    using IndependentBlockThreadIter = MakeIterator::
-        Create<T_IdxMapping, idxTrait::ThreadIdxInBlock, idxTrait::NumThreadsInBlock, idxTrait::NumThreadsInBlock>;
+        constexpr auto overDataFrames = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
+            DictEntry(extentFn, idxTrait::DataFrameCount{}),
+            DictEntry(strideFn, idxTrait::GlobalNumThreadBlocks{}))};
+
+        constexpr auto withinDataFrame = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
+            DictEntry(extentFn, idxTrait::DataFrameExtent{}),
+            DictEntry(strideFn, idxTrait::NumThreadsInBlock{}))};
+
+        constexpr auto overThreadRange = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
+            DictEntry(extentFn, idxTrait::GlobalNumThreads{}),
+            DictEntry(strideFn, idxTrait::GlobalNumThreads{}))};
+
+        constexpr auto overThreadBlocks = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
+            DictEntry(extentFn, idxTrait::GlobalNumThreadBlocks{}),
+            DictEntry(strideFn, idxTrait::GlobalNumThreadBlocks{}))};
+
+        constexpr auto withinThreadBlock = Dict{std::make_tuple(
+            DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
+            DictEntry(extentFn, idxTrait::NumThreadsInBlock{}),
+            DictEntry(strideFn, idxTrait::NumThreadsInBlock{}))};
+    } // namespace iter
 
 } // namespace alpaka

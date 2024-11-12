@@ -73,9 +73,9 @@ struct StencilKernel
         double const rY = dt / (dy * dy);
 
         // go over only core cells
-        for(auto idx2D : alpaka::DataFrameIter<>::get(acc,IdxVec{1u, 1u},IdxVec{16u, 16u}))
+        for(auto idx2D : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, IdxVec{1u, 1u}, IdxVec{16u, 16u}))
         {
-           //  idx2D = idx2D + IdxVec{1, 1}; // offset for halo above and to the left
+            //  idx2D = idx2D + IdxVec{1, 1}; // offset for halo above and to the left
             auto localIdx1D = alpaka::linearize(chunkSize + halo, idx2D);
 
 
