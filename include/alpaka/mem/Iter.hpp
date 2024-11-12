@@ -52,9 +52,22 @@ namespace alpaka
 
     struct Stride
     {
-        auto adjust(auto const& extentVec, auto const& strideVec) const
+        static constexpr auto adjust(auto const& firstVec, auto const& extentVec, auto const& strideVec)
         {
-            return std::make_tuple(extentVec, strideVec);
+            // std::cout<<firstVec<<extentVec<<strideVec<<std::endl;
+            return std::make_tuple(firstVec, extentVec, strideVec);
+        }
+    };
+
+    struct Contigious
+    {
+        static constexpr auto adjust(auto const& firstVec, auto const& extentVec, auto const& strideVec)
+        {
+            auto numElements = core::divCeil(extentVec, strideVec);
+            auto stride = ALPAKA_TYPE(strideVec)::all(1u);
+            auto first = firstVec * numElements;
+            // std::cout<<firstVec<<first<<first + numElements<<stride<<std::endl;
+            return std::make_tuple(first, extentVec.min(first + numElements), stride);
         }
     };
 
@@ -239,12 +252,14 @@ namespace alpaka
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            return const_iterator(m_stride, m_extent + m_offset, m_first + m_offset);
+            auto [first, extent, stride] = T_MapperFn::adjust(m_first, m_extent, m_stride);
+            return const_iterator(stride, extent + m_offset, first + m_offset);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            return const_iterator_end(m_extent[0] + m_offset[0]);
+            auto [_, extent, __] = T_MapperFn::adjust(m_first, m_extent, m_stride);
+            return const_iterator_end(extent[0] + m_offset[0]);
         }
 
     private:
@@ -342,6 +357,28 @@ namespace alpaka
     {
     };
 
+    struct AutoIndexMapping
+    {
+        template<typename T_Acc, typename T_Api>
+        struct Op
+        {
+            auto operator()(T_Acc const&, T_Api const&) const
+            {
+                return Stride{};
+            }
+        };
+    };
+
+    template<typename T_Acc>
+    requires exec::traits::isSeqMapping_v<decltype(std::declval<T_Acc>()[object::exec])>
+    struct AutoIndexMapping::Op<T_Acc, api::Cpu>
+    {
+        auto operator()(T_Acc const&, api::Cpu const&) const
+        {
+            return Contigious{};
+        }
+    };
+
     struct MakeIterator
     {
         template<typename T_IdxMapping, typename T_StartIdxFn, typename T_ExtentFn, typename T_StrideFn>
@@ -354,7 +391,7 @@ namespace alpaka
                 if constexpr(std::is_same_v<T_IdxMapping, Auto>)
                 {
                     if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Stride, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
+                        return IndexContainer<Contigious, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
                     else
                         return IndexContainer<Stride, IdxVecType, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc};
                 }
@@ -366,7 +403,7 @@ namespace alpaka
                 if constexpr(std::is_same_v<T_IdxMapping, Auto>)
                 {
                     if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
+                        return IndexContainer<Contigious, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
                     else
                         return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{acc, extent};
                 }
@@ -378,7 +415,7 @@ namespace alpaka
                 if constexpr(std::is_same_v<T_IdxMapping, Auto>)
                 {
                     if constexpr(std::is_same_v<api::Cpu, decltype(acc[object::api])>)
-                        return IndexContainer<Stride, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
+                        return IndexContainer<Contigious, T_IdxVec, T_StartIdxFn, T_ExtentFn, T_StrideFn>{
                             acc,
                             extent,
                             offset};
@@ -397,8 +434,11 @@ namespace alpaka
         Create<T_IdxMapping, idxTrait::GlobalThreadIdx, idxTrait::DataExtent, idxTrait::GlobalNumThreads>;
 
     template<typename T_IdxMapping = Auto>
-    using DataBlockIter = MakeIterator::
-        Create<T_IdxMapping, idxTrait::GlobalThreadBlockIdx, idxTrait::DataFrameCount, idxTrait::GlobalNumThreadBlocks>;
+    using DataBlockIter = MakeIterator::Create<
+        T_IdxMapping,
+        idxTrait::GlobalThreadBlockIdx,
+        idxTrait::DataFrameCount,
+        idxTrait::GlobalNumThreadBlocks>;
 
     template<typename T_IdxMapping = Auto>
     using DataFrameIter = MakeIterator::

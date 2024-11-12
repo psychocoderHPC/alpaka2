@@ -103,7 +103,8 @@ namespace alpaka
                         auto moreLayer = Dict{
                             DictEntry(frame::count, dataBlocking.m_numBlocks),
                             DictEntry(frame::extent, dataBlocking.m_blockSize),
-                            DictEntry(object::api, api::cpu)};
+                            DictEntry(object::api, api::cpu),
+                            DictEntry(object::exec, executor)};
                         Acc acc = makeAcc(executor, threadBlocking);
                         acc(std::move(kernel), moreLayer);
                     });
