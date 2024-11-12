@@ -9,9 +9,9 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <ranges>
 #include <sstream>
 #include <type_traits>
-#include <ranges>
 
 namespace alpaka
 {
@@ -629,7 +629,28 @@ namespace alpaka
     }
 
     /** @} */
-} // namespace alpaka
+
+
+    template<typename T>
+    struct IsVector : std::false_type
+    {
+    };
+
+    template<typename T_Type, uint32_t T_dim, typename T_Storage>
+    struct IsVector<Vec<T_Type, T_dim, T_Storage>> : std::true_type
+    {
+    };
+
+    template<typename T>
+    constexpr bool isVector_v = IsVector<T>::value;
+
+    namespace concepts
+    {
+        template<typename T>
+        concept Vector = isVector_v<T>;
+    } // namespace concepts
+
+}; // namespace alpaka
 
 namespace std
 {
