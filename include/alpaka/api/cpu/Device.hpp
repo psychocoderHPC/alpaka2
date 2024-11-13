@@ -199,8 +199,7 @@ namespace alpaka
                 }
                 else
                 {
-                    auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(2);
-                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
+                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, dataBlocking.m_numThreads};
                 }
             }
         };
