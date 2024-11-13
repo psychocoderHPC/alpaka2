@@ -250,3 +250,61 @@ TEMPLATE_LIST_TEST_CASE("iota3D", "", TestApis)
 #    endif
 }
 #endif
+
+
+template<typename T_Selection>
+struct IotaKernelNDSelection
+{
+    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
+    {
+        for(auto i : makeIter(acc, iter::overDataRange)[T_Selection{}])
+        {
+            out[i] = i;
+        }
+    }
+};
+
+TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
+{
+    auto cfg = TestType::makeDict();
+    auto api = cfg[object::api];
+    auto exec = cfg[object::exec];
+
+    std::cout << api.getName() << std::endl;
+
+    Platform platform = makePlatform(api);
+    Device device = platform.makeDevice(0);
+
+    std::cout << getName(platform) << " " << device.getName() << std::endl;
+
+    Queue queue = device.makeQueue();
+    constexpr Vec extent = Vec{4u, 8u, 16u};
+    std::cout << "exec=" << core::demangledName(exec) << std::endl;
+    auto dBuff = alpaka::alloc<Vec<uint32_t, 3u>>(device, extent);
+
+    Platform cpuPlatform = makePlatform(api::cpu);
+    Device cpuDevice = cpuPlatform.makeDevice(0);
+    auto hBuff = alpaka::alloc<Vec<uint32_t, 3u>>(cpuDevice, extent);
+
+    wait(queue);
+    constexpr auto frameSize = Vec{2u, 4u, 8u};
+
+    auto selection = CVec<uint32_t, 1, 2, 0>{};
+
+    alpaka::enqueue(
+        queue,
+        exec,
+        alpaka::DataBlocking{extent / frameSize, frameSize},
+        KernelBundle{IotaKernelNDSelection<ALPAKA_TYPE(selection)>{}, dBuff.getMdSpan(), extent});
+    alpaka::memcpy(queue, hBuff, dBuff);
+    wait(queue);
+#if 1
+    auto mdSpan = hBuff.getMdSpan();
+    for(uint32_t k = 0u; k < extent.z(); ++k)
+        for(uint32_t j = 0u; j < extent.y(); ++j)
+            for(uint32_t i = 0u; i < extent.x(); ++i)
+            {
+                CHECK(Vec{k, j, i} == mdSpan[Vec{k, j, i}]);
+            }
+#endif
+}

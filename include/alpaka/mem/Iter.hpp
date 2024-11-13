@@ -106,7 +106,10 @@ namespace alpaka
         concept IdxMapping = isIdxMapping_v<T>;
     } // namespace concepts
 
-    template<typename T_IdxVecType, typename T_IdxMapperFn>
+    template<
+        typename T_IdxVecType,
+        typename T_IdxMapperFn,
+        typename T_CSelect = decltype(iotaCVec<typename T_IdxVecType::type, T_IdxVecType::dim()>())>
     class IndexContainer : private T_IdxMapperFn
     {
         void _()
@@ -150,7 +153,8 @@ namespace alpaka
                 static_assert(std::forward_iterator<const_iterator_end>);
             }
 
-            ALPAKA_FN_ACC inline const_iterator_end(IdxType extentSlowDim) : m_extentSlowDim{extentSlowDim}
+            ALPAKA_FN_ACC inline const_iterator_end(IdxVecType const& extent)
+                : m_extentSlowDim{extent.select(T_CSelect{})[0]}
             {
             }
 
@@ -172,7 +176,7 @@ namespace alpaka
 
             constexpr bool operator==(const_iterator const& other) const
             {
-                return (m_extentSlowDim <= other.m_extent[0]);
+                return (m_extentSlowDim <= other.slowCurrent);
             }
 
             constexpr bool operator!=(const_iterator const& other) const
@@ -189,27 +193,35 @@ namespace alpaka
             friend class IndexContainer;
             friend class const_iterator_end;
 
+            static constexpr uint32_t iterDim = T_CSelect::dim();
+            using IterIdxVecType = Vec<IdxType, iterDim>;
+
             void _()
             {
                 static_assert(std::forward_iterator<const_iterator>);
             }
 
             constexpr const_iterator(IdxVecType stride, IdxVecType extent, IdxVecType first)
-                : m_stride{stride}
-                , m_extent{extent}
-                , m_current{first}
-                , m_first(first)
+                : m_current{first}
+                , m_stride{stride.select(T_CSelect{})}
+                , m_extent{extent.select(T_CSelect{})}
+                , m_first(first.select(T_CSelect{}))
             {
                 // range check required for 1 dimensional iterators
-                if constexpr(dim > 1u)
+                if constexpr(iterDim > 1u)
                 {
                     // invalidate current if one dimension is out of range.
                     bool isIndexValid = true;
-                    for(uint32_t d = 1u; d < dim; ++d)
+                    for(uint32_t d = 1u; d < iterDim; ++d)
                         isIndexValid = isIndexValid && (first[d] < extent[d]);
                     if(!isIndexValid)
-                        m_current[0] = m_extent[0];
+                        m_current[T_CSelect{}[0]] = m_extent[0];
                 }
+            }
+
+            ALPAKA_FN_ACC constexpr IdxType slowCurrent() const
+            {
+                return m_current[T_CSelect{}[0]];
             }
 
         public:
@@ -221,15 +233,15 @@ namespace alpaka
             // pre-increment the iterator
             ALPAKA_FN_ACC inline const_iterator& operator++()
             {
-                for(uint32_t d = 0; d < dim; ++d)
+                for(uint32_t d = 0; d < iterDim; ++d)
                 {
-                    uint32_t const idx = dim - 1u - d;
-                    m_current[idx] += m_stride[idx];
-                    if constexpr(dim != 1u)
+                    uint32_t const idx = iterDim - 1u - d;
+                    m_current[T_CSelect{}[idx]] += m_stride[idx];
+                    if constexpr(iterDim != 1u)
                     {
-                        if(idx >= 1u && m_current[idx] >= m_extent[idx])
+                        if(idx >= 1u && m_current[T_CSelect{}[idx]] >= m_extent[idx])
                         {
-                            m_current[idx] = m_first[idx];
+                            m_current[T_CSelect{}[idx]] = m_first[idx];
                         }
                         else
                             break;
@@ -258,7 +270,7 @@ namespace alpaka
 
             constexpr bool operator==(const_iterator_end const& other) const
             {
-                return (m_current[0] >= *other);
+                return (slowCurrent() >= *other);
             }
 
             constexpr bool operator!=(const_iterator_end const& other) const
@@ -267,12 +279,12 @@ namespace alpaka
             }
 
         private:
-            // non-const to support iterator copy and assignment
-            IdxVecType m_stride;
-            IdxVecType m_extent;
             // modified by the pre/post-increment operator
             IdxVecType m_current;
-            iter::detail::ReducedVector<IdxType, dim> m_first;
+            // non-const to support iterator copy and assignment
+            IterIdxVecType m_stride;
+            IterIdxVecType m_extent;
+            iter::detail::ReducedVector<IdxType, iterDim> m_first;
         };
 
         ALPAKA_FN_ACC inline const_iterator begin() const
@@ -284,7 +296,18 @@ namespace alpaka
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
             auto [_, extent, __] = this->adjust(m_first, m_extent, m_stride);
-            return const_iterator_end(extent[0] + m_offset[0]);
+            return const_iterator_end(extent + m_offset);
+        }
+
+        template<typename T, T... T_values>
+        ALPAKA_FN_HOST_ACC constexpr auto operator[](Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const iterDir) const
+        {
+            return IndexContainer<T_IdxVecType, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
+                m_first,
+                m_extent,
+                m_stride,
+                m_offset,
+                T_IdxMapperFn{});
         }
 
     private:
