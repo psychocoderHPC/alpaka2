@@ -7,6 +7,7 @@
 #include "alpaka/core/common.hpp"
 
 #include <array>
+#include <concepts>
 #include <cstdint>
 #include <iostream>
 #include <ranges>
@@ -33,6 +34,37 @@ namespace alpaka
         {
         }
     };
+
+    namespace detail
+    {
+        template<typename T, T... T_values>
+        struct CVec
+        {
+            using Values = std::tuple<std::integral_constant<T, T_values>...>;
+
+            static consteval uint32_t dim()
+            {
+                return std::tuple_size_v<Values>;
+            }
+
+            constexpr T operator[](std::integral auto const idx) const
+            {
+                T result;
+                using IdxType = ALPAKA_TYPE(idx);
+                std::apply(
+                    [&result, idx](auto const&... v)
+                    {
+                        IdxType i{0u};
+                        /**
+                         *  sizeof() is required to return a bool which is deferred in the evaluation
+                         */
+                        (((idx == i++) && (result = ALPAKA_TYPE(v)::value, sizeof(IdxType))), ...);
+                    },
+                    Values{});
+                return result;
+            }
+        };
+    } // namespace detail
 
     template<typename T_Type, uint32_t T_dim, typename T_Storage = ArrayStorage<T_Type, T_dim>>
     struct Vec;
@@ -192,12 +224,12 @@ namespace alpaka
 
         /** @} */
 
-        constexpr type& operator[](uint32_t const idx)
+        constexpr decltype(auto) operator[](uint32_t const idx)
         {
             return Storage::operator[](idx);
         }
 
-        constexpr type const& operator[](uint32_t const idx) const
+        constexpr decltype(auto) operator[](uint32_t const idx) const
         {
             return Storage::operator[](idx);
         }
@@ -406,6 +438,9 @@ namespace alpaka
             return stream.str();
         }
     };
+
+    template<typename T, T... T_values>
+    using CVec = Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>>;
 
     template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
     constexpr auto get(Vec<T_Type, T_dim, T_Storage> const& v)

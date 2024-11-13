@@ -29,6 +29,13 @@ struct CompileTimeKernel1D
         static_assert(vec.x() == 3);
         static_assert(vec == Vec{3});
 
+        // compile time vector
+        auto detailCVec = detail::CVec<int, 23>{};
+        static_assert(detailCVec[0] == 23);
+
+        auto cvec = CVec<int, 23>{};
+        static_assert(cvec[0] == 23);
+
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;
@@ -90,6 +97,17 @@ struct CompileTimeKernel2D
         static_assert(linearize(Vec{3, 2}, Vec{0, 1}) == 1);
         static_assert(linearize(Vec{3, 2}, Vec{1, 0}) == 2);
         static_assert(linearize(Vec{3, 2}, Vec{1, 1}) == 3);
+
+        // compile time vector
+        auto detailCVec = detail::CVec<int, 3, 2>{};
+        static_assert(detailCVec[0] == 3);
+        static_assert(detailCVec[1] == 2);
+
+        auto cvec = CVec<int, 3, 2>{};
+        static_assert(cvec[0] == 3);
+        static_assert(cvec[1] == 2);
+
+        static_assert(linearize(cvec, Vec{0, 1}) == 1);
 
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
@@ -158,6 +176,19 @@ struct CompileTimeKernel3D
         static_assert(linearize(Vec{5, 3, 2}, Vec{0, 1, 0}) == 2);
         static_assert(linearize(Vec{5, 3, 2}, Vec{0, 1, 1}) == 3);
         static_assert(linearize(Vec{5, 3, 2}, Vec{1, 0, 0}) == 6);
+
+        // compile time vector
+        auto detailCVec = detail::CVec<int, 5, 3, 2>{};
+        static_assert(detailCVec[0] == 5);
+        static_assert(detailCVec[1] == 3);
+        static_assert(detailCVec[2] == 2);
+
+        auto cvec = CVec<int, 5, 3, 2>{};
+        static_assert(cvec[0] == 5);
+        static_assert(cvec[1] == 3);
+        static_assert(cvec[2] == 2);
+
+        static_assert(linearize(cvec, Vec{0, 0, 1}) == 1);
     }
 };
 
