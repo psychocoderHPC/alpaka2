@@ -41,6 +41,7 @@ namespace alpaka
         struct CVec
         {
             using Values = std::tuple<std::integral_constant<T, T_values>...>;
+            using type = T;
 
             static consteval uint32_t dim()
             {
@@ -436,6 +437,13 @@ namespace alpaka
                 stream << separator << (*this)[i];
             stream << locale_enclosing_end;
             return stream.str();
+        }
+
+        template<typename T, T... T_values>
+        constexpr auto select(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v) const
+        {
+            using InType = ALPAKA_TYPE(v);
+            return Vec<T_Type, InType::dim()>{(*this)[T_values]...};
         }
     };
 
