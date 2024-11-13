@@ -36,6 +36,10 @@ struct CompileTimeKernel1D
         auto cvec = CVec<int, 23>{};
         static_assert(cvec[0] == 23);
 
+        auto selectVec = CVec<int, 0>{};
+        constexpr auto selectRes = vec.select(selectVec);
+        static_assert(selectRes == Vec{3});
+
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;
@@ -108,6 +112,10 @@ struct CompileTimeKernel2D
         static_assert(cvec[1] == 2);
 
         static_assert(linearize(cvec, Vec{0, 1}) == 1);
+
+        auto selectVec = CVec<int, 1, 0>{};
+        constexpr auto selectRes = vec.select(selectVec);
+        static_assert(selectRes == Vec{7, 3});
 
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
@@ -189,6 +197,10 @@ struct CompileTimeKernel3D
         static_assert(cvec[2] == 2);
 
         static_assert(linearize(cvec, Vec{0, 0, 1}) == 1);
+
+        auto selectVec = CVec<int, 1, 2, 0>{};
+        constexpr auto selectRes = vec.select(selectVec);
+        static_assert(selectRes == Vec{7, 5, 3});
     }
 };
 
