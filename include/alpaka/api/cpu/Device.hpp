@@ -99,7 +99,7 @@ namespace alpaka
         struct IsMappingSupportedBy::Op<exec::CpuSerial, cpu::Device<T_Platform>> : std::true_type
         {
         };
-
+#if ALPAKA_OMP
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<exec::CpuOmpBlocksAndThreads, cpu::Device<T_Platform>> : std::true_type
         {
@@ -109,6 +109,7 @@ namespace alpaka
         struct IsMappingSupportedBy::Op<exec::CpuOmpBlocks, cpu::Device<T_Platform>> : std::true_type
         {
         };
+#endif
     } // namespace trait
 
     namespace internal

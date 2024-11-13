@@ -300,7 +300,8 @@ namespace alpaka
         }
 
         template<typename T, T... T_values>
-        ALPAKA_FN_HOST_ACC constexpr auto operator[](Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const iterDir) const
+        ALPAKA_FN_HOST_ACC constexpr auto operator[](
+            Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const iterDir) const
         {
             return IndexContainer<T_IdxVecType, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
                 m_first,
