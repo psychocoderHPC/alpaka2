@@ -199,7 +199,9 @@ namespace alpaka
                 }
                 else
                 {
-                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, dataBlocking.m_numThreads};
+                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{
+                        dataBlocking.m_numBlocks,
+                        dataBlocking.m_numThreads};
                 }
             }
         };

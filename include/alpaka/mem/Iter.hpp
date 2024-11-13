@@ -413,9 +413,15 @@ namespace alpaka
 
         struct MakeIter
         {
+            /* create iterator
+             *
+             * ALPAKA_FN_HOST_ACC is required for cuda else __host__ function called from __host__ __device__ warning
+             * is popping up and generated code is wrong.
+             */
             template<typename T_Acc, typename T_RangeOps, typename T_IdxMapping>
             struct Op
             {
+                ALPAKA_NO_HOST_ACC_WARNING
                 ALPAKA_FN_HOST_ACC constexpr auto operator()(
                     T_Acc const& acc,
                     T_RangeOps rangeOps,
@@ -472,6 +478,11 @@ namespace alpaka
         };
     } // namespace internal
 
+    /**
+     * ALPAKA_FN_HOST_ACC is required for cuda else __host__ function called from __host__ __device__ warning
+     * is popping up and generated code is wrong.
+     * @{
+     */
     template<concepts::IdxMapping T_IdxMapping = Optimize>
     ALPAKA_FN_HOST_ACC constexpr auto makeIter(
         auto const& acc,
@@ -513,6 +524,8 @@ namespace alpaka
             offset,
             extent);
     }
+
+    /** @} */
 
     namespace iter
     {
