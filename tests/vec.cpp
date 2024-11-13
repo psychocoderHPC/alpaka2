@@ -117,6 +117,9 @@ struct CompileTimeKernel2D
         constexpr auto selectRes = vec.select(selectVec);
         static_assert(selectRes == Vec{7, 3});
 
+        constexpr auto iota2 = iotaCVec<int, 2u>();
+        static_assert(iota2 == Vec{0, 1});
+
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;
@@ -201,6 +204,9 @@ struct CompileTimeKernel3D
         auto selectVec = CVec<int, 1, 2, 0>{};
         constexpr auto selectRes = vec.select(selectVec);
         static_assert(selectRes == Vec{7, 5, 3});
+
+        constexpr auto iota3 = iotaCVec<int, 3u>();
+        static_assert(iota3 == Vec{0, 1, 2});
     }
 };
 
