@@ -450,6 +450,19 @@ namespace alpaka
     template<typename T, T... T_values>
     using CVec = Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>>;
 
+    template<typename T, size_t... T_idx>
+    constexpr auto iotaCVecDo(std::index_sequence<T_idx...>)
+    {
+        return CVec<T, T{T_idx}...>{};
+    }
+
+    template<typename T, uint32_t T_dim>
+    constexpr auto iotaCVec()
+    {
+        using IotaSeq = std::make_integer_sequence<size_t, T_dim>;
+        return iotaCVecDo<T>(IotaSeq{});
+    }
+
     template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
     constexpr auto get(Vec<T_Type, T_dim, T_Storage> const& v)
     {
