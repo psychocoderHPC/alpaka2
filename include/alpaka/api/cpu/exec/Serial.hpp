@@ -8,6 +8,7 @@
 #include "alpaka/Blocking.hpp"
 #include "alpaka/Tags.hpp"
 #include "alpaka/Vec.hpp"
+#include "alpaka/api/cpu/IdxLayer.hpp"
 #include "alpaka/api/cpu/block/mem/SingleThreadStaticShared.hpp"
 #include "alpaka/api/cpu/block/sync/NoOp.hpp"
 #include "alpaka/core/Dict.hpp"

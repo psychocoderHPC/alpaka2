@@ -89,7 +89,6 @@ namespace alpaka
                             }
                             blockSharedMem.reset();
                         }
-#endif
                     }
                 }
             }
@@ -103,3 +102,5 @@ namespace alpaka
         return cpu::OmpThreads(threadBlocking);
     }
 } // namespace alpaka
+
+#endif

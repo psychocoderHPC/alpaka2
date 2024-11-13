@@ -195,7 +195,7 @@ add_custom_target("alpakaIde" SOURCES ${alpakaSources})
 source_group(TREE "${CMAKE_CURRENT_LIST_DIR}/include/alpaka" FILES ${alpakaSources})
 
 option(alpaka_TESTING "Enable/Disable testing" OFF)
-option(alpaka_BENCHMARKs "Enable/Disable benchmarks" OFF)
+option(alpaka_BENCHMARK "Enable/Disable benchmarks" OFF)
 option(alpaka_EXAMPLES "Enable/Disable benchmarks" OFF)
 include(CTest)
 
