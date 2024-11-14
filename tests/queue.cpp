@@ -257,7 +257,7 @@ struct IotaKernelNDSelection
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numFrames) const
     {
-        for(auto frameIdx : makeIter(acc, iter::overDataFrames, numFrames, Stride{})[T_Selection{}])
+        for(auto frameIdx : makeIter(acc, iter::overDataFrames, numFrames)[T_Selection{}])
         {
             for(auto elemIdx : makeIter(acc, iter::withinDataFrame))
                 if(linearize(acc[frame::extent], elemIdx) == 1u)
@@ -284,7 +284,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     Queue queue = device.makeQueue();
     constexpr Vec numBlocks = Vec{4u, 8u, 16u};
     auto numBlocksReduced = numBlocks;
-    numBlocksReduced.ref(CVec<uint32_t, 0u, 1u>{}) = 1u;
+    numBlocksReduced.ref(CVec<uint32_t, 2u, 1u>{}) = 1u;
     std::cout << numBlocksReduced << std::endl;
     std::cout << "exec=" << core::demangledName(exec) << std::endl;
     auto dBuff = alpaka::alloc<Vec<uint32_t, 3u>>(device, numBlocks);
@@ -296,7 +296,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     wait(queue);
     constexpr auto frameSize = Vec{1u, 1u, 2u};
 
-    auto selection = CVec<uint32_t, 0u, 1u>{};
+    auto selection = CVec<uint32_t, 2u, 1u>{};
 
     alpaka::enqueue(
         queue,

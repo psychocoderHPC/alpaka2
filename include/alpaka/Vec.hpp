@@ -25,6 +25,7 @@ namespace alpaka
     template<typename T_Type, uint32_t T_dim>
     struct ArrayStorage : protected std::array<T_Type, T_dim>
     {
+        using type = T_Type;
         using BaseType = std::array<T_Type, T_dim>;
         using BaseType::operator[];
 
@@ -214,15 +215,34 @@ namespace alpaka
     constexpr Vec& operator op(Vec<T_Type, T_dim, T_OtherStorage> const& rhs)                                         \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
-            unWrapp((*this)[i]) op rhs[i];                                                                            \
+        {                                                                                                             \
+            if constexpr(requires { unWrapp((*this)[i]) op rhs[i]; })                                                 \
+            {                                                                                                         \
+                unWrapp((*this)[i]) op rhs[i];                                                                        \
+            }                                                                                                         \
+            else                                                                                                      \
+            {                                                                                                         \
+                (*this)[i] op rhs[i];                                                                                 \
+            }                                                                                                         \
+        }                                                                                                             \
         return *this;                                                                                                 \
     }                                                                                                                 \
     constexpr Vec& operator op(T_Type const value)                                                                    \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
-            unWrapp((*this)[i]) op value;                                                                             \
+        {                                                                                                             \
+            if constexpr(requires { unWrapp((*this)[i]) op value; })                                                  \
+            {                                                                                                         \
+                unWrapp((*this)[i]) op value;                                                                         \
+            }                                                                                                         \
+            else                                                                                                      \
+            {                                                                                                         \
+                (*this)[i] op value;                                                                                  \
+            }                                                                                                         \
+        }                                                                                                             \
         return *this;                                                                                                 \
     }
+
 
         ALPAKA_VECTOR_ASSIGN_OP(+=)
         ALPAKA_VECTOR_ASSIGN_OP(-=)
