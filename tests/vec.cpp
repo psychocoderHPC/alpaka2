@@ -209,6 +209,13 @@ struct CompileTimeKernel3D
         constexpr auto selectRes2 = vec.select(selectVec2);
         static_assert(selectRes2 == Vec{7, 5});
 
+#if 0
+// add this to runtime etst as soon we add them back
+         auto vecRT = Vec{3, 7, 5};
+        auto ref = vecRT.ref(selectVec2);
+        ref *= 2u;
+        CHECK(ref == Vec{14, 10});
+#endif
         constexpr auto iota3 = iotaCVec<int, 3u>();
         static_assert(iota3 == Vec{0, 1, 2});
     }

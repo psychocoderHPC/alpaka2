@@ -255,11 +255,15 @@ TEMPLATE_LIST_TEST_CASE("iota3D", "", TestApis)
 template<typename T_Selection>
 struct IotaKernelNDSelection
 {
-    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
+    ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numFrames) const
     {
-        for(auto i : makeIter(acc, iter::overDataRange)[T_Selection{}])
+        for(auto frameIdx : makeIter(acc, iter::overDataFrames, numFrames, Stride{})[T_Selection{}])
         {
-            out[i] = i;
+            for(auto elemIdx : makeIter(acc, iter::withinDataFrame))
+                if(linearize(acc[frame::extent], elemIdx) == 1u)
+                {
+                    out[frameIdx] = frameIdx;
+                }
         }
     }
 };
@@ -278,31 +282,34 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     std::cout << getName(platform) << " " << device.getName() << std::endl;
 
     Queue queue = device.makeQueue();
-    constexpr Vec extent = Vec{4u, 8u, 16u};
+    constexpr Vec numBlocks = Vec{4u, 8u, 16u};
+    auto numBlocksReduced = numBlocks;
+    numBlocksReduced.ref(CVec<uint32_t, 0u, 1u>{}) = 1u;
+    std::cout << numBlocksReduced << std::endl;
     std::cout << "exec=" << core::demangledName(exec) << std::endl;
-    auto dBuff = alpaka::alloc<Vec<uint32_t, 3u>>(device, extent);
+    auto dBuff = alpaka::alloc<Vec<uint32_t, 3u>>(device, numBlocks);
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = alpaka::alloc<Vec<uint32_t, 3u>>(cpuDevice, extent);
+    auto hBuff = alpaka::alloc<Vec<uint32_t, 3u>>(cpuDevice, numBlocks);
 
     wait(queue);
-    constexpr auto frameSize = Vec{2u, 4u, 8u};
+    constexpr auto frameSize = Vec{1u, 1u, 2u};
 
-    auto selection = CVec<uint32_t, 1, 2, 0>{};
+    auto selection = CVec<uint32_t, 0u, 1u>{};
 
     alpaka::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{extent / frameSize, frameSize},
-        KernelBundle{IotaKernelNDSelection<ALPAKA_TYPE(selection)>{}, dBuff.getMdSpan(), extent});
+        alpaka::DataBlocking{numBlocksReduced, frameSize},
+        KernelBundle{IotaKernelNDSelection<ALPAKA_TYPE(selection)>{}, dBuff.getMdSpan(), numBlocks});
     alpaka::memcpy(queue, hBuff, dBuff);
     wait(queue);
 #if 1
     auto mdSpan = hBuff.getMdSpan();
-    for(uint32_t k = 0u; k < extent.z(); ++k)
-        for(uint32_t j = 0u; j < extent.y(); ++j)
-            for(uint32_t i = 0u; i < extent.x(); ++i)
+    for(uint32_t k = 0u; k < numBlocks.z(); ++k)
+        for(uint32_t j = 0u; j < numBlocks.y(); ++j)
+            for(uint32_t i = 0u; i < numBlocks.x(); ++i)
             {
                 CHECK(Vec{k, j, i} == mdSpan[Vec{k, j, i}]);
             }
