@@ -33,6 +33,10 @@ namespace alpaka
         constexpr ArrayStorage(T_Args&&... args) : BaseType{std::forward<T_Args>(args)...}
         {
         }
+
+        constexpr ArrayStorage(std::array<T_Type, T_dim> const& data) : BaseType{data}
+        {
+        }
     };
 
     namespace detail
@@ -135,6 +139,10 @@ namespace alpaka
 
         constexpr Vec(Vec const& other) = default;
 
+        constexpr Vec(T_Storage const& other) : T_Storage{other}
+        {
+        }
+
         /** constructor allows changing the storage policy
          */
         template<typename T_OtherStorage>
@@ -206,15 +214,16 @@ namespace alpaka
     constexpr Vec& operator op(Vec<T_Type, T_dim, T_OtherStorage> const& rhs)                                         \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
-            (*this)[i] op rhs[i];                                                                                     \
+            unWrapp((*this)[i]) op rhs[i];                                                                            \
         return *this;                                                                                                 \
     }                                                                                                                 \
     constexpr Vec& operator op(T_Type const value)                                                                    \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
-            (*this)[i] op value;                                                                                      \
+            unWrapp((*this)[i]) op value;                                                                             \
         return *this;                                                                                                 \
     }
+
         ALPAKA_VECTOR_ASSIGN_OP(+=)
         ALPAKA_VECTOR_ASSIGN_OP(-=)
         ALPAKA_VECTOR_ASSIGN_OP(/=)
@@ -445,6 +454,22 @@ namespace alpaka
             using InType = ALPAKA_TYPE(v);
             return Vec<T_Type, InType::dim()>{(*this)[T_values]...};
         }
+
+        template<typename T, T... T_values>
+        constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v)
+        {
+            using InType = ALPAKA_TYPE(v);
+            auto array = std::array{std::ref((*this)[T_values])...};
+            return Vec<T_Type, InType::dim(), ALPAKA_TYPE(array)>{array};
+        };
+
+        template<typename T, T... T_values>
+        constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v) const
+        {
+            using InType = ALPAKA_TYPE(v);
+            auto array = std::array{std::ref((*this)[T_values])...};
+            return Vec<T_Type, InType::dim(), ALPAKA_TYPE(array)>{array};
+        };
     };
 
     template<typename T, T... T_values>
