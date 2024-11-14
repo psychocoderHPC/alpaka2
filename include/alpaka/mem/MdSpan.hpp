@@ -57,6 +57,10 @@ namespace alpaka
     template<typename T>
     struct MdSpan : T
     {
+        constexpr MdSpan(T const& base) : T{base}
+        {
+        }
+
         template<typename T_Type, uint32_t T_dim>
         constexpr decltype(auto) operator[](Vec<T_Type, T_dim> const& vec) const
         {

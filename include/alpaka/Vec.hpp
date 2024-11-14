@@ -64,7 +64,7 @@ namespace alpaka
                         /**
                          *  sizeof() is required to return a bool which is deferred in the evaluation
                          */
-                        (((idx == i++) && (result = ALPAKA_TYPE(v)::value, sizeof(IdxType))), ...);
+                        (void) (((idx == i++) && (result = ALPAKA_TYPE(v)::value, sizeof(IdxType))) || ...);
                     },
                     Values{});
                 return result;
