@@ -119,7 +119,7 @@ namespace alpaka
         {
             auto operator()(cpu::Device<T_Platform>& device, T_Extents const& extents) const
             {
-                constexpr auto dim = extents.dim();
+                constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
                     auto* ptr = new T_Type[extents.x()];

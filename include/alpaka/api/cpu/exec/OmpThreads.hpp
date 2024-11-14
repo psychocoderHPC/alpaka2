@@ -49,7 +49,7 @@ namespace alpaka
                     {
                         // affects all new parallel regions started by this thread
                         ::omp_set_dynamic(0);
-                        ::omp_set_nested(2);
+                        ::omp_set_max_active_levels(2);
                     }
 #    pragma omp parallel
                     {
