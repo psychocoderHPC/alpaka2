@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/Tags.hpp"
+#include "alpaka/core/PP.hpp"
 #include "alpaka/core/common.hpp"
 
 #include <cstdint>
@@ -310,6 +311,41 @@ namespace alpaka
                 m_offset,
                 T_IdxMapperFn{});
         }
+
+        /** assign operator
+         * @{
+         */
+#define ALPAKA_ITER_ASSIGN_OP(op)                                                                                     \
+    template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
+    ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator op(T_OpType const& rhs)                                     \
+    {                                                                                                                 \
+        m_offset op rhs;                                                                                              \
+        return *this;                                                                                                 \
+    }
+
+        ALPAKA_ITER_ASSIGN_OP(+=)
+        ALPAKA_ITER_ASSIGN_OP(-=)
+#undef ALPAKA_ITER_ASSIGN_OP
+
+        template<concepts::TypeOrVector<IdxType> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator%=(T_OpType const& rhs)
+        {
+            m_stride *= rhs;
+            return *this;
+        }
+
+#define ALPAKA_ITER_BINARY_OP(op)                                                                                     \
+    template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
+    ALPAKA_FN_HOST_ACC constexpr IndexContainer operator op(T_OpType const& rhs) const                                \
+    {                                                                                                                 \
+        auto idxContainer = (*this);                                                                                  \
+        idxContainer.m_offset ALPAKA_PP_CAT(op, =) rhs;                                                               \
+        return idxContainer;                                                                                          \
+    }
+
+        ALPAKA_ITER_BINARY_OP(+)
+
+#undef ALPAKA_ITER_BINARY_OP
 
     private:
         IdxVecType m_extent;
