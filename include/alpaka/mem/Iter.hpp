@@ -315,16 +315,16 @@ namespace alpaka
         /** assign operator
          * @{
          */
-#define ALPAKA_ITER_ASSIGN_OP(op)                                                                                     \
+#define ALPAKA_ITER_ASSIGN_OP(interfaceOp, executedOp)                                                                \
     template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
-    ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator op(T_OpType const& rhs)                                     \
+    ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator interfaceOp(T_OpType const& rhs)                            \
     {                                                                                                                 \
-        m_offset op rhs;                                                                                              \
+        m_offset executedOp rhs;                                                                                      \
         return *this;                                                                                                 \
     }
 
-        ALPAKA_ITER_ASSIGN_OP(+=)
-        ALPAKA_ITER_ASSIGN_OP(-=)
+        ALPAKA_ITER_ASSIGN_OP(>>=, +=)
+        ALPAKA_ITER_ASSIGN_OP(<<=, -=)
 #undef ALPAKA_ITER_ASSIGN_OP
 
         template<concepts::TypeOrVector<IdxType> T_OpType>
@@ -334,18 +334,29 @@ namespace alpaka
             return *this;
         }
 
+        template<concepts::TypeOrVector<IdxType> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr IndexContainer operator%(T_OpType const& rhs)
+        {
+            auto idxContainer = (*this);
+            idxContainer.m_first *= rhs;
+            idxContainer.m_stride *= rhs;
+            return idxContainer;
+        }
+
 #define ALPAKA_ITER_BINARY_OP(op)                                                                                     \
     template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
-    ALPAKA_FN_HOST_ACC constexpr IndexContainer operator op(T_OpType const& rhs) const                                \
+    ALPAKA_FN_HOST_ACC constexpr IndexContainer operator op(T_OpType const& rhs)                                      \
     {                                                                                                                 \
         auto idxContainer = (*this);                                                                                  \
-        idxContainer.m_offset ALPAKA_PP_CAT(op, =) rhs;                                                               \
+        idxContainer ALPAKA_PP_CAT(op, =) rhs;                                                                        \
         return idxContainer;                                                                                          \
     }
 
-        ALPAKA_ITER_BINARY_OP(+)
+        ALPAKA_ITER_BINARY_OP(>>)
+        ALPAKA_ITER_BINARY_OP(<<)
 
 #undef ALPAKA_ITER_BINARY_OP
+
 
     private:
         IdxVecType m_extent;
