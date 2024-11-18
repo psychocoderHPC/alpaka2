@@ -5,8 +5,8 @@
 #pragma once
 
 #include "alpaka/Vec.hpp"
-#include "alpaka/core/common.hpp"
 #include "alpaka/core/PP.hpp"
+#include "alpaka/core/common.hpp"
 
 #include <cstdint>
 
