@@ -75,9 +75,9 @@ auto example(T_Cfg const& cfg) -> int
     alpaka::onHost::Device devHost = platformHost.makeDevice(0);
 
     // Allocate 3 host memory buffers
-    auto bufHostA = alloc<Data>(devHost, extent);
-    auto bufHostB = alloc<Data>(devHost, extent);
-    auto bufHostC = alloc<Data>(devHost, extent);
+    auto bufHostA = alpaka::onHost::alloc<Data>(devHost, extent);
+    auto bufHostB = alpaka::onHost::alloc<Data>(devHost, extent);
+    auto bufHostC = alpaka::onHost::alloc<Data>(devHost, extent);
 
     // C++14 random generator for uniformly distributed numbers in {1,..,42}
     std::random_device rd{};
@@ -92,14 +92,14 @@ auto example(T_Cfg const& cfg) -> int
     }
 
     // Allocate 3 buffers on the accelerator
-    auto bufAccA = alloc<Data>(devAcc, extent);
-    auto bufAccB = alloc<Data>(devAcc, extent);
-    auto bufAccC = alloc<Data>(devAcc, extent);
+    auto bufAccA = alpaka::onHost::alloc<Data>(devAcc, extent);
+    auto bufAccB = alpaka::onHost::alloc<Data>(devAcc, extent);
+    auto bufAccC = alpaka::onHost::alloc<Data>(devAcc, extent);
 
     // Copy Host -> Acc
-    memcpy(queue, bufAccA, bufHostA);
-    memcpy(queue, bufAccB, bufHostB);
-    memcpy(queue, bufAccC, bufHostC);
+    alpaka::onHost::memcpy(queue, bufAccA, bufHostA);
+    alpaka::onHost::memcpy(queue, bufAccB, bufHostB);
+    alpaka::onHost::memcpy(queue, bufAccC, bufHostC);
 
     // Instantiate the kernel function object
     VectorAddKernel kernel;
