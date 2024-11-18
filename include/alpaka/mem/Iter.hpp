@@ -51,24 +51,155 @@ namespace alpaka
         };
     } // namespace iter::detail
 
+    template<typename T_Begin, typename T_End, typename T_Stride>
+    struct IdxRange
+    {
+        using IdxVecType = T_Begin;
+        using IdxType = typename IdxVecType::type;
+
+        constexpr IdxRange(T_Begin const& begin, T_End const& end, T_Stride const& stride)
+            : m_begin(begin)
+            , m_end(end)
+            , m_stride(stride)
+        {
+        }
+
+        static consteval uint32_t dim()
+        {
+            return T_Begin::dim();
+        }
+
+        /** assign operator
+         * @{
+         */
+#define ALPAKA_ITER_ASSIGN_OP(interfaceOp, executedOp)                                                                \
+    template<concepts::TypeOrVector<typename T_Begin::type> T_OpType>                                                 \
+    ALPAKA_FN_HOST_ACC constexpr IdxRange& operator interfaceOp(T_OpType const& rhs)                                  \
+    {                                                                                                                 \
+        m_begin executedOp rhs;                                                                                       \
+        m_end executedOp rhs;                                                                                         \
+        return *this;                                                                                                 \
+    }
+
+        ALPAKA_ITER_ASSIGN_OP(>>=, +=)
+        ALPAKA_ITER_ASSIGN_OP(<<=, -=)
+#undef ALPAKA_ITER_ASSIGN_OP
+
+        template<concepts::TypeOrVector<typename T_Stride::type> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr IdxRange& operator%=(T_OpType const& rhs)
+        {
+            m_stride *= rhs;
+            return *this;
+        }
+
+        template<concepts::TypeOrVector<typename T_Stride::type> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr IdxRange operator%(T_OpType const& rhs)
+        {
+            auto idxContainer = (*this);
+            idxContainer.m_stride *= rhs;
+            return idxContainer;
+        }
+
+#define ALPAKA_ITER_BINARY_OP(op)                                                                                     \
+    template<concepts::TypeOrVector<typename T_Begin::type> T_OpType>                                                 \
+    ALPAKA_FN_HOST_ACC constexpr IdxRange operator op(T_OpType const& rhs)                                            \
+    {                                                                                                                 \
+        auto idxContainer = (*this);                                                                                  \
+        idxContainer ALPAKA_PP_CAT(op, =) rhs;                                                                        \
+        return idxContainer;                                                                                          \
+    }
+
+        ALPAKA_ITER_BINARY_OP(>>)
+        ALPAKA_ITER_BINARY_OP(<<)
+
+#undef ALPAKA_ITER_BINARY_OP
+
+        constexpr auto distance() const
+        {
+            return m_end - m_begin;
+        }
+
+        std::string toString(std::string const separator = ",", std::string const enclosings = "{}") const
+        {
+            std::string locale_enclosing_begin;
+            std::string locale_enclosing_end;
+            size_t enclosing_dim = enclosings.size();
+
+            if(enclosing_dim > 0)
+            {
+                /* % avoid out of memory access */
+                locale_enclosing_begin = enclosings[0 % enclosing_dim];
+                locale_enclosing_end = enclosings[1 % enclosing_dim];
+            }
+
+            std::stringstream stream;
+            stream << locale_enclosing_begin;
+            stream << m_begin << separator << m_end << separator << m_stride;
+            stream << locale_enclosing_end;
+            return stream.str();
+        }
+
+        T_Begin m_begin;
+        T_End m_end;
+        T_Stride m_stride;
+    };
+
+    template<typename T_ThreadIdx, typename T_ThreadCount>
+    struct ThreadSpace
+    {
+        constexpr ThreadSpace(T_ThreadIdx const& threadIdx, T_ThreadCount const& threadCount)
+            : m_threadIdx(threadIdx)
+            , m_threadCount(threadCount)
+        {
+        }
+
+        std::string toString(std::string const separator = ",", std::string const enclosings = "{}") const
+        {
+            std::string locale_enclosing_begin;
+            std::string locale_enclosing_end;
+            size_t enclosing_dim = enclosings.size();
+
+            if(enclosing_dim > 0)
+            {
+                /* % avoid out of memory access */
+                locale_enclosing_begin = enclosings[0 % enclosing_dim];
+                locale_enclosing_end = enclosings[1 % enclosing_dim];
+            }
+
+            std::stringstream stream;
+            stream << locale_enclosing_begin;
+            stream << m_threadIdx << separator << m_threadCount;
+            stream << locale_enclosing_end;
+            return stream.str();
+        }
+
+        T_ThreadIdx m_threadIdx;
+        T_ThreadCount m_threadCount;
+    };
+
     struct Stride
     {
-        static constexpr auto adjust(auto const& firstVec, auto const& extentVec, auto const& strideVec)
+        static constexpr auto adjust(
+            auto const& strideVec,
+            auto const& extentVec,
+            auto const& firstVec,
+            auto const& threadCount)
         {
-            // std::cout<<firstVec<<extentVec<<strideVec<<std::endl;
-            return std::make_tuple(firstVec, extentVec, strideVec);
+            return std::make_tuple(firstVec * strideVec, extentVec, threadCount * strideVec);
         }
     };
 
     struct Contigious
     {
-        static constexpr auto adjust(auto const& firstVec, auto const& extentVec, auto const& strideVec)
+        static constexpr auto adjust(
+            auto const& strideVec,
+            auto const& extentVec,
+            auto const& firstVec,
+            auto const& threadCount)
         {
-            auto numElements = core::divCeil(extentVec, strideVec);
-            auto stride = ALPAKA_TYPE(strideVec)::all(1u);
-            auto first = firstVec * numElements;
-            // std::cout<<firstVec<<first<<first + numElements<<stride<<std::endl;
-            return std::make_tuple(first, extentVec.min(first + numElements), stride);
+            auto numElements = core::divCeil(extentVec, threadCount * strideVec);
+            auto first = firstVec * numElements * strideVec;
+            return std::make_tuple(first, extentVec.min(first + numElements * strideVec), strideVec);
         }
     };
 
@@ -107,10 +238,7 @@ namespace alpaka
         concept IdxMapping = isIdxMapping_v<T>;
     } // namespace concepts
 
-    template<
-        typename T_IdxVecType,
-        typename T_IdxMapperFn,
-        typename T_CSelect = decltype(iotaCVec<typename T_IdxVecType::type, T_IdxVecType::dim()>())>
+    template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, typename T_CSelect>
     class IndexContainer : private T_IdxMapperFn
     {
         void _()
@@ -119,23 +247,21 @@ namespace alpaka
         }
 
     public:
-        using IdxVecType = T_IdxVecType;
+        using IdxVecType = typename T_IdxRange::IdxVecType;
         using IdxType = typename IdxVecType::type;
 
         static constexpr uint32_t dim = IdxVecType::dim();
 
         ALPAKA_FN_ACC inline IndexContainer(
-            IdxVecType const& first,
-            IdxVecType const& extent,
-            IdxVecType const& stride,
-            IdxVecType const& offset,
-            T_IdxMapperFn idxMapping)
+            T_IdxRange const& idxRange,
+            T_ThreadSpace const& threadSpace,
+            T_IdxMapperFn idxMapping,
+            T_CSelect const& = T_CSelect{})
             : T_IdxMapperFn{std::move(idxMapping)}
-            , m_extent(extent)
-            , m_stride{stride}
-            , m_first{first}
-            , m_offset{offset}
+            , m_idxRange(idxRange)
+            , m_threadSpace{threadSpace}
         {
+            //  std::cout << "iter:" << m_idxRange.toString() << " " << m_threadSpace.toString() << std::endl;
         }
 
         class const_iterator;
@@ -218,6 +344,8 @@ namespace alpaka
                     if(!isIndexValid)
                         m_current[T_CSelect{}[0]] = m_extent[0];
                 }
+
+                // std::cout << "const iter " << m_current << m_extent << m_stride << std::endl;
             }
 
             ALPAKA_FN_ACC constexpr IdxType slowCurrent() const
@@ -290,79 +418,37 @@ namespace alpaka
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            auto [first, extent, stride] = this->adjust(m_first, m_extent, m_stride);
-            return const_iterator(stride, extent + m_offset, first + m_offset);
+            auto [first, extent, stride] = this->adjust(
+                m_idxRange.m_stride,
+                m_idxRange.distance(),
+                m_threadSpace.m_threadIdx,
+                m_threadSpace.m_threadCount);
+            return const_iterator(stride, m_idxRange.m_begin + extent, m_idxRange.m_begin + first);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            auto [_, extent, __] = this->adjust(m_first, m_extent, m_stride);
-            return const_iterator_end(extent + m_offset);
+            auto [_, extent, __] = this->adjust(
+                m_idxRange.m_stride,
+                m_idxRange.distance(),
+                m_threadSpace.m_threadIdx,
+                m_threadSpace.m_threadCount);
+            return const_iterator_end(m_idxRange.m_begin + extent);
         }
 
         template<typename T, T... T_values>
         ALPAKA_FN_HOST_ACC constexpr auto operator[](
             Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const iterDir) const
         {
-            return IndexContainer<T_IdxVecType, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
-                m_first,
-                m_extent,
-                m_stride,
-                m_offset,
+            return IndexContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
+                m_idxRange,
+                m_threadSpace,
                 T_IdxMapperFn{});
         }
 
-        /** assign operator
-         * @{
-         */
-#define ALPAKA_ITER_ASSIGN_OP(interfaceOp, executedOp)                                                                \
-    template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
-    ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator interfaceOp(T_OpType const& rhs)                            \
-    {                                                                                                                 \
-        m_offset executedOp rhs;                                                                                      \
-        return *this;                                                                                                 \
-    }
-
-        ALPAKA_ITER_ASSIGN_OP(>>=, +=)
-        ALPAKA_ITER_ASSIGN_OP(<<=, -=)
-#undef ALPAKA_ITER_ASSIGN_OP
-
-        template<concepts::TypeOrVector<IdxType> T_OpType>
-        ALPAKA_FN_HOST_ACC constexpr IndexContainer& operator%=(T_OpType const& rhs)
-        {
-            m_stride *= rhs;
-            return *this;
-        }
-
-        template<concepts::TypeOrVector<IdxType> T_OpType>
-        ALPAKA_FN_HOST_ACC constexpr IndexContainer operator%(T_OpType const& rhs)
-        {
-            auto idxContainer = (*this);
-            idxContainer.m_first *= rhs;
-            idxContainer.m_stride *= rhs;
-            return idxContainer;
-        }
-
-#define ALPAKA_ITER_BINARY_OP(op)                                                                                     \
-    template<concepts::TypeOrVector<IdxType> T_OpType>                                                                \
-    ALPAKA_FN_HOST_ACC constexpr IndexContainer operator op(T_OpType const& rhs)                                      \
-    {                                                                                                                 \
-        auto idxContainer = (*this);                                                                                  \
-        idxContainer ALPAKA_PP_CAT(op, =) rhs;                                                                        \
-        return idxContainer;                                                                                          \
-    }
-
-        ALPAKA_ITER_BINARY_OP(>>)
-        ALPAKA_ITER_BINARY_OP(<<)
-
-#undef ALPAKA_ITER_BINARY_OP
-
-
     private:
-        IdxVecType m_extent;
-        IdxVecType m_stride;
-        IdxVecType m_first;
-        IdxVecType m_offset;
+        T_IdxRange m_idxRange;
+        T_ThreadSpace m_threadSpace;
     };
 
     namespace idxTrait
@@ -451,7 +537,7 @@ namespace alpaka
 
     ALPAKA_TAG(firstFn);
     ALPAKA_TAG(extentFn);
-    ALPAKA_TAG(strideFn);
+    ALPAKA_TAG(threadCountFn);
 
     namespace internal
     {
@@ -521,12 +607,11 @@ namespace alpaka
                     static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
 
                     auto adjIdxMapping = adjustMapping(acc, idxMapping);
-                    return IndexContainer<ALPAKA_TYPE(extent), ALPAKA_TYPE(adjIdxMapping)>{
-                        rangeOps[firstFn](acc),
-                        extent,
-                        rangeOps[strideFn](acc),
-                        offset,
-                        adjIdxMapping};
+                    return IndexContainer{
+                        IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
+                        ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
+                        adjIdxMapping,
+                        iotaCVec<typename ALPAKA_TYPE(extent)::type, ALPAKA_TYPE(extent)::dim()>()};
                 }
 
                 ALPAKA_FN_HOST_ACC constexpr auto operator()(
@@ -538,12 +623,11 @@ namespace alpaka
                 {
                     static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
 
-                    return IndexContainer<ALPAKA_TYPE(extent), ALPAKA_TYPE(idxMapping)>(
-                        rangeOps[firstFn](acc),
-                        extent,
-                        rangeOps[strideFn](acc),
-                        offset,
-                        idxMapping);
+                    return IndexContainer{
+                        IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
+                        ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
+                        idxMapping,
+                        iotaCVec<typename ALPAKA_TYPE(extent)::type, ALPAKA_TYPE(extent)::dim()>()};
                 }
             };
         };
@@ -603,32 +687,32 @@ namespace alpaka
         constexpr auto overDataRange = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
             DictEntry(extentFn, idxTrait::DataExtent{}),
-            DictEntry(strideFn, idxTrait::GlobalNumThreads{}))};
+            DictEntry(threadCountFn, idxTrait::GlobalNumThreads{}))};
 
         constexpr auto overDataFrames = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
             DictEntry(extentFn, idxTrait::DataFrameCount{}),
-            DictEntry(strideFn, idxTrait::GlobalNumThreadBlocks{}))};
+            DictEntry(threadCountFn, idxTrait::GlobalNumThreadBlocks{}))};
 
         constexpr auto withinDataFrame = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
             DictEntry(extentFn, idxTrait::DataFrameExtent{}),
-            DictEntry(strideFn, idxTrait::NumThreadsInBlock{}))};
+            DictEntry(threadCountFn, idxTrait::NumThreadsInBlock{}))};
 
         constexpr auto overThreadRange = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
             DictEntry(extentFn, idxTrait::GlobalNumThreads{}),
-            DictEntry(strideFn, idxTrait::GlobalNumThreads{}))};
+            DictEntry(threadCountFn, idxTrait::GlobalNumThreads{}))};
 
         constexpr auto overThreadBlocks = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
             DictEntry(extentFn, idxTrait::GlobalNumThreadBlocks{}),
-            DictEntry(strideFn, idxTrait::GlobalNumThreadBlocks{}))};
+            DictEntry(threadCountFn, idxTrait::GlobalNumThreadBlocks{}))};
 
         constexpr auto withinThreadBlock = Dict{std::make_tuple(
             DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
             DictEntry(extentFn, idxTrait::NumThreadsInBlock{}),
-            DictEntry(strideFn, idxTrait::NumThreadsInBlock{}))};
+            DictEntry(threadCountFn, idxTrait::NumThreadsInBlock{}))};
     } // namespace iter
 
 } // namespace alpaka
