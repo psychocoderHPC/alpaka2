@@ -4,15 +4,15 @@
 
 #pragma once
 
-#include "../Vec.hpp"
-#include "../core/Dict.hpp"
-#include "../core/Tag.hpp"
-#include "../core/common.hpp"
-#include "../meta/NdLoop.hpp"
-#include "../tag.hpp"
+#include "alpaka/Vec.hpp"
+#include "alpaka/core/Dict.hpp"
+#include "alpaka/core/Tag.hpp"
+#include "alpaka/core/common.hpp"
+#include "alpaka/meta/NdLoop.hpp"
+#include "alpaka/tag.hpp"
 
-#include "../../../../../../../usr/include/c++/11/cassert"
-#include "../../../../../../../usr/include/c++/11/tuple"
+#include <cassert>
+#include <tuple>
 
 namespace alpaka::onAcc
 {

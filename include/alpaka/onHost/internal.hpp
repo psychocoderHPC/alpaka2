@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "../Blocking.hpp"
-#include "../KernelBundle.hpp"
-#include "../core/common.hpp"
 #include "Handle.hpp"
+#include "alpaka/Blocking.hpp"
+#include "alpaka/KernelBundle.hpp"
+#include "alpaka/core/common.hpp"
 
 namespace alpaka::onHost
 {

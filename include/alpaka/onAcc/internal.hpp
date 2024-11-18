@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "../core/common.hpp"
-#include "../tag.hpp"
+#include "alpaka/core/common.hpp"
+#include "alpaka/tag.hpp"
 
 namespace alpaka::onAcc
 {

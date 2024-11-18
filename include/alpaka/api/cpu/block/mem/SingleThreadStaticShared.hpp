@@ -6,6 +6,7 @@
 
 #include "alpaka/core/common.hpp"
 
+#include <array>
 #include <memory>
 
 namespace alpaka::onAcc
