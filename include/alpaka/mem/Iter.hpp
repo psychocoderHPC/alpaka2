@@ -434,7 +434,6 @@ namespace alpaka
         };
 
         template<typename T_Acc>
-        requires(not exec::traits::isSeqMapping_v<ALPAKA_TYPE(std::declval<T_Acc>()[object::exec])>)
         struct AutoIndexMapping::Op<T_Acc, api::Cpu>
         {
             constexpr auto operator()(T_Acc const&, api::Cpu) const
@@ -486,7 +485,7 @@ namespace alpaka
                 {
                     static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
 
-                    auto adjIdxMapping = adjustMapping(acc, idxMapping);
+                    auto adjIdxMapping = adjustMapping(acc, acc[object::api]);
                     return IndexContainer{
                         IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
                         ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
@@ -502,7 +501,6 @@ namespace alpaka
                     concepts::Vector auto const& extent) const
                 {
                     static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
-
                     return IndexContainer{
                         IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
                         ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
