@@ -5,16 +5,16 @@
 
 #pragma once
 
-#include "alpaka/Trait.hpp"
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cuda/Api.hpp"
 #include "alpaka/meta/filter.hpp"
+#include "alpaka/onHost/trait.hpp"
 
 #include <algorithm>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
 
     constexpr auto enabledApis = meta::filter([](auto api) { return isPlatformAvaiable(api); }, apis);
-} // namespace alpaka
+} // namespace alpaka::onHost

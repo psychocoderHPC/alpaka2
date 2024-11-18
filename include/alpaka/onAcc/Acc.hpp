@@ -4,17 +4,17 @@
 
 #pragma once
 
-#include "Tags.hpp"
-#include "alpaka/Vec.hpp"
-#include "alpaka/core/Dict.hpp"
-#include "alpaka/core/Tag.hpp"
-#include "alpaka/core/common.hpp"
-#include "alpaka/meta/NdLoop.hpp"
+#include "../Vec.hpp"
+#include "../core/Dict.hpp"
+#include "../core/Tag.hpp"
+#include "../core/common.hpp"
+#include "../meta/NdLoop.hpp"
+#include "../tag.hpp"
 
-#include <cassert>
-#include <tuple>
+#include "../../../../../../../usr/include/c++/11/cassert"
+#include "../../../../../../../usr/include/c++/11/tuple"
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     template<typename T_Storage>
     struct Acc : T_Storage
@@ -44,4 +44,4 @@ namespace alpaka
         }
     };
 
-} // namespace alpaka
+} // namespace alpaka::onAcc

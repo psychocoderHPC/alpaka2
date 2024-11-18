@@ -7,21 +7,21 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/Acc.hpp"
 #    include "alpaka/Blocking.hpp"
-#    include "alpaka/Tags.hpp"
 #    include "alpaka/Vec.hpp"
 #    include "alpaka/api/cpu/IdxLayer.hpp"
 #    include "alpaka/api/cpu/block/mem/SingleThreadStaticShared.hpp"
 #    include "alpaka/api/cpu/block/sync/NoOp.hpp"
 #    include "alpaka/core/Dict.hpp"
 #    include "alpaka/meta/NdLoop.hpp"
+#    include "alpaka/onAcc/Acc.hpp"
+#    include "alpaka/tag.hpp"
 
 #    include <cassert>
 #    include <stdexcept>
 #    include <tuple>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cpu
     {
@@ -49,17 +49,17 @@ namespace alpaka
                 {
                     // copy from num blocks to derive correct index type
                     auto blockIdx = m_threadBlocking.m_numBlocks;
-                    auto blockSharedMem = cpu::SingleThreadStaticShared{};
+                    auto blockSharedMem = onAcc::cpu::SingleThreadStaticShared{};
                     auto blockCount = m_threadBlocking.m_numBlocks;
 
                     auto const blockLayerEntry = DictEntry{
                         layer::block,
-                        alpaka::cpu::GenericLayer{std::cref(blockIdx), std::cref(blockCount)}};
-                    auto const threadLayerEntry = DictEntry{layer::thread, cpu::OneLayer<IndexVecType>{}};
+                        onAcc::cpu::GenericLayer{std::cref(blockIdx), std::cref(blockCount)}};
+                    auto const threadLayerEntry = DictEntry{layer::thread, onAcc::cpu::OneLayer<IndexVecType>{}};
                     auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
-                    auto const blockSyncEntry = DictEntry{action::sync, cpu::NoOp{}};
+                    auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::NoOp{}};
 
-                    auto acc = Acc(
+                    auto acc = onAcc::Acc(
                         joinDict(Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry}, dict));
 
 #    pragma omp for nowait
@@ -80,6 +80,6 @@ namespace alpaka
     {
         return cpu::OmpBlocks(threadBlocking);
     }
-} // namespace alpaka
+} // namespace alpaka::onHost
 
 #endif

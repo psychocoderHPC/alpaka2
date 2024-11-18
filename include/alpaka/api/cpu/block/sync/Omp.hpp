@@ -9,7 +9,7 @@
 #include <memory>
 #include <optional>
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     namespace cpu
     {
@@ -24,4 +24,4 @@ namespace alpaka
         };
 #endif
     } // namespace cpu
-} // namespace alpaka
+} // namespace alpaka::onAcc

@@ -13,17 +13,18 @@
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/api/cuda/IdxLayer.hpp"
+#    include "alpaka/api/cuda/MemcpyKind.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
-#    include "alpaka/core/CallbackThread.hpp"
-#    include "alpaka/core/DemangleTypeNames.hpp"
-#    include "alpaka/core/Handle.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
-#    include "alpaka/hostApi.hpp"
+#    include "alpaka/internal.hpp"
+#    include "alpaka/onHost.hpp"
+#    include "alpaka/onHost/Handle.hpp"
+#    include "alpaka/onHost/internal.hpp"
 
 #    include <cstdint>
 #    include <sstream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cuda
     {
@@ -37,14 +38,14 @@ namespace alpaka
         public:
             Queue(concepts::DeviceHandle auto device, uint32_t const idx) : m_device(std::move(device)), m_idx(idx)
             {
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(alpaka::getNativeHandle(m_device)));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(onHost::getNativeHandle(m_device)));
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     TApi::streamCreateWithFlags(&m_UniformCudaHipQueue, TApi::streamNonBlocking));
             }
 
             ~Queue()
             {
-                alpaka::internal::Wait::wait(*this);
+                onHost::internal::Wait::wait(*this);
             }
 
             Queue(Queue const&) = delete;
@@ -77,16 +78,16 @@ namespace alpaka
                 return std::string("cuda::Queue id=") + std::to_string(m_idx);
             }
 
-            friend struct alpaka::internal::GetNativeHandle;
+            friend struct onHost::internal::GetNativeHandle;
 
             [[nodiscard]] auto getNativeHandle() const noexcept
             {
                 return m_UniformCudaHipQueue;
             }
 
-            friend struct alpaka::internal::Enqueue;
+            friend struct onHost::internal::Enqueue;
 
-            friend struct alpaka::internal::Wait;
+            friend struct onHost::internal::Wait;
 
             void wait() const
             {
@@ -94,29 +95,8 @@ namespace alpaka
             }
 
             friend struct alpaka::internal::GetApi;
-            friend struct alpaka::internal::Memcpy;
+            friend struct onHost::internal::Memcpy;
             friend struct CallKernel;
-        };
-
-        template<typename T_Dest, typename T_Source>
-        struct Memcpy;
-
-        template<>
-        struct Memcpy<api::Cpu, api::Cuda>
-        {
-            static constexpr auto kind = ApiCudaRt::memcpyDeviceToHost;
-        };
-
-        template<>
-        struct Memcpy<api::Cuda, api::Cuda>
-        {
-            static constexpr auto kind = ApiCudaRt::memcpyDeviceToDevice;
-        };
-
-        template<>
-        struct Memcpy<api::Cuda, api::Cpu>
-        {
-            static constexpr auto kind = ApiCudaRt::memcpyHostToDevice;
         };
 
         template<
@@ -130,14 +110,14 @@ namespace alpaka
             T_NumFrames const numFrames,
             T_FrameSize const framesSize)
         {
-            auto acc = Acc{
+            auto acc = onAcc::Acc{
                 Dict{
-                    DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
-                    DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(layer::shared, cuda::StaticShared{}),
+                    DictEntry(layer::block, onAcc::cuda::CudaBlock<T_IdxType, T_dim>{}),
+                    DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
+                    DictEntry(layer::shared, onAcc::cuda::StaticShared{}),
                     DictEntry(frame::count, numFrames),
                     DictEntry(frame::extent, framesSize),
-                    DictEntry(action::sync, cuda::Sync{}),
+                    DictEntry(action::sync, onAcc::cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
                     DictEntry(object::exec, exec::gpuCuda)},
             };
@@ -147,12 +127,12 @@ namespace alpaka
         template<typename T_IdxType, uint32_t T_dim, typename TKernelBundle>
         __global__ void gpuKernel(TKernelBundle const kernelBundle)
         {
-            auto acc = Acc{
+            auto acc = onAcc::Acc{
                 Dict{
-                    DictEntry(layer::block, CudaBlock<T_IdxType, T_dim>{}),
-                    DictEntry(layer::shared, cuda::StaticShared{}),
-                    DictEntry(layer::thread, CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(action::sync, cuda::Sync{}),
+                    DictEntry(layer::block, onAcc::cuda::CudaBlock<T_IdxType, T_dim>{}),
+                    DictEntry(layer::shared, onAcc::cuda::StaticShared{}),
+                    DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
+                    DictEntry(action::sync, onAcc::cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
                     DictEntry(object::exec, exec::gpuCuda)},
             };
@@ -188,7 +168,7 @@ namespace alpaka
                 T_Args const&... args) const
             {
                 using TApi = typename cuda::Queue<T_Device>::TApi;
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(alpaka::getNativeHandle(queue.m_device)));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(onHost::getNativeHandle(queue.m_device)));
 
                 auto kernelName = gpuKernel<typename T_NumBlocks::type, T_NumBlocks::dim(), T_KernelBundle, T_Args...>;
 
@@ -197,15 +177,25 @@ namespace alpaka
                     convertVecToUniformCudaHipDim(threadBlocking.m_numThreads),
                     static_cast<std::size_t>(0),
                     queue.getNativeHandle()>>>(kernelBundle, args...);
-#    if 0
-                auto const msg
-                    = std::string{"execution of kernel '" + core::demangledName<T_KernelBundle>() + "' failed with"};
-                ::alpaka::uniform_cuda_hip::detail::rtCheckLastError<TApi, true>(msg.c_str(), __FILE__, __LINE__);
-#    endif
             }
         };
     } // namespace cuda
+} // namespace alpaka::onHost
 
+namespace alpaka::internal
+{
+    template<typename T_Device>
+    struct GetApi::Op<onHost::cuda::Queue<T_Device>>
+    {
+        decltype(auto) operator()(auto&& queue) const
+        {
+            return onHost::getApi(queue.m_device);
+        }
+    };
+} // namespace alpaka::internal
+
+namespace alpaka::onHost
+{
     namespace internal
     {
 
@@ -252,13 +242,14 @@ namespace alpaka
             {
                 using TApi = typename cuda::Queue<T_Device>::TApi;
 
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(alpaka::getNativeHandle(queue.m_device)));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(onHost::getNativeHandle(queue.m_device)));
 
-                auto* destPtr = (void*) alpaka::data(dest);
-                auto* const srcPtr = (void*) alpaka::data(source);
+                auto* destPtr = (void*) onHost::data(dest);
+                auto* const srcPtr = (void*) onHost::data(source);
 
-                auto copyKind
-                    = cuda::Memcpy<ALPAKA_TYPE(internal::getApi(dest)), ALPAKA_TYPE(internal::getApi(source))>::kind;
+                auto copyKind = cuda::MemcpyKind<
+                    ALPAKA_TYPE(alpaka::internal::getApi(dest)),
+                    ALPAKA_TYPE(alpaka::internal::getApi(source))>::kind;
 
                 constexpr auto dim = extents.dim();
                 if constexpr(dim == 1u)
@@ -308,6 +299,5 @@ namespace alpaka
             }
         };
     } // namespace internal
-} // namespace alpaka
-
+} // namespace alpaka::onHost
 #endif

@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "alpaka/HostApiConcepts.hpp"
+#include "alpaka/concepts.hpp"
 #include "alpaka/core/config.hpp"
+#include "alpaka/onHost/trait.hpp"
 
 #include <memory>
 #include <sstream>
@@ -31,13 +32,13 @@ namespace alpaka
         constexpr auto cuda = Cuda{};
     } // namespace api
 
-#if ALPAKA_LANG_CUDA
-    namespace trait
+    namespace onHost::trait
     {
+#if ALPAKA_LANG_CUDA
         template<>
         struct IsPlatformAvailable::Op<api::Cuda> : std::true_type
         {
         };
-    } // namespace trait
 #endif
+    } // namespace onHost::trait
 } // namespace alpaka

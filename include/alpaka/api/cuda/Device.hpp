@@ -8,15 +8,17 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
-#    include "alpaka/Device.hpp"
-#    include "alpaka/Queue.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/Queue.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
-#    include "alpaka/core/Handle.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
-#    include "alpaka/hostApi.hpp"
-#    include "alpaka/mem/Data.hpp"
+#    include "alpaka/internal.hpp"
+#    include "alpaka/onHost.hpp"
+#    include "alpaka/onHost/Device.hpp"
+#    include "alpaka/onHost/Handle.hpp"
+#    include "alpaka/onHost/Queue.hpp"
+#    include "alpaka/onHost/mem/Data.hpp"
+#    include "alpaka/onHost/mem/View.hpp"
 
 #    include <cstdint>
 #    include <memory>
@@ -24,7 +26,7 @@
 #    include <sstream>
 #    include <vector>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cuda
     {
@@ -77,14 +79,14 @@ namespace alpaka
                 return std::string("cuda::Device id=") + std::to_string(m_idx);
             }
 
-            friend struct alpaka::internal::GetNativeHandle;
+            friend struct onHost::internal::GetNativeHandle;
 
             [[nodiscard]] uint32_t getNativeHandle() const noexcept
             {
                 return m_idx;
             }
 
-            friend struct alpaka::internal::MakeQueue;
+            friend struct onHost::internal::MakeQueue;
 
             Handle<cuda::Queue<Device>> makeQueue()
             {
@@ -96,11 +98,26 @@ namespace alpaka
                 return newQueue;
             }
 
-            friend struct alpaka::internal::Alloc;
+            friend struct onHost::internal::Alloc;
             friend struct alpaka::internal::GetApi;
         };
     } // namespace cuda
+} // namespace alpaka::onHost
 
+namespace alpaka::internal
+{
+    template<typename T_Platform>
+    struct GetApi::Op<onHost::cuda::Device<T_Platform>>
+    {
+        decltype(auto) operator()(auto&& device) const
+        {
+            return onHost::getApi(device.m_platform);
+        }
+    };
+} // namespace alpaka::internal
+
+namespace alpaka::onHost
+{
     namespace internal
     {
         template<typename T_Type, typename T_Platform, typename T_Extents>
@@ -147,22 +164,13 @@ namespace alpaka
                 }
 
                 auto deleter = [](T_Type* ptr) { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(TApi::free(ptr)); };
-                auto data = std::make_shared<alpaka::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
+                auto data = std::make_shared<onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
                     device.getSharedPtr(),
                     ptr,
                     extents,
                     pitches,
                     deleter);
-                return alpaka::View<std::decay_t<decltype(data)>, T_Extents>(data);
-            }
-        };
-
-        template<typename T_Platform>
-        struct GetApi::Op<cuda::Device<T_Platform>>
-        {
-            decltype(auto) operator()(auto&& device) const
-            {
-                return alpaka::getApi(device.m_platform);
+                return onHost::View<std::decay_t<decltype(data)>, T_Extents>(data);
             }
         };
     } // namespace internal
@@ -174,6 +182,6 @@ namespace alpaka
         {
         };
     } // namespace trait
-} // namespace alpaka
+} // namespace alpaka::onHost
 
 #endif

@@ -44,7 +44,7 @@ struct StencilKernel
     {
         using IdxVec = alpaka::Vec<TIdx, 2u>;
 
-        auto& sdata = alpaka::declareSharedVar<double[T_SharedMemSize1D]>(acc);
+        auto& sdata = alpaka::onAcc::declareSharedVar<double[T_SharedMemSize1D]>(acc);
 
         // Get extents(dimensions)
         auto const blockThreadExtent = acc[alpaka::layer::thread].count();
@@ -66,7 +66,7 @@ struct StencilKernel
             sdata[i] = *elem;
         }
 
-        alpaka::syncBlockThreads(acc);
+        alpaka::onAcc::syncBlockThreads(acc);
 
         // Each kernel executes one element
         double const rX = dt / (dx * dx);

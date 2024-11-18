@@ -4,21 +4,22 @@
 
 #pragma once
 
-#include "alpaka/HostApiConcepts.hpp"
+#include "Handle.hpp"
 #include "alpaka/KernelBundle.hpp"
-#include "alpaka/core/Handle.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/meta/filter.hpp"
+#include "alpaka/onHost/concepts.hpp"
+#include "alpaka/tag.hpp"
 
 #include <type_traits>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace trait
     {
         struct IsPlatformAvailable
         {
-            template<concepts::Api T_Api>
+            template<alpaka::concepts::Api T_Api>
             struct Op : std::false_type
             {
             };
@@ -40,7 +41,7 @@ namespace alpaka
 
     } // namespace trait
 
-    consteval bool isPlatformAvaiable(concepts::Api auto api)
+    consteval bool isPlatformAvaiable(alpaka::concepts::Api auto api)
     {
         return trait::IsPlatformAvailable::Op<std::decay_t<decltype(api)>>::value;
     }
@@ -55,4 +56,4 @@ namespace alpaka
             },
             exec::availableMappings);
     }
-} // namespace alpaka
+} // namespace alpaka::onHost

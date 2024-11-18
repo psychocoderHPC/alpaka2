@@ -10,7 +10,7 @@
 
 #    include "alpaka/core/common.hpp"
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     namespace cuda
     {
@@ -33,6 +33,6 @@ namespace alpaka
             }
         };
     } // namespace cuda
-} // namespace alpaka
+} // namespace alpaka::onAcc
 
 #endif

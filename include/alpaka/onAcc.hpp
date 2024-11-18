@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "alpaka/ComputeApiTraits.hpp"
+#include "alpaka/onAcc/internal.hpp"
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     constexpr void syncBlockThreads(auto const& acc)
     {
@@ -18,4 +18,4 @@ namespace alpaka
     {
         return internalCompute::declareSharedVar<T>(acc);
     }
-} // namespace alpaka
+} // namespace alpaka::onAcc

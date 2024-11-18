@@ -10,6 +10,7 @@
 
 
 using namespace alpaka;
+using namespace alpaka::onHost;
 
 TEST_CASE("cpu api creation", "")
 {

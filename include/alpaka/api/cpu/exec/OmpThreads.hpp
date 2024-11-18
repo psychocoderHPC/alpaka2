@@ -7,20 +7,21 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/Acc.hpp"
 #    include "alpaka/Blocking.hpp"
-#    include "alpaka/Tags.hpp"
 #    include "alpaka/Vec.hpp"
+#    include "alpaka/api/cpu/IdxLayer.hpp"
 #    include "alpaka/api/cpu/block/mem/OmpStaticShared.hpp"
 #    include "alpaka/api/cpu/block/sync/Omp.hpp"
 #    include "alpaka/core/Dict.hpp"
 #    include "alpaka/meta/NdLoop.hpp"
+#    include "alpaka/onAcc/Acc.hpp"
+#    include "alpaka/tag.hpp"
 
 #    include <cassert>
 #    include <stdexcept>
 #    include <tuple>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cpu
     {
@@ -55,16 +56,16 @@ namespace alpaka
                     {
                         // copy from num blocks to derive correct index type
                         auto blockIdx = m_threadBlocking.m_numBlocks;
-                        auto blockSharedMem = cpu::OmpStaticShared{};
+                        auto blockSharedMem = onAcc::cpu::OmpStaticShared{};
                         auto blockCountND = m_threadBlocking.m_numBlocks;
                         auto threadCountND = m_threadBlocking.m_numThreads;
                         auto const threadCount = threadCountND.product();
 
                         auto const blockLayerEntry = DictEntry{
                             layer::block,
-                            alpaka::cpu::GenericLayer{std::cref(blockIdx), std::cref(blockCountND)}};
+                            onAcc::cpu::GenericLayer{std::cref(blockIdx), std::cref(blockCountND)}};
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
-                        auto const blockSyncEntry = DictEntry{action::sync, cpu::OmpSync{}};
+                        auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::OmpSync{}};
 
 #    pragma omp for
                         for(IndexType i = 0; i < blockCountND.product(); ++i)
@@ -81,8 +82,8 @@ namespace alpaka
 
                                 auto const threadLayerEntry = DictEntry{
                                     layer::thread,
-                                    alpaka::cpu::GenericLayer{std::cref(threadIdx), std::cref(threadCountND)}};
-                                auto acc = Acc(joinDict(
+                                    onAcc::cpu::GenericLayer{std::cref(threadIdx), std::cref(threadCountND)}};
+                                auto acc = onAcc::Acc(joinDict(
                                     Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry},
                                     dict));
                                 kernelBundle(acc);
@@ -101,6 +102,6 @@ namespace alpaka
     {
         return cpu::OmpThreads(threadBlocking);
     }
-} // namespace alpaka
+} // namespace alpaka::onHost
 
 #endif

@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "alpaka/core/Handle.hpp"
+#include "Handle.hpp"
 #include "alpaka/core/common.hpp"
-#include "alpaka/hostApi.hpp"
+#include "alpaka/onHost.hpp"
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<typename T>
     struct Platform : std::shared_ptr<T>
@@ -16,11 +16,11 @@ namespace alpaka
     private:
         using Parent = std::shared_ptr<T>;
 
-        friend struct alpaka::internal::MakePlatform;
+        friend struct internal::MakePlatform;
         friend struct alpaka::internal::GetName;
-        friend struct alpaka::internal::GetDeviceCount;
-        friend struct alpaka::internal::GetNativeHandle;
-        friend struct alpaka::internal::MakeDevice;
+        friend struct internal::GetDeviceCount;
+        friend struct internal::GetNativeHandle;
+        friend struct internal::MakeDevice;
 
     public:
         using element_type = typename Parent::element_type;
@@ -37,20 +37,20 @@ namespace alpaka
 
         std::string getName() const
         {
-            return alpaka::getName(static_cast<Parent>(*this));
+            return onHost::getName(static_cast<Parent>(*this));
         }
 
         uint32_t getDeviceCount() const
         {
-            return alpaka::getDeviceCount(static_cast<Parent>(*this));
+            return onHost::getDeviceCount(static_cast<Parent>(*this));
         }
 
         auto makeDevice(uint32_t idx)
         {
-            return alpaka::makeDevice(static_cast<Parent>(*this), idx);
+            return onHost::makeDevice(static_cast<Parent>(*this), idx);
         }
     };
 
     template<typename T>
     ALPAKA_FN_HOST Platform(std::shared_ptr<T>) -> Platform<T>;
-} // namespace alpaka
+} // namespace alpaka::onHost

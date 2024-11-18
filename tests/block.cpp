@@ -16,6 +16,7 @@
 #    include <thread>
 
 using namespace alpaka;
+using namespace alpaka::onHost;
 
 using TestApis = std::decay_t<decltype(allExecutorsAndApis(enabledApis))>;
 
@@ -53,22 +54,22 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
     constexpr Vec blockExtent = Vec{128u};
     constexpr Vec dataExtent = numBlocks * blockExtent;
     std::cout << "block iota exec=" << core::demangledName(exec) << std::endl;
-    auto dBuff = alpaka::alloc<uint32_t>(device, dataExtent);
+    auto dBuff = onHost::alloc<uint32_t>(device, dataExtent);
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = alpaka::alloc<uint32_t>(cpuDevice, dataExtent);
+    auto hBuff = onHost::alloc<uint32_t>(cpuDevice, dataExtent);
     wait(queue);
 
-    alpaka::enqueue(
+    onHost::enqueue(
         queue,
         exec,
         alpaka::DataBlocking{numBlocks / 2u, blockExtent},
         KernelBundle{BlockIotaKernel{}, dBuff.getMdSpan(), numBlocks});
-    alpaka::memcpy(queue, hBuff, dBuff);
+    onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);
 
-    auto* ptr = alpaka::data(hBuff);
+    auto* ptr = onHost::data(hBuff);
     for(uint32_t i = 0u; i < dataExtent; ++i)
     {
         CHECK(i == ptr[i]);

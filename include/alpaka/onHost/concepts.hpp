@@ -4,33 +4,33 @@
 
 #pragma once
 
-#include "alpaka/HostApiTraits.hpp"
+#include "alpaka/concepts.hpp"
+#include "alpaka/internal.hpp"
+#include "alpaka/onHost/internal.hpp"
 
 #include <concepts>
 #include <string>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace concepts
     {
         template<typename T>
-        concept HasStaticName = requires(T t) {
-            {
-                internal::GetStaticName::Op<std::decay_t<T>>{}(t)
-            } -> std::convertible_to<std::string>;
+        concept NameHandle = requires(T t) {
+            typename T::element_type;
+            requires alpaka::concepts::HasName<typename T::element_type>;
         };
 
         template<typename T>
-        concept HasName = requires(T t) {
-            {
-                internal::GetName::Op<T>{}(t)
-            } -> std::convertible_to<std::string>;
+        concept StaticNameHandle = requires(T t) {
+            typename T::element_type;
+            requires alpaka::concepts::HasStaticName<typename T::element_type>;
         };
 
         template<typename T>
         concept Platform = requires(T platform) {
             {
-                internal::GetName::Op<T>{}(platform)
+                alpaka::internal::GetName::Op<T>{}(platform)
             };
             {
                 internal::GetDeviceCount::Op<T>{}(platform)
@@ -39,12 +39,9 @@ namespace alpaka
         };
 
         template<typename T>
-        concept Api = requires(T t) { requires HasStaticName<T>; };
-
-        template<typename T>
         concept Device = requires(T device) {
             {
-                internal::GetName::Op<T>{}(device)
+                alpaka::internal::GetName::Op<T>{}(device)
             } -> std::convertible_to<std::string>;
 
             {
@@ -58,7 +55,7 @@ namespace alpaka
         template<typename T>
         concept Queue = requires(T device) {
             {
-                internal::GetName::Op<T>{}(device)
+                alpaka::internal::GetName::Op<T>{}(device)
             } -> std::convertible_to<std::string>;
             {
                 internal::GetNativeHandle::Op<T>{}(device)
@@ -86,20 +83,5 @@ namespace alpaka
             typename T::element_type;
             requires Platform<typename T::element_type>;
         };
-
-        template<typename T>
-        concept NameHandle = requires(T t) {
-            typename T::element_type;
-            requires HasName<typename T::element_type>;
-        };
-
-        template<typename T>
-        concept StaticNameHandle = requires(T t) {
-            typename T::element_type;
-            requires HasStaticName<typename T::element_type>;
-        };
-
-        template<typename T>
-        concept HasGet = requires(T t) { t.get(); };
     } // namespace concepts
-} // namespace alpaka
+} // namespace alpaka::onHost
