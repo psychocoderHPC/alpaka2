@@ -10,12 +10,10 @@
 #include <cassert>
 #include <tuple>
 
-namespace alpaka
+namespace alpaka::onAcc
 {
-
     namespace cpu
     {
-
         template<typename IndexVecType>
         struct OneLayer
         {
@@ -52,6 +50,5 @@ namespace alpaka
             T_Idx m_idx;
             T_Count m_count;
         };
-
     } // namespace cpu
-} // namespace alpaka
+} // namespace alpaka::onAcc

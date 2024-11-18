@@ -6,6 +6,9 @@
 
 #include "alpaka/core/common.hpp"
 
+#include <cstdint>
+#include <ostream>
+
 namespace alpaka
 {
     template<typename T_NumBlocks, typename T_NumThreads>

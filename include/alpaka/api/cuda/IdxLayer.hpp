@@ -8,13 +8,13 @@
 
 #if ALPAKA_LANG_CUDA
 
-#    include "alpaka/Tags.hpp"
 #    include "alpaka/Vec.hpp"
+#    include "alpaka/tag.hpp"
 
 #    include <stdexcept>
 #    include <tuple>
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     namespace cuda
     {
@@ -58,6 +58,6 @@ namespace alpaka
             }
         };
     } // namespace cuda
-} // namespace alpaka
+} // namespace alpaka::onAcc
 
 #endif

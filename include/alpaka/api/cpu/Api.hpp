@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "alpaka/HostApiConcepts.hpp"
+#include "alpaka/concepts.hpp"
+#include "alpaka/onHost/trait.hpp"
 
 #include <memory>
 #include <sstream>
@@ -29,11 +30,11 @@ namespace alpaka
         constexpr auto cpu = Cpu{};
     } // namespace api
 
-    namespace trait
+    namespace onHost::trait
     {
         template<>
         struct IsPlatformAvailable::Op<api::Cpu> : std::true_type
         {
         };
-    } // namespace trait
+    } // namespace onHost::trait
 } // namespace alpaka

@@ -4,24 +4,25 @@
 
 #pragma once
 
-#include "alpaka/HostApiConcepts.hpp"
 #include "alpaka/KernelBundle.hpp"
+#include "alpaka/concepts.hpp"
+#include "alpaka/onHost/concepts.hpp"
 
-namespace alpaka
+namespace alpaka::onHost
 {
-    inline concepts::PlatformHandle auto makePlatform(concepts::Api auto&& api)
+    inline concepts::PlatformHandle auto makePlatform(alpaka::concepts::Api auto&& api)
     {
         return internal::makePlatform(ALPAKA_FORWARD(api));
     }
 
     inline std::convertible_to<std::string> auto getStaticName(concepts::StaticNameHandle auto const& any)
     {
-        return internal::GetStaticName::Op<std::decay_t<decltype(*any.get())>>{}(*any.get());
+        return alpaka::internal::GetStaticName::Op<std::decay_t<decltype(*any.get())>>{}(*any.get());
     }
 
     inline std::convertible_to<std::string> auto getName(concepts::NameHandle auto const& any)
     {
-        return internal::GetName::Op<std::decay_t<decltype(*any.get())>>{}(*any.get());
+        return alpaka::internal::GetName::Op<std::decay_t<decltype(*any.get())>>{}(*any.get());
     }
 
     inline uint32_t getDeviceCount(concepts::PlatformHandle auto const& platform)
@@ -44,7 +45,7 @@ namespace alpaka
         return internal::MakeQueue::Op<std::decay_t<decltype(*device.get())>>{}(*device.get());
     }
 
-    inline auto wait(concepts::HasGet auto const& any)
+    inline auto wait(alpaka::concepts::HasGet auto const& any)
     {
         return internal::Wait::wait(*any.get());
     }
@@ -71,19 +72,19 @@ namespace alpaka
         return internal::Data::data(ALPAKA_FORWARD(any));
     }
 
-    inline decltype(auto) data(concepts::HasGet auto&& any)
+    inline decltype(auto) data(alpaka::concepts::HasGet auto&& any)
     {
         return internal::Data::data(*any.get());
     }
 
     inline decltype(auto) getApi(auto&& any)
     {
-        return internal::getApi(ALPAKA_FORWARD(any));
+        return alpaka::internal::getApi(ALPAKA_FORWARD(any));
     }
 
-    inline decltype(auto) getApi(concepts::HasGet auto&& any)
+    inline decltype(auto) getApi(alpaka::concepts::HasGet auto&& any)
     {
-        return internal::getApi(*any.get());
+        return alpaka::internal::getApi(*any.get());
     }
 
     template<typename T_Type>
@@ -107,4 +108,4 @@ namespace alpaka
     {
         return memcpy(queue, dest, source, dest.getExtents());
     }
-} // namespace alpaka
+} // namespace alpaka::onHost

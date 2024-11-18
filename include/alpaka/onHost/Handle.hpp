@@ -8,7 +8,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<typename T_Object, typename... T_Args>
     inline auto make_sharedSingleton(T_Args&&... args)
@@ -28,4 +28,4 @@ namespace alpaka
 
     template<typename T>
     using Handle = std::shared_ptr<T>;
-} // namespace alpaka
+} // namespace alpaka::onHost

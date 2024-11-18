@@ -4,22 +4,23 @@
 
 #pragma once
 
-#include "alpaka/HostApiTraits.hpp"
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/exec/OmpBlocks.hpp"
 #include "alpaka/api/cpu/exec/OmpThreads.hpp"
 #include "alpaka/api/cpu/exec/Serial.hpp"
 #include "alpaka/core/CallbackThread.hpp"
-#include "alpaka/core/Handle.hpp"
-#include "alpaka/hostApi.hpp"
+#include "alpaka/internal.hpp"
 #include "alpaka/meta/NdLoop.hpp"
+#include "alpaka/onHost.hpp"
+#include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/internal.hpp"
 
 #include <cstdint>
 #include <cstring>
 #include <future>
 #include <sstream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cpu
     {
@@ -33,7 +34,7 @@ namespace alpaka
 
             ~Queue()
             {
-                alpaka::internal::Wait::wait(*this);
+                internal::Wait::wait(*this);
             }
 
             Queue(Queue const&) = delete;
@@ -66,14 +67,14 @@ namespace alpaka
                 return std::string("cpu::Queue id=") + std::to_string(m_idx);
             }
 
-            friend struct alpaka::internal::GetNativeHandle;
+            friend struct internal::GetNativeHandle;
 
             [[nodiscard]] auto getNativeHandle() const noexcept
             {
                 return 0;
             }
 
-            friend struct alpaka::internal::Enqueue;
+            friend struct internal::Enqueue;
 
             template<typename T_NumBlocks, typename T_NumThreads>
             void enqueue(
@@ -84,7 +85,7 @@ namespace alpaka
                 m_workerThread.submit(
                     [=, kernel = std::move(kernelBundle)]()
                     {
-                        Acc acc = makeAcc(executor, threadBlocking);
+                        onAcc::Acc acc = makeAcc(executor, threadBlocking);
                         acc(std::move(kernel));
                     });
             }
@@ -105,7 +106,7 @@ namespace alpaka
                             DictEntry(frame::extent, dataBlocking.m_blockSize),
                             DictEntry(object::api, api::cpu),
                             DictEntry(object::exec, executor)};
-                        Acc acc = makeAcc(executor, threadBlocking);
+                        onAcc::Acc acc = makeAcc(executor, threadBlocking);
                         acc(std::move(kernel), moreLayer);
                     });
             }
@@ -115,8 +116,8 @@ namespace alpaka
                 m_workerThread.submit([task]() { task(); });
             }
 
-            friend struct alpaka::internal::Wait;
-            friend struct alpaka::internal::Memcpy;
+            friend struct internal::Wait;
+            friend struct internal::Memcpy;
             friend struct alpaka::internal::GetApi;
         };
     } // namespace cpu
@@ -197,10 +198,11 @@ namespace alpaka
                 {
                     internal::enqueue(
                         queue,
-                        [extents, l_dest = std::move(dest), l_source = std::move(source)]() {
+                        [extents, l_dest = std::move(dest), l_source = std::move(source)]()
+                        {
                             std::memcpy(
-                                alpaka::data(l_dest),
-                                alpaka::data(l_source),
+                                alpaka::onHost::data(l_dest),
+                                alpaka::onHost::data(l_source),
                                 extents.x() * sizeof(typename T_Dest::type));
                         });
                 }
@@ -215,9 +217,9 @@ namespace alpaka
                             if(static_cast<std::size_t>(extents.product()) != 0u)
                             {
                                 auto const destPitchBytesWithoutColumn = l_dest.getPitches().eraseBack();
-                                auto* destPtr = alpaka::data(l_dest);
+                                auto* destPtr = data(l_dest);
                                 auto const sourcePitchBytesWithoutColumn = l_source.getPitches().eraseBack();
-                                auto* sourcePtr = alpaka::data(l_source);
+                                auto* sourcePtr = data(l_source);
 
                                 meta::ndLoopIncIdx(
                                     dstExtentWithoutColumn,
@@ -236,48 +238,18 @@ namespace alpaka
             }
         };
 
-        template<typename T_Device>
-        struct GetApi::Op<cpu::Queue<T_Device>>
-        {
-            decltype(auto) operator()(auto&& queue) const
-            {
-                return alpaka::getApi(queue.m_device);
-            }
-        };
-#if 0
-        template<typename T_Type, typename T_Device, typename T_Extents>
-        struct Alloc::Op<T_Type, cpu::Queue<T_Device>, T_Extents>
-        {
-            auto operator()(cpu::Queue<T_Device>& queue, T_Extents const& extents) const
-            {
-                return alpaka::alloc<T_Type>(queue.m_device,extents);
-            }
-        };
-#endif
-    } // namespace internal
 
-#if 0
-    namespace internal
-    {
-        template<
-            concepts::Queue T_Device,
-            typename T_Mapping,
-            typename T_NumBlocks,
-            typename T_NumThreads,
-            typename T_KernelBundle>
-        struct Enqueue::Kernel<Handle<cpu::Queue<T_Device>>, T_Mapping, T_NumBlocks, T_NumThreads, T_KernelBundle>
-        {
-            void operator()(
-                Handle<cpu::Queue<T_Device>> const queue,
-                T_Mapping const executor,
-                T_NumBlocks const numBlocks,
-                T_NumThreads const numThreads,
-                T_KernelBundle kernelBundle) const
-            {
-                std::cout << "enqueu overload" << std::endl;
-                return queue->enqueue(executor, numBlocks, numThreads, std::move(kernelBundle));
-            }
-        };
     } // namespace internal
-#endif
-} // namespace alpaka
+} // namespace alpaka::onHost
+
+namespace alpaka::internal
+{
+    template<typename T_Device>
+    struct GetApi::Op<onHost::cpu::Queue<T_Device>>
+    {
+        decltype(auto) operator()(auto&& queue) const
+        {
+            return onHost::getApi(queue.m_device);
+        }
+    };
+} // namespace alpaka::internal

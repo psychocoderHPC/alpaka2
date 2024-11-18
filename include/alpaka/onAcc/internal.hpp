@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "Tags.hpp"
-#include "alpaka/core/common.hpp"
+#include "../core/common.hpp"
+#include "../tag.hpp"
 
-namespace alpaka
+namespace alpaka::onAcc
 {
     namespace internalCompute
     {
@@ -47,4 +47,4 @@ namespace alpaka
         }
 
     } // namespace internalCompute
-} // namespace alpaka
+} // namespace alpaka::onAcc

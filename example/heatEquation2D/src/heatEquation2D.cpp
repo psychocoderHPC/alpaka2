@@ -40,6 +40,7 @@ template<typename T_Cfg>
 auto example(T_Cfg const& cfg) -> int
 {
     using namespace alpaka;
+    using namespace alpaka::onHost;
 
     using Idx = uint32_t;
     using IdxVec = alpaka::Vec<Idx, 2u>;
@@ -83,11 +84,11 @@ auto example(T_Cfg const& cfg) -> int
 
     // Initialize host-buffer
     // This buffer will hold the current values (used for the next step)
-    auto uBufHost = alpaka::alloc<double>(devHost, extent);
+    auto uBufHost = alpaka::onHost::alloc<double>(devHost, extent);
 
     // Accelerator buffer
-    auto uCurrBufAcc = alpaka::alloc<double>(devAcc, extent);
-    auto uNextBufAcc = alpaka::alloc<double>(devAcc, extent);
+    auto uCurrBufAcc = alpaka::onHost::alloc<double>(devAcc, extent);
+    auto uNextBufAcc = alpaka::onHost::alloc<double>(devAcc, extent);
 
     auto const pitchCurrAcc{uCurrBufAcc.getPitches()};
     auto const pitchNextAcc{uNextBufAcc.getPitches()};
@@ -100,8 +101,8 @@ auto example(T_Cfg const& cfg) -> int
     Queue computeQueue = devAcc.makeQueue();
 
     // Copy host -> device
-    alpaka::memcpy(computeQueue, uCurrBufAcc, uBufHost);
-    alpaka::wait(computeQueue);
+    alpaka::onHost::memcpy(computeQueue, uCurrBufAcc, uBufHost);
+    alpaka::onHost::wait(computeQueue);
 
     // Appropriate chunk size to split your problem for your Acc
     constexpr Idx xSize = 16u;
@@ -130,7 +131,7 @@ auto example(T_Cfg const& cfg) -> int
     for(uint32_t step = 1; step <= numTimeSteps; ++step)
     {
         // Compute next values
-        alpaka::enqueue(
+        alpaka::onHost::enqueue(
             computeQueue,
             exec,
             dataBlocking,
@@ -145,7 +146,7 @@ auto example(T_Cfg const& cfg) -> int
                 dy,
                 dt});
         // Apply boundaries
-        alpaka::enqueue(
+        alpaka::onHost::enqueue(
             computeQueue,
             exec,
             dataBlocking,
@@ -165,7 +166,7 @@ auto example(T_Cfg const& cfg) -> int
         std::swap(uNextBufAcc, uCurrBufAcc);
     }
 
-    alpaka::wait(computeQueue);
+    alpaka::onHost::wait(computeQueue);
     auto endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedTime = endTime - startTime;
 
@@ -173,8 +174,8 @@ auto example(T_Cfg const& cfg) -> int
 
 
     // Copy device -> host
-    alpaka::memcpy(dumpQueue, uBufHost, uCurrBufAcc);
-    alpaka::wait(dumpQueue);
+    alpaka::onHost::memcpy(dumpQueue, uBufHost, uCurrBufAcc);
+    alpaka::onHost::wait(dumpQueue);
 
     // Validate
     auto const [resultIsCorrect, maxError] = validateSolution(uBufHost, extent, dx, dy, tMax);
@@ -206,5 +207,7 @@ auto main() -> int
     //   TagCpuSerial, TagGpuHipRt, TagGpuCudaRt, TagCpuOmp2Blocks, TagCpuTbbBlocks,
     //   TagCpuOmp2Threads, TagCpuSycl, TagCpuTbbBlocks, TagCpuThreads,
     //   TagFpgaSyclIntel, TagGenericSycl, TagGpuSyclIntel
-    return executeForEach([=](auto const& tag) { return example(tag); }, allExecutorsAndApis(enabledApis));
+    return executeForEach(
+        [=](auto const& tag) { return example(tag); },
+        onHost::allExecutorsAndApis(onHost::enabledApis));
 }

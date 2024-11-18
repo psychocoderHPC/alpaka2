@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "alpaka/core/Handle.hpp"
-#include "alpaka/hostApi.hpp"
+#include "Handle.hpp"
+#include "alpaka/onHost.hpp"
 
 #include <memory>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<typename T_Queue>
     struct Queue : std::shared_ptr<T_Queue>
@@ -18,8 +18,8 @@ namespace alpaka
         using Parent = std::shared_ptr<T_Queue>;
 
     public:
-        friend struct alpaka::internal::Enqueue;
-        friend struct alpaka::internal::Wait;
+        friend struct internal::Enqueue;
+        friend struct internal::Wait;
         using element_type = typename Parent::element_type;
 
         Queue(std::shared_ptr<T_Queue>&& ptr) : std::shared_ptr<T_Queue>{std::forward<std::shared_ptr<T_Queue>>(ptr)}
@@ -34,12 +34,12 @@ namespace alpaka
 
         std::string getName() const
         {
-            return alpaka::getName(static_cast<Parent>(*this));
+            return onHost::getName(static_cast<Parent>(*this));
         }
 
         [[nodiscard]] uint32_t getNativeHandle() const
         {
-            return alpaka::getNativeHandle(static_cast<Parent>(*this));
+            return onHost::getNativeHandle(static_cast<Parent>(*this));
         }
 
         bool operator==(Queue const& other) const
@@ -54,12 +54,12 @@ namespace alpaka
 
         void wait() const
         {
-            return alpaka::wait(static_cast<Parent>(*this));
+            return onHost::wait(static_cast<Parent>(*this));
         }
 
         void enqueue(auto const executor, auto const& blockCfg, auto&& f, auto&&... args)
         {
-            return alpaka::enqueue(
+            return onHost::enqueue(
                 static_cast<Parent>(*this),
                 std::move(executor),
                 blockCfg,
@@ -69,12 +69,12 @@ namespace alpaka
         template<typename TKernelFn, typename... TArgs>
         void enqueue(auto const executor, auto const& blockCfg, KernelBundle<TKernelFn, TArgs...> kernelBundle)
         {
-            return alpaka::enqueue(static_cast<Parent>(*this), std::move(executor), blockCfg, std::move(kernelBundle));
+            return onHost::enqueue(static_cast<Parent>(*this), std::move(executor), blockCfg, std::move(kernelBundle));
         }
 
-        void enqueue(auto const executor, concepts::KernelBundleWithSize auto const& kernelBundleWithSize)
+        void enqueue(auto const executor, alpaka::concepts::KernelBundleWithSize auto const& kernelBundleWithSize)
         {
-            return alpaka::enqueue(
+            return onHost::enqueue(
                 static_cast<Parent>(*this),
                 std::move(executor),
                 kernelBundleWithSize.m_numBlocks,
@@ -82,4 +82,4 @@ namespace alpaka
                 kernelBundleWithSize.m_kernelBundle);
         }
     };
-} // namespace alpaka
+} // namespace alpaka::onHost

@@ -200,7 +200,7 @@ option(alpaka_EXAMPLES "Enable/Disable benchmarks" OFF)
 include(CTest)
 
 if (BUILD_TESTING OR alpaka_BENCHMARK)
-    option(alpaka_SYSTEM_CATCH2 "Use the system provided Catch2." ON)
+    option(alpaka_SYSTEM_CATCH2 "Use the system provided Catch2." OFF)
     if (alpaka_SYSTEM_CATCH2)
         find_package(Catch2 3.5.3 REQUIRED)
         include(Catch)

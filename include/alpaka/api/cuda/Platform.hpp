@@ -9,20 +9,21 @@
 
 #if ALPAKA_LANG_CUDA
 
-#    include "alpaka/Trait.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/Device.hpp"
+#    include "alpaka/api/cuda/Platform.hpp"
 #    include "alpaka/core/ApiCudaRt.hpp"
-#    include "alpaka/core/Handle.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
-#    include "alpaka/hostApi.hpp"
+#    include "alpaka/internal.hpp"
+#    include "alpaka/onHost.hpp"
+#    include "alpaka/onHost/Handle.hpp"
 
 #    include <memory>
 #    include <mutex>
 #    include <sstream>
 #    include <vector>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cuda
     {
@@ -57,7 +58,7 @@ namespace alpaka
                 return "cuda::Platform";
             }
 
-            friend struct alpaka::internal::GetDeviceCount;
+            friend struct onHost::internal::GetDeviceCount;
 
             uint32_t getDeviceCount()
             {
@@ -74,7 +75,7 @@ namespace alpaka
                 return static_cast<uint32_t>(numDevices);
             }
 
-            friend struct alpaka::internal::MakeDevice;
+            friend struct onHost::internal::MakeDevice;
 
             Handle<cuda::Device<Platform>> makeDevice(uint32_t const& idx)
             {
@@ -107,18 +108,21 @@ namespace alpaka
         {
             auto operator()(api::Cuda const&) const
             {
-                return alpaka::make_sharedSingleton<cuda::Platform>();
-            }
-        };
-
-        template<>
-        struct GetApi::Op<cuda::Platform>
-        {
-            decltype(auto) operator()(auto&& platform) const
-            {
-                return api::Cuda{};
+                return onHost::make_sharedSingleton<cuda::Platform>();
             }
         };
     } // namespace internal
-} // namespace alpaka
+} // namespace alpaka::onHost
+
+namespace alpaka::internal
+{
+    template<>
+    struct GetApi::Op<onHost::cuda::Platform>
+    {
+        decltype(auto) operator()(auto&& platform) const
+        {
+            return api::Cuda{};
+        }
+    };
+} // namespace alpaka::internal
 #endif

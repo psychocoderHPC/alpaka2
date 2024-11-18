@@ -4,16 +4,17 @@
 
 #pragma once
 
-#include "alpaka/Trait.hpp"
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/Device.hpp"
-#include "alpaka/core/Handle.hpp"
-#include "alpaka/hostApi.hpp"
+#include "alpaka/internal.hpp"
+#include "alpaka/onHost.hpp"
+#include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/trait.hpp"
 
 #include <memory>
 #include <sstream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace cpu
     {
@@ -45,14 +46,14 @@ namespace alpaka
                 return "cpu::Platform";
             }
 
-            friend struct alpaka::internal::GetDeviceCount;
+            friend struct internal::GetDeviceCount;
 
             uint32_t getDeviceCount() const
             {
                 return 1u;
             }
 
-            friend struct alpaka::internal::MakeDevice;
+            friend struct internal::MakeDevice;
 
             Handle<cpu::Device<Platform>> makeDevice(uint32_t const& idx)
             {
@@ -83,17 +84,20 @@ namespace alpaka
         {
             auto operator()(auto&&) const
             {
-                return alpaka::make_sharedSingleton<cpu::Platform>();
-            }
-        };
-
-        template<>
-        struct GetApi::Op<cpu::Platform>
-        {
-            decltype(auto) operator()(auto&& platform) const
-            {
-                return api::Cpu{};
+                return make_sharedSingleton<cpu::Platform>();
             }
         };
     } // namespace internal
-} // namespace alpaka
+} // namespace alpaka::onHost
+
+namespace alpaka::internal
+{
+    template<>
+    struct GetApi::Op<onHost::cpu::Platform>
+    {
+        decltype(auto) operator()(auto&& platform) const
+        {
+            return api::Cpu{};
+        }
+    };
+} // namespace alpaka::internal

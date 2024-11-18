@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "alpaka/core/Handle.hpp"
-#include "alpaka/hostApi.hpp"
+#include "Handle.hpp"
+#include "alpaka/onHost.hpp"
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<typename T_Device>
     struct Device : std::shared_ptr<T_Device>
@@ -17,9 +17,9 @@ namespace alpaka
 
     public:
         friend struct alpaka::internal::GetName;
-        friend struct alpaka::internal::GetNativeHandle;
-        friend struct alpaka::internal::MakeQueue;
-        friend struct alpaka::internal::Enqueue;
+        friend struct internal::GetNativeHandle;
+        friend struct internal::MakeQueue;
+        friend struct internal::Enqueue;
 
         using element_type = typename Parent::element_type;
 
@@ -36,12 +36,12 @@ namespace alpaka
 
         std::string getName() const
         {
-            return alpaka::getName(static_cast<Parent>(*this));
+            return onHost::getName(static_cast<Parent>(*this));
         }
 
         [[nodiscard]] uint32_t getNativeHandle() const
         {
-            return alpaka::getNativeHandle(static_cast<Parent>(*this));
+            return onHost::getNativeHandle(static_cast<Parent>(*this));
         }
 
         bool operator==(Device const& other) const
@@ -56,7 +56,7 @@ namespace alpaka
 
         auto makeQueue()
         {
-            return alpaka::makeQueue(static_cast<Parent>(*this));
+            return onHost::makeQueue(static_cast<Parent>(*this));
         }
     };
-} // namespace alpaka
+} // namespace alpaka::onHost

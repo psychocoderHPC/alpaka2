@@ -8,6 +8,7 @@
 #include "alpaka/Vec.hpp"
 #include "alpaka/core/config.hpp"
 
+#include <cassert>
 #include <experimental/mdspan>
 #include <type_traits>
 

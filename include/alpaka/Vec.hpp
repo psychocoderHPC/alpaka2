@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/core/common.hpp"
+#include "alpaka/core/util.hpp"
 
 #include <array>
 #include <concepts>

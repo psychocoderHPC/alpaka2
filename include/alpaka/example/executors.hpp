@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "alpaka/Tags.hpp"
 #include "alpaka/core/Dict.hpp"
 #include "alpaka/meta/filter.hpp"
+#include "alpaka/tag.hpp"
 
 #include <algorithm>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     constexpr auto getExecutors(auto const& api)
     {
@@ -36,4 +36,4 @@ namespace alpaka
             [](auto... api) { return std::tuple_cat(createApiAndExecTuple(api, getExecutors(api))...); },
             usedApis);
     }
-} // namespace alpaka
+} // namespace alpaka::onHost

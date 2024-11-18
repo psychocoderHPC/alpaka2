@@ -5,16 +5,18 @@
 
 #pragma once
 
-#include "alpaka/core/Handle.hpp"
+#include "alpaka/Vec.hpp"
 #include "alpaka/core/config.hpp"
-#include "alpaka/hostApi.hpp"
+#include "alpaka/internal.hpp"
+#include "alpaka/onHost.hpp"
+#include "alpaka/onHost/Handle.hpp"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <sstream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     namespace mem
     {
@@ -98,7 +100,7 @@ namespace alpaka
             return this->shared_from_this();
         }
 
-        friend struct alpaka::internal::Data;
+        friend struct internal::Data;
 
         T_Extents getPitches() const
         {
@@ -122,16 +124,17 @@ namespace alpaka
 
         friend struct alpaka::internal::GetApi;
     };
+} // namespace alpaka::onHost
 
-    namespace internal
+namespace alpaka::internal
+{
+
+    template<typename T_BaseHandle, typename T_Type, typename T_Extents>
+    struct GetApi::Op<onHost::Data<T_BaseHandle, T_Type, T_Extents>>
     {
-        template<typename T_BaseHandle, typename T_Type, typename T_Extents>
-        struct GetApi::Op<alpaka::Data<T_BaseHandle, T_Type, T_Extents>>
+        decltype(auto) operator()(auto&& data) const
         {
-            decltype(auto) operator()(auto&& data) const
-            {
-                return alpaka::getApi(data.m_base);
-            }
-        };
-    } // namespace internal
-} // namespace alpaka
+            return onHost::getApi(data.m_base);
+        }
+    };
+} // namespace alpaka::internal

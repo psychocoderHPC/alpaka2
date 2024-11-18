@@ -4,17 +4,18 @@
 
 #pragma once
 
-#include "alpaka/core/Handle.hpp"
 #include "alpaka/core/config.hpp"
-#include "alpaka/hostApi.hpp"
+#include "alpaka/internal.hpp"
 #include "alpaka/mem/MdSpan.hpp"
+#include "alpaka/onHost.hpp"
+#include "alpaka/onHost/Handle.hpp"
 
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <sstream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<typename T_Datahandle, typename T_Extents>
     struct View
@@ -52,12 +53,12 @@ namespace alpaka
 
         decltype(auto) data()
         {
-            return alpaka::data(m_data);
+            return onHost::data(m_data);
         }
 
         decltype(auto) data() const
         {
-            return alpaka::data(m_data);
+            return onHost::data(m_data);
         }
 
         auto getMdSpan() const
@@ -74,7 +75,7 @@ namespace alpaka
             using std::experimental::full_extent;
             using std::experimental::submdspan;
 
-            auto* ptr = reinterpret_cast<std::byte*>(alpaka::data(m_data));
+            auto* ptr = reinterpret_cast<std::byte*>(onHost::data(m_data));
             auto ex = detail::makeExtents(m_extents, std::make_index_sequence<T_Extents::dim()>{});
             auto const strides = m_data->getPitches();
             layout_stride::mapping<decltype(ex)> m{ex, strides.toStdArray()};
@@ -88,12 +89,12 @@ namespace alpaka
             //                static_assert(concepts::Device<Device>);
         }
 
-        friend struct alpaka::internal::Memcpy;
+        friend struct internal::Memcpy;
 
         T_Datahandle m_data;
         T_Extents m_extents;
 
-        friend struct alpaka::internal::Data;
+        friend struct internal::Data;
         friend struct alpaka::internal::GetApi;
     };
 
@@ -103,21 +104,24 @@ namespace alpaka
     namespace internal
     {
         template<typename... T_Args>
-        struct Data::Op<alpaka::View<T_Args...>>
+        struct Data::Op<View<T_Args...>>
         {
             decltype(auto) operator()(auto&& buffer) const
             {
-                return alpaka::data(buffer.m_data);
-            }
-        };
-
-        template<typename... T_Args>
-        struct GetApi::Op<alpaka::View<T_Args...>>
-        {
-            decltype(auto) operator()(auto&& buffer) const
-            {
-                return alpaka::getApi(buffer.m_data);
+                return onHost::data(buffer.m_data);
             }
         };
     } // namespace internal
-} // namespace alpaka
+} // namespace alpaka::onHost
+
+namespace alpaka::internal
+{
+    template<typename... T_Args>
+    struct GetApi::Op<onHost::View<T_Args...>>
+    {
+        decltype(auto) operator()(auto&& buffer) const
+        {
+            return onHost::getApi(buffer.m_data);
+        }
+    };
+} // namespace alpaka::internal

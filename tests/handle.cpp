@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MPL-2.0
  */
 
-#include <alpaka/core/Handle.hpp>
+#include "alpaka/onHost/Handle.hpp"
 
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -10,6 +10,7 @@
 #include <cstdint>
 
 using namespace alpaka;
+using namespace alpaka::onHost;
 
 struct Count
 {
