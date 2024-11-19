@@ -1,4 +1,4 @@
-/* Copyright 2024 Bernhard Manfred Gruber, René Widera
+/* Copyright 2024 René Widera
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -8,71 +8,217 @@
 #include "alpaka/Vec.hpp"
 #include "alpaka/core/config.hpp"
 
-#include <cassert>
-#include <experimental/mdspan>
 #include <type_traits>
 
 namespace alpaka
 {
-    namespace detail
+    template<typename T_Type, typename T_Extents, typename T_Pitches>
+    struct MdSpan
     {
-        template<typename ElementType>
-        struct ByteIndexedAccessor
+        using element_type = T_Type;
+        using reference = element_type&;
+        using index_type = typename T_Pitches::type;
+
+        static_assert(std::is_convertible_v<index_type, typename T_Extents::type>);
+
+        static consteval uint32_t dim()
         {
-            using offset_policy = ByteIndexedAccessor;
-            using element_type = ElementType;
-            using reference = ElementType&;
+            return T_Extents::dim();
+        }
 
-            using data_handle_type = std::conditional_t<std::is_const_v<ElementType>, std::byte const*, std::byte*>;
+        /** return value the origin pointer is pointing to
+         *
+         * @return value at the current location
+         */
+        constexpr reference operator*()
+        {
+            return *this->m_ptr;
+        }
 
-            constexpr ByteIndexedAccessor() noexcept = default;
+        /** get origin pointer
+         *
+         * @{
+         */
+        constexpr element_type const* data() const
+        {
+            return this->m_ptr;
+        }
 
-            constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept
+        constexpr element_type* data()
+        {
+            return this->m_ptr;
+        }
+
+        /** @} */
+
+        /*Object must init by copy a valid instance*/
+        constexpr MdSpan() = default;
+
+        /** Constructor
+         *
+         * @param pointer pointer to the memory
+         * @param extents number of elements
+         * @param pitchBytes pitch in bytes per dimension
+         */
+        constexpr MdSpan(element_type* pointer, T_Extents extents, T_Pitches const& pitchBytes)
+            : m_ptr(pointer)
+            , m_extent(extents)
+            , m_pitch(pitchBytes.eraseBack())
+        {
+        }
+
+        MdSpan(MdSpan const&) = default;
+
+        /** get value at the given index
+         *
+         * @param idx n-dimensional offset, relative to the origin pointer
+         * @return reference to the value
+         * @{
+         */
+        constexpr element_type const& operator[](concepts::Vector auto const& idx) const
+        {
+            return *ptr(idx);
+        }
+
+        constexpr reference operator[](concepts::Vector auto const& idx)
+        {
+            return *const_cast<element_type*>(ptr(idx));
+        }
+
+        /** }@ */
+
+        auto getExtents() const
+        {
+            return m_extent;
+        }
+
+    protected:
+        /** get the pointer of the value relative to the origin pointer m_ptr
+         *
+         * @param idx n-dimensional offset
+         * @return pointer to value
+         */
+        constexpr element_type const* ptr(concepts::Vector auto const& idx) const
+        {
+            /** offset in bytes
+             *
+             * We calculate the complete offset in bytes even if it would be possible to change the x-dimension
+             * with the native element_types pointer, this is reducing the register footprint.
+             */
+            size_t offset = sizeof(element_type) * idx.back();
+            for(uint32_t d = 0u; d < dim() - 1u; ++d)
             {
-                return p + i;
+                offset += m_pitch[d] * idx[d];
             }
-
-            constexpr reference access(data_handle_type p, size_t i) const noexcept
-            {
-                assert(i % alignof(ElementType) == 0);
-#if ALPAKA_COMP_GNUC
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wcast-align"
-#endif
-                return *reinterpret_cast<ElementType*>(p + i);
-#if ALPAKA_COMP_GNUC
-#    pragma GCC diagnostic pop
-#endif
-            }
-        };
-
-        template<typename T_Extnets, std::size_t... Is>
-        constexpr auto makeExtents(T_Extnets const& extent, std::index_sequence<Is...>)
-        {
-            auto const ex = extent;
-            return std::experimental::dextents<typename T_Extnets::type, T_Extnets::dim()>{ex[Is]...};
+            return reinterpret_cast<element_type const*>(reinterpret_cast<char const*>(this->m_ptr) + offset);
         }
 
-    } // namespace detail
-
-    template<typename T>
-    struct MdSpan : T
-    {
-        constexpr MdSpan(T const& base) : T{base}
-        {
-        }
-
-        template<typename T_Type, uint32_t T_dim>
-        constexpr decltype(auto) operator[](Vec<T_Type, T_dim> const& vec) const
-        {
-            return T::operator()(vec.toStdArray());
-        }
-
-        template<typename T_Type>
-        requires(std::is_integral_v<T_Type> && T::rank() == 1u)
-        constexpr decltype(auto) operator[](T_Type const& value) const
-        {
-            return T::operator()(value);
-        }
+        element_type* m_ptr;
+        T_Extents m_extent;
+        decltype(std::declval<T_Pitches>().eraseBack()) m_pitch;
     };
+
+    template<typename T_Type, typename T_Extents, typename T_Pitches>
+    ALPAKA_FN_HOST_ACC MdSpan(T_Type* pointer, T_Extents const&, T_Pitches const&)
+        -> MdSpan<T_Type, T_Extents, T_Pitches>;
+
+    template<typename T_Type, typename T_Extents, typename T_Pitches>
+    requires(T_Pitches::dim() == 1u && T_Extents::dim() == 1u)
+    struct MdSpan<T_Type, T_Extents, T_Pitches>
+    {
+        using element_type = T_Type;
+        using reference = element_type&;
+        using index_type = typename T_Pitches::type;
+
+        static_assert(std::is_convertible_v<index_type, typename T_Extents::type>);
+
+        static consteval uint32_t dim()
+        {
+            return 1u;
+        }
+
+        /** return value the origin pointer is pointing to
+         *
+         * @return value at the current location
+         */
+        constexpr reference operator*()
+        {
+            return *this->m_ptr;
+        }
+
+        /** get origin pointer
+         *
+         * @{
+         */
+        constexpr element_type const* data() const
+        {
+            return this->m_ptr;
+        }
+
+        constexpr element_type* data()
+        {
+            return this->m_ptr;
+        }
+
+        /** @} */
+
+        /*Object must init by copy a valid instance*/
+        constexpr MdSpan() = default;
+
+        /** Constructor
+         *
+         * @param pointer pointer to the memory
+         * @param extents number of elements
+         * @param pitchBytes pitch in bytes per dimension
+         */
+        constexpr MdSpan(element_type* pointer, T_Extents const& extents, [[maybe_unused]] T_Pitches const& pitchBytes)
+            : m_ptr(pointer)
+            , m_extent(extents)
+        {
+        }
+
+        constexpr MdSpan(element_type* pointer) : m_ptr(pointer)
+        {
+        }
+
+        constexpr MdSpan(MdSpan const&) = default;
+
+        /** get value at the given index
+         *
+         * @param idx offset relative to the origin pointer
+         * @return reference to the value
+         * @{
+         */
+        constexpr element_type const& operator[](concepts::Vector auto const& idx) const
+        {
+            return *(m_ptr + idx.x());
+        }
+
+        constexpr reference operator[](concepts::Vector auto const& idx)
+        {
+            return *(m_ptr + idx.x());
+        }
+
+        constexpr element_type const& operator[](index_type const& idx) const
+        {
+            return *(m_ptr + idx);
+        }
+
+        constexpr reference operator[](index_type const& idx)
+        {
+            return *(m_ptr + idx);
+        }
+
+        /** @} */
+
+        auto getExtents() const
+        {
+            return m_extent;
+        }
+
+    protected:
+        element_type* m_ptr;
+        T_Extents m_extent;
+    };
+
 } // namespace alpaka
