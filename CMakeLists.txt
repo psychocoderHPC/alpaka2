@@ -126,67 +126,6 @@ if(alpaka_API_CUDA)
     endif()
 endif()
 
-#-------------------------------------------------------------------------------
-# Include mdspan
-
-set(alpaka_USE_MDSPAN "FETCH" CACHE STRING "Use std::mdspan with alpaka")
-set_property(CACHE alpaka_USE_MDSPAN PROPERTY STRINGS "SYSTEM;FETCH;OFF")
-
-if (alpaka_USE_MDSPAN STREQUAL "SYSTEM")
-    find_package(mdspan REQUIRED)
-    target_link_libraries(alpaka INTERFACE std::mdspan)
-    target_compile_definitions(alpaka INTERFACE ALPAKA_USE_MDSPAN)
-elseif (alpaka_USE_MDSPAN STREQUAL "FETCH")
-    include(FetchContent)
-    FetchContent_Declare(
-            mdspan
-            GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-            GIT_TAG 973ef6415a6396e5f0a55cb4c99afd1d1d541681
-    )
-    # we don't use FetchContent_MakeAvailable(mdspan) since it would also install mdspan
-    # see also: https://stackoverflow.com/questions/65527126/how-to-disable-installation-a-fetchcontent-dependency
-    FetchContent_GetProperties(mdspan)
-    if(NOT mdspan_POPULATED)
-        FetchContent_Populate(mdspan)
-        if(${CMAKE_VERSION} VERSION_LESS "3.25.0")
-            add_subdirectory(${mdspan_SOURCE_DIR} ${mdspan_BINARY_DIR} EXCLUDE_FROM_ALL)
-        else()
-            add_subdirectory(${mdspan_SOURCE_DIR} ${mdspan_BINARY_DIR} EXCLUDE_FROM_ALL SYSTEM)
-        endif()
-    endif()
-    if(${CMAKE_VERSION} VERSION_LESS "3.25.0")
-        get_target_property(mdspan_include_dir std::mdspan INTERFACE_INCLUDE_DIRECTORIES)
-        target_include_directories(alpaka SYSTEM INTERFACE ${mdspan_include_dir})
-    else()
-        target_link_libraries(alpaka INTERFACE std::mdspan)
-    endif()
-    target_compile_definitions(alpaka INTERFACE ALPAKA_USE_MDSPAN)
-elseif (alpaka_USE_MDSPAN STREQUAL "OFF")
-else()
-    message(FATAL_ERROR "Invalid option for alpaka_USE_MDSPAN")
-endif()
-
-if (NOT alpaka_USE_MDSPAN STREQUAL "OFF")
-    if (MSVC AND (alpaka_CXX_STANDARD LESS 20))
-        message(WARNING "std::mdspan on MSVC requires C++20. Please enable C++20 via alpaka_CXX_STANDARD. Use of std::mdspan has been disabled.")
-        set(alpaka_USE_MDSPAN "OFF" CACHE STRING "Use std::mdspan with alpaka" FORCE)
-    endif ()
-
-    if (alpaka_ACC_GPU_CUDA_ENABLE AND (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA") AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-        # this issue actually only occurs when the host compiler (not the CXX compiler) is clang, but cmake does not let us query the host compiler id
-        # see: https://gitlab.kitware.com/cmake/cmake/-/issues/20901
-        message(WARNING "std::mdspan does not work with nvcc and clang as host compiler. Use of std::mdspan has been disabled.")
-        set(alpaka_USE_MDSPAN "OFF" CACHE STRING "Use std::mdspan with alpaka" FORCE)
-    endif ()
-
-    if (alpaka_API_CUDA AND (NOT alpaka_CUDA_EXPT_EXTENDED_LAMBDA STREQUAL ON))
-        message(WARNING "std::mdspan requires nvcc's extended lambdas. Use of std::mdspan has been disabled.")
-        set(alpaka_USE_MDSPAN "OFF" CACHE STRING "Use std::mdspan with alpaka" FORCE)
-    endif()
-endif()
-
-
-
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # alpaka IDE target to make source browsable/editable in IDEs

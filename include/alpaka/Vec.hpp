@@ -753,6 +753,9 @@ namespace alpaka
 
         template<typename T, typename T_RequiredComponent>
         concept TypeOrVector = (isVector_v<T> || std::is_same_v<T, T_RequiredComponent>);
+
+        template<typename T, typename T_RequiredComponent>
+        concept VectorOrConvertableType = (isVector_v<T> || std::is_convertible_v<T, T_RequiredComponent>);
     } // namespace concepts
 
 }; // namespace alpaka
