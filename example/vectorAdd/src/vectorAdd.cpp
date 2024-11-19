@@ -111,6 +111,7 @@ auto example(T_Cfg const& cfg) -> int
 
     // Enqueue the kernel execution task
     {
+        alpaka::onHost::wait(queue);
         auto const beginT = std::chrono::high_resolution_clock::now();
         alpaka::onHost::enqueue(queue, exec, dataBlocking, taskKernel);
         alpaka::onHost::wait(queue); // wait in case we are using an asynchronous queue to time actual kernel runtime
