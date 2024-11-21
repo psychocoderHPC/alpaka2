@@ -90,7 +90,7 @@ namespace alpaka::onHost
     template<typename T_Type>
     inline auto alloc(auto const& any, auto const& extents)
     {
-        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*any.get())>, std::decay_t<decltype(extents)>>{}(
+        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*any.get())>, ALPAKA_TYPE(extents)>{}(
             *any.get(),
             extents);
     }

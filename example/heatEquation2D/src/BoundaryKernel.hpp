@@ -23,12 +23,12 @@
 //! \param dt step in t
 struct BoundaryKernel
 {
-    template<typename TAcc, typename TChunk>
+    template<typename TAcc>
     ALPAKA_FN_ACC auto operator()(
         TAcc const& acc,
         double* const uBuf,
-        TChunk const chunkSize,
-        TChunk const pitch,
+        alpaka::concepts::Vector auto const chunkSize,
+        alpaka::concepts::Vector auto const pitch,
         uint32_t step,
         double const dx,
         double const dy,
