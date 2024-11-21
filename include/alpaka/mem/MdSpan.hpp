@@ -340,16 +340,12 @@ namespace alpaka
 
         constexpr auto getExtents() const
         {
-            return getExtents(std::make_integer_sequence<uint32_t, dim()>{});
+            auto const createExtents = []<std::size_t... T_extent>(std::index_sequence<T_extent...>)
+            { return CVec<index_type, std::extent_v<T_ArrayType, T_extent>...>{}; }();
+            return createExtents(std::make_integer_sequence<uint32_t, dim()>{});
         }
 
     protected:
-        template<std::size_t... T_extent>
-        auto getExtents(std::index_sequence<T_extent...>) const
-        {
-            return CVec<index_type, std::extent_v<T_ArrayType, T_extent>...>{};
-        }
-
         T_ArrayType& m_ptr;
     };
 } // namespace alpaka
