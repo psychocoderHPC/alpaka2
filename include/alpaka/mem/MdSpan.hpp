@@ -223,6 +223,7 @@ namespace alpaka
         T_Extents m_extent;
     };
 
+    /** access a C array with compile time extents via a runtime md index. */
     template<std::integral auto T_numDims, uint32_t T_dim = 0u>
     struct ResolveArrayAccess
     {
@@ -239,6 +240,19 @@ namespace alpaka
         {
             return arrayPtr[idx[T_dim]];
         }
+    };
+
+    /** build C array type with compile time extents from a scalar value based on the compile time extents vector */
+    template<typename T, concepts::CVector T_Extent, uint32_t T_numDims = T_Extent::dim(), uint32_t T_dim = 0u>
+    struct CArrayType
+    {
+        using type = typename CArrayType<T[T_Extent{}[T_dim]], T_Extent, T_numDims - 1u, T_dim + 1u>::type;
+    };
+
+    template<typename T, concepts::CVector T_Extent, uint32_t T_dim>
+    struct CArrayType<T, T_Extent, 1u, T_dim>
+    {
+        using type = T[T_Extent{}[T_dim]];
     };
 
     template<typename T_ArrayType>

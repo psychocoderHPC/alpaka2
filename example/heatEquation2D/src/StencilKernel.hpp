@@ -42,7 +42,7 @@ struct StencilKernel
         double const dy,
         double const dt) const -> void
     {
-        auto sdata = alpaka::onAcc::declareSharedArray<double[T_SharedMemSize{}[0]][T_SharedMemSize{}[1]]>(acc);
+        auto sdata = alpaka::onAcc::declareSharedMdArray<double>(acc, T_SharedMemSize{});
 
         // Get indexes
         auto const gridBlockIdx = acc[alpaka::layer::block].idx();
