@@ -68,6 +68,7 @@ namespace alpaka
         }
 
         MdSpan(MdSpan const&) = default;
+        MdSpan(MdSpan&&) = default;
 
         /** get value at the given index
          *
@@ -87,7 +88,7 @@ namespace alpaka
 
         /** }@ */
 
-        auto getExtents() const
+        constexpr auto getExtents() const
         {
             return m_extent;
         }
@@ -105,7 +106,7 @@ namespace alpaka
              * We calculate the complete offset in bytes even if it would be possible to change the x-dimension
              * with the native element_types pointer, this is reducing the register footprint.
              */
-            size_t offset = sizeof(element_type) * idx.back();
+            index_type offset = sizeof(element_type) * idx.back();
             for(uint32_t d = 0u; d < dim() - 1u; ++d)
             {
                 offset += m_pitch[d] * idx[d];
@@ -182,6 +183,7 @@ namespace alpaka
         }
 
         constexpr MdSpan(MdSpan const&) = default;
+        constexpr MdSpan(MdSpan&&) = default;
 
         /** get value at the given index
          *
@@ -211,7 +213,7 @@ namespace alpaka
 
         /** @} */
 
-        auto getExtents() const
+        constexpr auto getExtents() const
         {
             return m_extent;
         }
@@ -221,4 +223,119 @@ namespace alpaka
         T_Extents m_extent;
     };
 
+    template<std::integral auto T_numDims, uint32_t T_dim = 0u>
+    struct ResolveArrayAccess
+    {
+        constexpr decltype(auto) operator()(auto arrayPtr, concepts::Vector auto const& idx) const
+        {
+            return ResolveArrayAccess<T_numDims - 1u, T_dim + 1u>{}(arrayPtr[idx[T_dim]], idx);
+        }
+    };
+
+    template<uint32_t T_dim>
+    struct ResolveArrayAccess<1u, T_dim>
+    {
+        constexpr decltype(auto) operator()(auto arrayPtr, concepts::Vector auto const& idx) const
+        {
+            return arrayPtr[idx[T_dim]];
+        }
+    };
+
+    template<typename T_ArrayType>
+    requires(std::is_array_v<T_ArrayType>)
+    struct MdSpanArray
+    {
+        using extentType = std::extent<T_ArrayType, std::rank_v<T_ArrayType>>;
+        using element_type = std::remove_all_extents_t<T_ArrayType>;
+        using reference = element_type&;
+        using index_type = typename extentType::value_type;
+
+        static consteval uint32_t dim()
+        {
+            return std::rank_v<T_ArrayType>;
+        }
+
+        /** return value the origin pointer is pointing to
+         *
+         * @return value at the current location
+         */
+        constexpr reference operator*()
+        {
+            return *this->m_ptr;
+        }
+
+        /** get origin pointer
+         *
+         * @{
+         */
+        constexpr element_type const* data() const
+        {
+            return this->m_ptr;
+        }
+
+        constexpr element_type* data()
+        {
+            return this->m_ptr;
+        }
+
+        /** @} */
+
+        /*Object must init by copy a valid instance*/
+        constexpr MdSpanArray() = default;
+
+        /** Constructor
+         *
+         * @param pointer pointer to the memory
+         * @param extents number of elements
+         * @param pitchBytes pitch in bytes per dimension
+         */
+        constexpr MdSpanArray(T_ArrayType& staticSizedArray) : m_ptr(staticSizedArray)
+        {
+        }
+
+        constexpr MdSpanArray(MdSpanArray const&) = default;
+        constexpr MdSpanArray(MdSpanArray&&) = default;
+
+        /** get value at the given index
+         *
+         * @param idx offset relative to the origin pointer
+         * @return reference to the value
+         * @{
+         */
+        constexpr element_type const& operator[](concepts::Vector auto const& idx) const
+        {
+            return ResolveArrayAccess<dim()>{}(m_ptr, idx);
+        }
+
+        constexpr reference operator[](concepts::Vector auto const& idx)
+        {
+            return ResolveArrayAccess<dim()>{}(m_ptr, idx);
+        }
+
+        constexpr element_type const& operator[](index_type const& idx) const
+        {
+            return m_ptr[idx];
+        }
+
+        constexpr reference operator[](index_type const& idx)
+        {
+            return m_ptr[idx];
+        }
+
+        /** @} */
+
+        constexpr auto getExtents() const
+        {
+            return getExtents(std::make_integer_sequence<uint32_t, dim()>{});
+        }
+
+    protected:
+        template<std::size_t... T_extent>
+        auto getExtents(std::index_sequence<T_extent...>) const
+        {
+            return CVec<index_type, std::extent_v<T_ArrayType, T_extent>...>{};
+        }
+
+        T_ArrayType& m_ptr;
+    };
 } // namespace alpaka

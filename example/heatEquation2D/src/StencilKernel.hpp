@@ -27,14 +27,14 @@
 //! \param dx step in x
 //! \param dy step in y
 //! \param dt step in t
-template<size_t T_SharedMemSize1D>
+template<typename T_SharedMemSize>
 struct StencilKernel
 {
     template<typename TAcc, typename TIdx>
     ALPAKA_FN_ACC auto operator()(
         TAcc const& acc,
-        double const* const uCurrBuf,
-        double* const uNextBuf,
+        auto const uCurrBuf,
+        auto uNextBuf,
         alpaka::Vec<TIdx, 2u> const chunkSize,
         alpaka::Vec<TIdx, 2u> const pitchCurr,
         alpaka::Vec<TIdx, 2u> const pitchNext,
@@ -42,28 +42,16 @@ struct StencilKernel
         double const dy,
         double const dt) const -> void
     {
-        using IdxVec = alpaka::Vec<TIdx, 2u>;
-
-        auto& sdata = alpaka::onAcc::declareSharedVar<double[T_SharedMemSize1D]>(acc);
-
-        // Get extents(dimensions)
-        auto const blockThreadExtent = acc[alpaka::layer::thread].count();
-        auto const numThreadsPerBlock = blockThreadExtent.product();
+        auto sdata = alpaka::onAcc::declareSharedArray<double[T_SharedMemSize{}[0]][T_SharedMemSize{}[1]]>(acc);
 
         // Get indexes
         auto const gridBlockIdx = acc[alpaka::layer::block].idx();
-        auto const blockThreadIdx = acc[alpaka::layer::thread].idx();
-        auto const threadIdx1D = alpaka::linearize(blockThreadExtent, blockThreadIdx);
         auto const blockStartIdx = gridBlockIdx * chunkSize;
 
-        constexpr IdxVec halo{2, 2};
-
-        for(auto i = threadIdx1D; i < T_SharedMemSize1D; i += numThreadsPerBlock)
+        for(auto idx2d : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, T_SharedMemSize{} + 0u))
         {
-            auto idx2d = alpaka::mapToND(chunkSize + halo, i);
-            idx2d = idx2d + blockStartIdx;
-            auto elem = getElementPtr(uCurrBuf, idx2d, pitchCurr);
-            sdata[i] = *elem;
+            auto bufIdx = idx2d + blockStartIdx;
+            sdata[idx2d] = uCurrBuf[bufIdx];
         }
 
         alpaka::onAcc::syncBlockThreads(acc);
@@ -72,20 +60,20 @@ struct StencilKernel
         double const rX = dt / (dx * dx);
         double const rY = dt / (dy * dy);
 
+        constexpr auto top = alpaka::CVec<uint32_t, -1u, 0u>{};
+        constexpr auto bottom = alpaka::CVec<uint32_t, 1u, 0u>{};
+        constexpr auto left = alpaka::CVec<uint32_t, 0u, -1u>{};
+        constexpr auto right = alpaka::CVec<uint32_t, 0u, 1u>{};
+
         // go over only core cells
+        // alpaka::Vec{1, 1}; offset for halo above and to the left
         for(auto idx2D :
             alpaka::makeIter(acc, alpaka::iter::withinDataFrame, alpaka::Vec{1u, 1u}, alpaka::Vec{16u, 16u}))
         {
-            //  idx2D = idx2D + IdxVec{1, 1}; // offset for halo above and to the left
-            auto localIdx1D = alpaka::linearize(chunkSize + halo, idx2D);
-
-
             auto bufIdx = idx2D + blockStartIdx;
-            auto elem = getElementPtr(uNextBuf, bufIdx, pitchNext);
 
-            *elem = sdata[localIdx1D] * (1.0 - 2.0 * rX - 2.0 * rY) + sdata[localIdx1D - 1] * rX
-                    + sdata[localIdx1D + 1] * rX + sdata[localIdx1D - chunkSize[1] - halo[1]] * rY
-                    + sdata[localIdx1D + chunkSize[1] + halo[1]] * rY;
+            uNextBuf[bufIdx] = sdata[idx2D] * (1.0 - 2.0 * rX - 2.0 * rY) + sdata[idx2D + left] * rX
+                               + sdata[idx2D + right] * rX + sdata[idx2D + top] * rY + sdata[idx2D + bottom] * rY;
         }
     }
 };
