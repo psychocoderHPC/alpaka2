@@ -119,7 +119,8 @@ auto example(T_Cfg const& cfg) -> int
         numNodes[0] % chunkSize[0] == 0 && numNodes[1] % chunkSize[1] == 0
         && "Domain must be divisible by chunk size");
 
-    StencilKernel<CVec<uint32_t, ySize + halo, xSize + halo>> stencilKernel;
+    auto sharedMemExtents = CVec<uint32_t, ySize + halo, xSize + halo>{};
+    StencilKernel stencilKernel;
     BoundaryKernel boundaryKernel;
 
     auto dataBlocking = alpaka::DataBlocking{numChunks, chunkSize};
@@ -139,8 +140,7 @@ auto example(T_Cfg const& cfg) -> int
                 uCurrBufAcc.getMdSpan(),
                 uNextBufAcc.getMdSpan(),
                 chunkSize,
-                pitchCurrAcc,
-                pitchNextAcc,
+                sharedMemExtents,
                 dx,
                 dy,
                 dt});
