@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/mem/MdSpan.hpp"
 #include "alpaka/onAcc/internal.hpp"
 
 namespace alpaka::onAcc
@@ -18,4 +19,11 @@ namespace alpaka::onAcc
     {
         return internalCompute::declareSharedVar<T>(acc);
     }
+
+    template<typename T_Array>
+    constexpr decltype(auto) declareSharedArray(auto const& acc)
+    {
+        return MdSpanArray<T_Array>{internalCompute::declareSharedVar<T_Array>(acc)};
+    }
+
 } // namespace alpaka::onAcc
