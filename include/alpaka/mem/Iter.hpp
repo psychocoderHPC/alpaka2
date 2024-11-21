@@ -208,13 +208,14 @@ namespace alpaka
             }
 
             constexpr const_iterator(
-                concepts::Vector auto const stride,
+                concepts::Vector auto const offset,
+                concepts::Vector auto const first,
                 concepts::Vector auto const extent,
-                concepts::Vector auto const first)
-                : m_current{first}
+                concepts::Vector auto const stride)
+                : m_current{first + offset}
                 , m_stride{stride.select(T_CSelect{})}
-                , m_extent{extent.select(T_CSelect{})}
-                , m_first(first.select(T_CSelect{}))
+                , m_extent{(extent + offset).select(T_CSelect{})}
+                , m_first((m_current).select(T_CSelect{}))
             {
                 // range check required for 1 dimensional iterators
                 if constexpr(iterDim > 1u)
@@ -222,7 +223,7 @@ namespace alpaka
                     // invalidate current if one dimension is out of range.
                     bool isIndexValid = true;
                     for(uint32_t d = 1u; d < iterDim; ++d)
-                        isIndexValid = isIndexValid && (first[d] < extent[d]);
+                        isIndexValid = isIndexValid && (m_first[d] < m_extent[d]);
                     if(!isIndexValid)
                         m_current[T_CSelect{}[0]] = m_extent[0];
                 }
@@ -305,7 +306,7 @@ namespace alpaka
                 m_idxRange.distance(),
                 m_threadSpace.m_threadIdx,
                 m_threadSpace.m_threadCount);
-            return const_iterator(stride, m_idxRange.m_begin + extent, m_idxRange.m_begin + first);
+            return const_iterator(m_idxRange.m_begin, first, extent, stride);
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
