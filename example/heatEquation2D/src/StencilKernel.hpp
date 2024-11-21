@@ -25,12 +25,12 @@
 //! \param dt step in t
 struct StencilKernel
 {
-    template<typename TAcc, typename TIdx>
+    template<typename TAcc>
     ALPAKA_FN_ACC auto operator()(
         TAcc const& acc,
         auto const uCurrBuf,
         auto uNextBuf,
-        alpaka::Vec<TIdx, 2u> const chunkSize,
+        alpaka::concepts::Vector auto const chunkSize,
         alpaka::concepts::CVector auto sharedMemExtents,
         double const dx,
         double const dy,
@@ -62,7 +62,7 @@ struct StencilKernel
         // go over only core cells
         // alpaka::Vec{1, 1}; offset for halo above and to the left
         for(auto idx2D :
-            alpaka::makeIter(acc, alpaka::iter::withinDataFrame, alpaka::Vec{1u, 1u}, alpaka::Vec{16u, 16u}))
+            alpaka::makeIter(acc, alpaka::iter::withinThreadBlock, alpaka::Vec{1u, 1u}, alpaka::Vec{16u, 16u}))
         {
             auto bufIdx = idx2D + blockStartIdx;
 

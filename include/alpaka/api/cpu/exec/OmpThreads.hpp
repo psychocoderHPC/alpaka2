@@ -28,9 +28,6 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct OmpThreads
         {
-            using IndexVecType = typename ThreadBlocking<T_NumBlocks, T_NumThreads>::vecType;
-            using IndexType = typename IndexVecType::type;
-
             constexpr OmpThreads(ThreadBlocking<T_NumBlocks, T_NumThreads> threadBlocking)
                 : m_threadBlocking{std::move(threadBlocking)}
             {
@@ -67,14 +64,17 @@ namespace alpaka::onHost
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                         auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::OmpSync{}};
 
+                        using NumThreadsVecType =
+                            typename ThreadBlocking<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
+                        using ThreadIdxType = typename NumThreadsVecType::type;
 #    pragma omp for
-                        for(IndexType i = 0; i < blockCountND.product(); ++i)
+                        for(ThreadIdxType i = 0; i < blockCountND.product(); ++i)
                         {
                             blockIdx = mapToND(blockCountND, i);
 #    pragma omp parallel num_threads(threadCount)
                             {
                                 int x = omp_get_thread_num();
-                                IndexVecType threadIdx = mapToND(threadCountND, static_cast<IndexType>(x));
+                                NumThreadsVecType threadIdx = mapToND(threadCountND, static_cast<ThreadIdxType>(x));
 
 
                                 // usleep(100 * x * i);

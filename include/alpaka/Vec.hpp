@@ -299,12 +299,12 @@ namespace alpaka
          */
 #define ALPAKA_NAMED_ARRAY_ACCESS(functionName, dimValue)                                                             \
     template<uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= dimValue + 1u, int> = 0>                     \
-    constexpr type& functionName()                                                                                    \
+    constexpr decltype(auto) functionName()                                                                           \
     {                                                                                                                 \
         return (*this)[T_dim - 1u - dimValue];                                                                        \
     }                                                                                                                 \
     template<uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= dimValue + 1u, int> = 0>                     \
-    constexpr type const& functionName() const                                                                        \
+    constexpr decltype(auto) functionName() const                                                                     \
     {                                                                                                                 \
         return (*this)[T_dim - 1u - dimValue];                                                                        \
     }

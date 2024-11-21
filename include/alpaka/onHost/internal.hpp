@@ -165,8 +165,8 @@ namespace alpaka::onHost
             KernelBundle<TKernelFn, TArgs...> const& kernelBundle)
         {
             return AdjustThreadBlocking::Op<
-                std::decay_t<decltype(device)>,
-                std::decay_t<decltype(executor)>,
+                ALPAKA_TYPE(device),
+                ALPAKA_TYPE(executor),
                 DataBlocking<T_NumBlocks, T_NumThreads>,
                 KernelBundle<TKernelFn, TArgs...>>{}(device, executor, dataBlocking, kernelBundle);
         }

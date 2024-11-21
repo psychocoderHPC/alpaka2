@@ -120,14 +120,14 @@ namespace alpaka::onHost
 {
     namespace internal
     {
-        template<typename T_Type, typename T_Platform, typename T_Extents>
+        template<typename T_Type, typename T_Platform, alpaka::concepts::Vector T_Extents>
         struct Alloc::Op<T_Type, cuda::Device<T_Platform>, T_Extents>
         {
             auto operator()(cuda::Device<T_Platform>& device, T_Extents const& extents) const
             {
                 using TApi = typename cuda::Device<T_Platform>::TApi;
                 T_Type* ptr = nullptr;
-                auto pitches = T_Extents::all(sizeof(T_Type));
+                auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
 
                 using Idx = typename T_Extents::type;
 
@@ -164,7 +164,8 @@ namespace alpaka::onHost
                 }
 
                 auto deleter = [](T_Type* ptr) { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(TApi::free(ptr)); };
-                auto data = std::make_shared<onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
+                auto data = std::make_shared<
+                    onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPE(pitches)>>(
                     device.getSharedPtr(),
                     ptr,
                     extents,

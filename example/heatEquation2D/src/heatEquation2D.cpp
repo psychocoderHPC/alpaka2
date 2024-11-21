@@ -108,7 +108,7 @@ auto example(T_Cfg const& cfg) -> int
     constexpr Idx xSize = 16u;
     constexpr Idx ySize = 16u;
     constexpr Idx halo = 2u;
-    constexpr IdxVec chunkSize{ySize, xSize};
+    constexpr auto chunkSize = CVec<Idx, ySize, xSize>{};
 
     constexpr IdxVec numChunks{
         alpaka::core::divCeil(numNodes[0], chunkSize[0]),

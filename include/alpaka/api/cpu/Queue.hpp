@@ -76,7 +76,7 @@ namespace alpaka::onHost
 
             friend struct internal::Enqueue;
 
-            template<typename T_NumBlocks, typename T_NumThreads>
+            template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
             void enqueue(
                 auto const executor,
                 ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
@@ -90,7 +90,7 @@ namespace alpaka::onHost
                     });
             }
 
-            template<typename T_Mapping, typename T_NumBlocks, typename T_BlockSize>
+            template<typename T_Mapping, alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_BlockSize>
             void enqueue(
                 T_Mapping const executor,
                 DataBlocking<T_NumBlocks, T_BlockSize> dataBlocking,

@@ -11,19 +11,20 @@
 
 namespace alpaka
 {
-    template<typename T_NumBlocks, typename T_NumThreads>
+    template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
     struct ThreadBlocking
     {
         using type = typename T_NumBlocks::type;
-        using vecType = T_NumBlocks;
+        using NumBlocksVecType = typename T_NumBlocks::UniVec;
+        using NumThreadsVecType = typename T_NumThreads::UniVec;
 
         consteval uint32_t dim() const
         {
             return T_NumThreads::dim();
         }
 
-        T_NumBlocks m_numBlocks;
-        T_NumThreads m_numThreads;
+        NumBlocksVecType m_numBlocks;
+        NumThreadsVecType m_numThreads;
 
         ThreadBlocking(T_NumBlocks const& numBlocks, T_NumThreads const& numThreads)
             : m_numBlocks(numBlocks)
@@ -32,7 +33,10 @@ namespace alpaka
         }
     };
 
-    template<typename T_NumBlocks, typename T_BlockSize>
+    template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
+    ThreadBlocking(T_NumBlocks const&, T_NumThreads const&) -> ThreadBlocking<T_NumBlocks, T_NumThreads>;
+
+    template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_BlockSize>
     struct DataBlocking
     {
         using type = typename T_NumBlocks::type;
@@ -61,7 +65,7 @@ namespace alpaka
         }
     };
 
-    template<typename T_NumBlocks, typename T_BlockSize>
+    template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_BlockSize>
     std::ostream& operator<<(std::ostream& s, DataBlocking<T_NumBlocks, T_BlockSize> const& d)
     {
         return s << "blocks=" << d.m_numBlocks << " blockSize=" << d.m_blockSize;

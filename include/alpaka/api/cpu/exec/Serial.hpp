@@ -24,7 +24,7 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct Serial
         {
-            using IndexVecType = typename ThreadBlocking<T_NumBlocks, T_NumThreads>::vecType;
+            using NumThreadsVecType = typename ThreadBlocking<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
 
             constexpr Serial(ThreadBlocking<T_NumBlocks, T_NumThreads> threadBlocking)
                 : m_threadBlocking{std::move(threadBlocking)}
@@ -45,7 +45,7 @@ namespace alpaka::onHost
                 auto const blockLayerEntry = DictEntry{
                     layer::block,
                     onAcc::cpu::GenericLayer{std::cref(blockIdx), std::cref(m_threadBlocking.m_numBlocks)}};
-                auto const threadLayerEntry = DictEntry{layer::thread, onAcc::cpu::OneLayer<IndexVecType>{}};
+                auto const threadLayerEntry = DictEntry{layer::thread, onAcc::cpu::OneLayer<NumThreadsVecType>{}};
                 auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                 auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::NoOp{}};
 

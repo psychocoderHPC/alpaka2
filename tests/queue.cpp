@@ -105,6 +105,8 @@ struct IotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, uint32_t outSize) const
     {
+        // check that frame extent keeps compile time const-ness
+        static_assert(alpaka::concepts::CVector<ALPAKA_TYPE(acc[frame::extent])>);
         for(auto i : makeIter(acc, iter::overDataRange))
         {
             out[i.x()] = i.x();
@@ -134,11 +136,11 @@ TEMPLATE_LIST_TEST_CASE("iota", "", TestApis)
     Device cpuDevice = cpuPlatform.makeDevice(0);
     auto hBuff = onHost::alloc<uint32_t>(cpuDevice, extent);
 
-    constexpr auto frameSize = 4u;
+    constexpr auto frameSize = CVec<uint32_t, 4u>{};
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{extent / frameSize, Vec{frameSize}},
+        alpaka::DataBlocking{extent / frameSize, frameSize},
         KernelBundle{IotaKernel{}, dBuff.getMdSpan(), extent.x()});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);

@@ -115,7 +115,7 @@ namespace alpaka::onHost
 
     namespace internal
     {
-        template<typename T_Type, typename T_Platform, typename T_Extents>
+        template<typename T_Type, typename T_Platform, alpaka::concepts::Vector T_Extents>
         struct Alloc::Op<T_Type, cpu::Device<T_Platform>, T_Extents>
         {
             auto operator()(cpu::Device<T_Platform>& device, T_Extents const& extents) const
@@ -125,13 +125,14 @@ namespace alpaka::onHost
                 {
                     auto* ptr = new T_Type[extents.x()];
                     auto deleter = [](T_Type* ptr) { delete[](ptr); };
-                    auto data
-                        = std::make_shared<onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
-                            device.getSharedPtr(),
-                            ptr,
-                            extents,
-                            T_Extents{sizeof(T_Type)},
-                            std::move(deleter));
+                    auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
+                    auto data = std::make_shared<
+                        onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPE(pitches)>>(
+                        device.getSharedPtr(),
+                        ptr,
+                        extents,
+                        pitches,
+                        std::move(deleter));
                     return View<std::decay_t<decltype(data)>, T_Extents>(data);
                 }
                 else
@@ -139,13 +140,13 @@ namespace alpaka::onHost
                     auto* ptr = new T_Type[extents.product()];
                     auto deleter = [](T_Type* ptr) { delete[](ptr); };
                     auto pitches = mem::calculatePitchesFromExtents<T_Type>(extents);
-                    auto data
-                        = std::make_shared<onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents>>(
-                            device.getSharedPtr(),
-                            ptr,
-                            extents,
-                            pitches,
-                            std::move(deleter));
+                    auto data = std::make_shared<
+                        onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPE(pitches)>>(
+                        device.getSharedPtr(),
+                        ptr,
+                        extents,
+                        pitches,
+                        std::move(deleter));
                     return View<std::decay_t<decltype(data)>, T_Extents>(data);
                 }
             }
@@ -168,7 +169,7 @@ namespace alpaka::onHost
                 T_KernelBundle const& kernelBundle) const
             {
                 auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
-                return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
+                return ThreadBlocking{dataBlocking.m_numBlocks, numThreads};
             }
         };
 
@@ -185,16 +186,17 @@ namespace alpaka::onHost
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
+                // universal vector type that both return produce the same result type.
+                using UniVec = typename ALPAKA_TYPE(dataBlocking.m_numBlocks)::UniVec;
+
                 if(dataBlocking.m_numThreads.product() > 4u)
                 {
-                    auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
-                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{dataBlocking.m_numBlocks, numThreads};
+                    auto const numThreads = UniVec::all(1);
+                    return ThreadBlocking{UniVec{dataBlocking.m_numBlocks}, numThreads};
                 }
                 else
                 {
-                    return ThreadBlocking<T_NumBlocks, T_NumThreads>{
-                        dataBlocking.m_numBlocks,
-                        dataBlocking.m_numThreads};
+                    return ThreadBlocking{UniVec{dataBlocking.m_numBlocks}, UniVec{dataBlocking.m_numThreads}};
                 }
             }
         };
