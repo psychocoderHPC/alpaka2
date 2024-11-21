@@ -120,6 +120,10 @@ struct CompileTimeKernel2D
         constexpr auto iota2 = iotaCVec<int, 2u>();
         static_assert(iota2 == Vec{0, 1});
 
+        // CVec fallback to Vec for different operations
+        constexpr auto allVec = CVec<int, 2u, 2u>::all(1u);
+        static_assert(allVec == Vec{1, 1});
+
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
         {
             using type = std::decay_t<decltype(typeDummy)>;

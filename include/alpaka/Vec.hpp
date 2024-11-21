@@ -43,6 +43,14 @@ namespace alpaka
 
     namespace detail
     {
+        struct GetValue
+        {
+            constexpr auto operator()(auto idx, auto value) const
+            {
+                return value;
+            }
+        };
+
         template<typename T, T... T_values>
         struct CVec
         {
@@ -71,6 +79,19 @@ namespace alpaka
                 return result;
             }
         };
+
+        template<typename T>
+        struct IsTemplateSignatureStorage : std::false_type
+        {
+        };
+
+        template<typename T_Type, T_Type... T_values>
+        struct IsTemplateSignatureStorage<CVec<T_Type, T_values...>> : std::true_type
+        {
+        };
+
+        template<typename T>
+        constexpr bool isTemplateSignatureStorage_v = IsTemplateSignatureStorage<T>::value;
     } // namespace detail
 
     template<typename T_Type, uint32_t T_dim, typename T_Storage = ArrayStorage<T_Type, T_dim>>
@@ -87,10 +108,8 @@ namespace alpaka
         using size_type = uint32_t;
         using rank_type = uint32_t;
 
-        constexpr auto toStdArray() const requires std::same_as<ArrayStorage<T_Type, T_dim>, T_Storage>
-        {
-            return static_cast<std::array<T_Type, T_dim>>(*this);
-        }
+        // universal vec used as fallback if T_Storage is holding the state in the template signature
+        using UniVec = Vec<T_Type, T_dim>;
 
         /*Vecs without elements are not allowed*/
         static_assert(T_dim > 0u);
@@ -180,14 +199,22 @@ namespace alpaka
          * @param value Value which is set for all dimensions
          * @return new Vec<...>
          */
-        static constexpr Vec all(T_Type const& value)
+        static constexpr auto all(T_Type const& value)
         {
-            Vec result([=](uint32_t const) { return value; });
-
-            return result;
+            if constexpr(requires { detail::isTemplateSignatureStorage_v<T_Storage>; })
+            {
+                UniVec result([=](uint32_t const) { return value; });
+                return result;
+            }
+            else
+            {
+                Vec result([=](uint32_t const) { return value; });
+                return result;
+            }
         }
 
         constexpr Vec toRT() const
+
         {
             return *this;
         }
@@ -573,9 +600,9 @@ namespace alpaka
         return s << vec.toString();
     }
 
-    /** binary operators
-     * @{
-     */
+/** binary operators
+ * @{
+ */
 #define ALPAKA_VECTOR_BINARY_OP(resultScalarType, op)                                                                 \
     template<typename T_Type, uint32_t T_dim, typename T_Storage, typename T_OtherStorage>                            \
     constexpr auto operator op(                                                                                       \
@@ -773,7 +800,6 @@ namespace alpaka
         template<typename T, typename T_RequiredComponent>
         concept VectorOrConvertableType = (isVector_v<T> || std::is_convertible_v<T, T_RequiredComponent>);
     } // namespace concepts
-
 }; // namespace alpaka
 
 namespace std
