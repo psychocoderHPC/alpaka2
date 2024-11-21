@@ -10,8 +10,6 @@
 
 //! alpaka version of explicit finite-difference 2D heat equation solver
 //!
-//! \tparam T_SharedMemSize1D size of the shared memory box
-//!
 //! Solving equation u_t(x, t) = u_xx(x, t) + u_yy(y, t) using a simple explicit scheme with
 //! forward difference in t and second-order central difference in x and y
 //!
@@ -21,13 +19,10 @@
 //!              u(x, y, t) | t = t_current + dt
 //! \param chunkSize The size of the chunk or tile that the user divides the problem into. This defines the size of the
 //!                  workload handled by each thread block.
-//! \param pitchCurr The pitch (or stride) in memory corresponding to the TDim grid in the accelerator's memory.
-//!              This is used to calculate memory offsets when accessing elements in the current buffer.
-//! \param pitchNext The pitch used to calculate memory offsets when accessing elements in the next buffer.
+//! \param sharedMemExtents size of the shared memory box
 //! \param dx step in x
 //! \param dy step in y
 //! \param dt step in t
-template<typename T_SharedMemSize>
 struct StencilKernel
 {
     template<typename TAcc, typename TIdx>
@@ -36,19 +31,18 @@ struct StencilKernel
         auto const uCurrBuf,
         auto uNextBuf,
         alpaka::Vec<TIdx, 2u> const chunkSize,
-        alpaka::Vec<TIdx, 2u> const pitchCurr,
-        alpaka::Vec<TIdx, 2u> const pitchNext,
+        alpaka::concepts::CVector auto sharedMemExtents,
         double const dx,
         double const dy,
         double const dt) const -> void
     {
-        auto sdata = alpaka::onAcc::declareSharedMdArray<double>(acc, T_SharedMemSize{});
+        auto sdata = alpaka::onAcc::declareSharedMdArray<double>(acc, sharedMemExtents);
 
         // Get indexes
         auto const gridBlockIdx = acc[alpaka::layer::block].idx();
         auto const blockStartIdx = gridBlockIdx * chunkSize;
 
-        for(auto idx2d : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, T_SharedMemSize{} + 0u))
+        for(auto idx2d : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, sharedMemExtents + 0u))
         {
             auto bufIdx = idx2d + blockStartIdx;
             sdata[idx2d] = uCurrBuf[bufIdx];
