@@ -20,10 +20,11 @@ namespace alpaka::onAcc
         return internalCompute::declareSharedVar<T>(acc);
     }
 
-    template<typename T_Array>
-    constexpr decltype(auto) declareSharedArray(auto const& acc)
+    template<typename T, concepts::CVector T_Extent>
+    constexpr decltype(auto) declareSharedMdArray(auto const& acc, T_Extent const& extent)
     {
-        return MdSpanArray<T_Array>{internalCompute::declareSharedVar<T_Array>(acc)};
+        using CArrayType = typename CArrayType<T, T_Extent>::type;
+        return MdSpanArray<CArrayType>{internalCompute::declareSharedVar<CArrayType>(acc)};
     }
 
 } // namespace alpaka::onAcc

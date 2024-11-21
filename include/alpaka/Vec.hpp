@@ -744,12 +744,28 @@ namespace alpaka
     };
 
     template<typename T>
+    struct IsCVector : std::false_type
+    {
+    };
+
+    template<typename T_Type, uint32_t T_dim, T_Type... T_values>
+    struct IsCVector<Vec<T_Type, T_dim, detail::CVec<T_Type, T_values...>>> : std::true_type
+    {
+    };
+
+    template<typename T>
     constexpr bool isVector_v = IsVector<T>::value;
+
+    template<typename T>
+    constexpr bool isCVector_v = IsCVector<T>::value;
 
     namespace concepts
     {
         template<typename T>
         concept Vector = isVector_v<T>;
+
+        template<typename T>
+        concept CVector = isCVector_v<T>;
 
         template<typename T, typename T_RequiredComponent>
         concept TypeOrVector = (isVector_v<T> || std::is_same_v<T, T_RequiredComponent>);
