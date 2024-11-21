@@ -60,10 +60,10 @@ namespace alpaka
     struct Stride
     {
         static constexpr auto adjust(
-            auto const& strideVec,
-            auto const& extentVec,
-            auto const& firstVec,
-            auto const& threadCount)
+            concepts::Vector auto const& strideVec,
+            concepts::Vector auto const& extentVec,
+            concepts::Vector auto const& firstVec,
+            concepts::Vector auto const& threadCount)
         {
             return std::make_tuple(firstVec * strideVec, extentVec, threadCount * strideVec);
         }
@@ -72,10 +72,10 @@ namespace alpaka
     struct Contigious
     {
         static constexpr auto adjust(
-            auto const& strideVec,
-            auto const& extentVec,
-            auto const& firstVec,
-            auto const& threadCount)
+            concepts::Vector auto const& strideVec,
+            concepts::Vector auto const& extentVec,
+            concepts::Vector auto const& firstVec,
+            concepts::Vector auto const& threadCount)
         {
             auto numElements = core::divCeil(extentVec, threadCount * strideVec);
             auto first = firstVec * numElements * strideVec;
@@ -118,7 +118,7 @@ namespace alpaka
         concept IdxMapping = isIdxMapping_v<T>;
     } // namespace concepts
 
-    template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, typename T_CSelect>
+    template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, concepts::CVector T_CSelect>
     class IndexContainer : private T_IdxMapperFn
     {
         void _()
@@ -127,10 +127,9 @@ namespace alpaka
         }
 
     public:
-        using IdxVecType = typename T_IdxRange::IdxVecType;
-        using IdxType = typename IdxVecType::type;
-
-        static constexpr uint32_t dim = IdxVecType::dim();
+        using IdxType = typename T_IdxRange::IdxType;
+        static constexpr uint32_t dim = T_IdxRange::dim();
+        using IdxVecType = Vec<IdxType, dim>;
 
         ALPAKA_FN_ACC inline IndexContainer(
             T_IdxRange const& idxRange,
@@ -160,7 +159,7 @@ namespace alpaka
                 static_assert(std::forward_iterator<const_iterator_end>);
             }
 
-            ALPAKA_FN_ACC inline const_iterator_end(IdxVecType const& extent)
+            ALPAKA_FN_ACC inline const_iterator_end(concepts::Vector auto const& extent)
                 : m_extentSlowDim{extent.select(T_CSelect{})[0]}
             {
             }
@@ -208,7 +207,10 @@ namespace alpaka
                 static_assert(std::forward_iterator<const_iterator>);
             }
 
-            constexpr const_iterator(IdxVecType stride, IdxVecType extent, IdxVecType first)
+            constexpr const_iterator(
+                concepts::Vector auto const stride,
+                concepts::Vector auto const extent,
+                concepts::Vector auto const first)
                 : m_current{first}
                 , m_stride{stride.select(T_CSelect{})}
                 , m_extent{extent.select(T_CSelect{})}
@@ -316,9 +318,7 @@ namespace alpaka
             return const_iterator_end(m_idxRange.m_begin + extent);
         }
 
-        template<typename T, T... T_values>
-        ALPAKA_FN_HOST_ACC constexpr auto operator[](
-            Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const iterDir) const
+        ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const
         {
             return IndexContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
                 m_idxRange,
@@ -483,7 +483,8 @@ namespace alpaka
                     concepts::Vector auto const& extent) const
                     requires std::is_same_v<ALPAKA_TYPE(idxMapping), ALPAKA_TYPE(optimize)>
                 {
-                    static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
+                    static_assert(
+                        std::is_same_v<typename ALPAKA_TYPE(offset)::type, typename ALPAKA_TYPE(extent)::type>);
 
                     auto adjIdxMapping = adjustMapping(acc, acc[object::api]);
                     return IndexContainer{

@@ -42,7 +42,7 @@ struct StencilKernel
         auto const gridBlockIdx = acc[alpaka::layer::block].idx();
         auto const blockStartIdx = gridBlockIdx * chunkSize;
 
-        for(auto idx2d : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, sharedMemExtents + 0u))
+        for(auto idx2d : alpaka::makeIter(acc, alpaka::iter::withinDataFrame, sharedMemExtents))
         {
             auto bufIdx = idx2d + blockStartIdx;
             sdata[idx2d] = uCurrBuf[bufIdx];
