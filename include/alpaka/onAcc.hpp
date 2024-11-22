@@ -31,7 +31,6 @@ namespace alpaka::onAcc
     /**
      * ALPAKA_FN_HOST_ACC is required for cuda else __host__ function called from __host__ __device__ warning
      * is popping up and generated code is wrong.
-     * @{
      */
     template<
         iter::concepts::IdxTraversing T_Traverse = iter::traverse::Flat,
@@ -48,45 +47,5 @@ namespace alpaka::onAcc
             traverse,
             idxMapping);
     }
-
-    template<
-        iter::concepts::IdxTraversing T_Traverse = iter::traverse::Flat,
-        iter::concepts::IdxMapping T_IdxMapping = iter::idxLayout::Optimized>
-    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
-        auto const& acc,
-        auto rangeOps,
-        alpaka::concepts::Vector auto const& extent,
-        T_Traverse traverse = T_Traverse{},
-        T_IdxMapping idxMapping = T_IdxMapping{})
-    {
-        return iter::internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_Traverse, T_IdxMapping>{}(
-            acc,
-            rangeOps,
-            traverse,
-            idxMapping,
-            extent);
-    }
-
-    template<
-        iter::concepts::IdxTraversing T_Traverse = iter::traverse::Flat,
-        iter::concepts::IdxMapping T_IdxMapping = iter::idxLayout::Optimized>
-    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
-        auto const& acc,
-        auto rangeOps,
-        alpaka::concepts::Vector auto const& offset,
-        alpaka::concepts::Vector auto const& extent,
-        T_Traverse traverse = T_Traverse{},
-        T_IdxMapping idxMapping = T_IdxMapping{})
-    {
-        return iter::internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_Traverse, T_IdxMapping>{}(
-            acc,
-            rangeOps,
-            traverse,
-            idxMapping,
-            offset,
-            extent);
-    }
-
-    /** @} */
 
 } // namespace alpaka::onAcc

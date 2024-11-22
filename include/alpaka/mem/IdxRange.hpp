@@ -13,68 +13,61 @@
 namespace alpaka
 {
 
-    template<typename T_Begin, typename T_End, typename T_Stride>
+    template<
+        concepts::Vector T_End,
+        concepts::Vector T_Begin = typename T_End::UniVec,
+        concepts::Vector T_Stride = typename T_End::UniVec>
     struct IdxRange
     {
-        using IdxVecType = T_Begin;
-        using IdxType = typename IdxVecType::type;
+        using IdxType = typename T_End::type;
+        using IdxVecType = typename T_End::UniVec;
 
         constexpr IdxRange(T_Begin const& begin, T_End const& end, T_Stride const& stride)
-            : m_begin(begin)
-            , m_end(end)
-            , m_stride(stride)
+            : m_begin{begin}
+            , m_end{end}
+            , m_stride{stride}
+        {
+        }
+
+        constexpr IdxRange(T_Begin const& begin, T_End const& end)
+            : m_begin{begin}
+            , m_end{end}
+            , m_stride{T_End::all(1u)}
+        {
+        }
+
+        constexpr IdxRange(T_End const& extent) : m_begin{T_End::all(0u)}, m_end{extent}, m_stride{T_End::all(1u)}
         {
         }
 
         static consteval uint32_t dim()
         {
-            return T_Begin::dim();
+            return IdxVecType::dim();
         }
 
-        /** assign operator
-         * @{
-         */
-#define ALPAKA_ITER_ASSIGN_OP(interfaceOp, executedOp)                                                                \
-    template<concepts::TypeOrVector<typename T_Begin::type> T_OpType>                                                 \
-    ALPAKA_FN_HOST_ACC constexpr IdxRange& operator interfaceOp(T_OpType const& rhs)                                  \
-    {                                                                                                                 \
-        m_begin executedOp rhs;                                                                                       \
-        m_end executedOp rhs;                                                                                         \
-        return *this;                                                                                                 \
-    }
-
-        ALPAKA_ITER_ASSIGN_OP(>>=, +=)
-        ALPAKA_ITER_ASSIGN_OP(<<=, -=)
-#undef ALPAKA_ITER_ASSIGN_OP
-
-        template<concepts::TypeOrVector<typename T_Stride::type> T_OpType>
-        ALPAKA_FN_HOST_ACC constexpr IdxRange& operator%=(T_OpType const& rhs)
+        template<concepts::TypeOrVector<typename T_End::type> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr auto operator%(T_OpType const& rhs) const
         {
-            m_stride *= rhs;
-            return *this;
+            return IdxRange<T_End, T_Begin, ALPAKA_TYPE(m_stride * rhs)>{m_begin, m_end, m_stride * rhs};
         }
 
-        template<concepts::TypeOrVector<typename T_Stride::type> T_OpType>
-        ALPAKA_FN_HOST_ACC constexpr IdxRange operator%(T_OpType const& rhs)
+        template<concepts::TypeOrVector<typename T_End::type> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr auto operator>>(T_OpType const& rhs) const
         {
-            auto idxContainer = (*this);
-            idxContainer.m_stride *= rhs;
-            return idxContainer;
+            return IdxRange<ALPAKA_TYPE(m_end + rhs), ALPAKA_TYPE(m_begin + rhs), ALPAKA_TYPE(m_stride)>{
+                m_begin + rhs,
+                m_end + rhs,
+                m_stride};
         }
 
-#define ALPAKA_ITER_BINARY_OP(op)                                                                                     \
-    template<concepts::TypeOrVector<typename T_Begin::type> T_OpType>                                                 \
-    ALPAKA_FN_HOST_ACC constexpr IdxRange operator op(T_OpType const& rhs)                                            \
-    {                                                                                                                 \
-        auto idxContainer = (*this);                                                                                  \
-        idxContainer ALPAKA_PP_CAT(op, =) rhs;                                                                        \
-        return idxContainer;                                                                                          \
-    }
-
-        ALPAKA_ITER_BINARY_OP(>>)
-        ALPAKA_ITER_BINARY_OP(<<)
-
-#undef ALPAKA_ITER_BINARY_OP
+        template<concepts::TypeOrVector<typename T_End::type> T_OpType>
+        ALPAKA_FN_HOST_ACC constexpr auto operator<<(T_OpType const& rhs) const
+        {
+            return IdxRange<ALPAKA_TYPE(m_end - rhs), ALPAKA_TYPE(m_begin - rhs), T_Stride>{
+                m_begin - rhs,
+                m_end - rhs,
+                m_stride};
+        }
 
         constexpr auto distance() const
         {

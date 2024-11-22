@@ -151,7 +151,7 @@ namespace alpaka::onAcc::iter
         struct DataExtent
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[frame::count] * acc[frame::extent];
             }
@@ -160,7 +160,7 @@ namespace alpaka::onAcc::iter
         struct DataFrameCount
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[frame::count];
             }
@@ -169,7 +169,7 @@ namespace alpaka::onAcc::iter
         struct DataFrameExtent
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[frame::extent];
             }
@@ -178,7 +178,7 @@ namespace alpaka::onAcc::iter
         struct GlobalThreadIdx
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::thread].count() * acc[layer::block].idx() + acc[layer::thread].idx();
             }
@@ -187,7 +187,7 @@ namespace alpaka::onAcc::iter
         struct GlobalThreadBlockIdx
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::block].idx();
             }
@@ -196,7 +196,7 @@ namespace alpaka::onAcc::iter
         struct GlobalNumThreadBlocks
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::block].count();
             }
@@ -205,7 +205,7 @@ namespace alpaka::onAcc::iter
         struct GlobalNumThreads
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::block].count() * acc[layer::thread].count();
             }
@@ -214,7 +214,7 @@ namespace alpaka::onAcc::iter
         struct NumThreadsInBlock
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::thread].count();
             }
@@ -223,7 +223,7 @@ namespace alpaka::onAcc::iter
         struct ThreadIdxInBlock
         {
             template<typename T_Acc>
-            constexpr auto operator()(T_Acc const& acc)
+            constexpr auto operator()(T_Acc const& acc) const
             {
                 return acc[layer::thread].idx();
             }
@@ -272,92 +272,138 @@ namespace alpaka::onAcc::iter
             template<typename T_Acc, typename T_RangeOps, typename T_Traverse, typename T_IdxMapping>
             struct Op
             {
-                ALPAKA_NO_HOST_ACC_WARNING
-                ALPAKA_FN_HOST_ACC constexpr auto operator()(
-                    T_Acc const& acc,
-                    T_RangeOps rangeOps,
-                    T_Traverse traverse,
-                    T_IdxMapping idxMapping) const
-                {
-                    return (*this)(acc, rangeOps, traverse, idxMapping, rangeOps[extentFn](acc));
-                }
-
-                ALPAKA_FN_HOST_ACC constexpr auto operator()(
-                    T_Acc const& acc,
-                    T_RangeOps rangeOps,
-                    T_Traverse traverse,
-                    T_IdxMapping idxMapping,
-                    alpaka::concepts::Vector auto const& extent) const
-                {
-                    return (*this)(acc, rangeOps, traverse, idxMapping, ALPAKA_TYPE(extent)::all(0), extent);
-                }
-
                 ALPAKA_FN_HOST_ACC constexpr auto operator()(
                     T_Acc const& acc,
                     T_RangeOps rangeOps,
                     [[maybe_unused]] T_Traverse traverse,
-                    T_IdxMapping idxMapping,
-                    alpaka::concepts::Vector auto const& offset,
-                    alpaka::concepts::Vector auto const& extent) const
+                    T_IdxMapping idxMapping) const
                     requires std::is_same_v<ALPAKA_TYPE(idxMapping), idxLayout::Optimized>
                 {
-                    static_assert(
-                        std::is_same_v<typename ALPAKA_TYPE(offset)::type, typename ALPAKA_TYPE(extent)::type>);
-
                     auto adjIdxMapping = adjustMapping(acc, acc[object::api]);
+                    auto const idxRange = rangeOps.getIdxRange(acc);
+                    auto const threadSpace = rangeOps.getThreadSpace(acc);
                     return T_Traverse::make(
-                        IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
-                        ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
+                        idxRange,
+                        threadSpace,
                         adjIdxMapping,
-                        iotaCVec<typename ALPAKA_TYPE(extent)::type, ALPAKA_TYPE(extent)::dim()>());
+                        iotaCVec<
+                            typename ALPAKA_TYPE(idxRange.distance())::type,
+                            ALPAKA_TYPE(idxRange.distance())::dim()>());
                 }
 
                 ALPAKA_FN_HOST_ACC constexpr auto operator()(
                     T_Acc const& acc,
                     T_RangeOps rangeOps,
-                    T_IdxMapping idxMapping,
-                    alpaka::concepts::Vector auto const& offset,
-                    alpaka::concepts::Vector auto const& extent) const
+                    T_IdxMapping idxMapping) const
                 {
-                    static_assert(std::is_same_v<ALPAKA_TYPE(offset), ALPAKA_TYPE(extent)>);
+                    auto const idxRange = rangeOps.getIdxRange(acc);
+                    auto const threadSpace = rangeOps.getThreadSpace(acc);
                     return T_Traverse::make(
-                        IdxRange{offset, offset + extent, ALPAKA_TYPE(offset)::all(1u)},
-                        ThreadSpace{rangeOps[firstFn](acc), rangeOps[threadCountFn](acc)},
+                        idxRange,
+                        threadSpace,
                         idxMapping,
-                        iotaCVec<typename ALPAKA_TYPE(extent)::type, ALPAKA_TYPE(extent)::dim()>());
+                        iotaCVec<
+                            typename ALPAKA_TYPE(idxRange.distance())::type,
+                            ALPAKA_TYPE(idxRange.distance())::dim()>());
                 }
             };
         };
     } // namespace internal
 
-    constexpr auto overDataRange = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
-        DictEntry(extentFn, idxTrait::DataExtent{}),
-        DictEntry(threadCountFn, idxTrait::GlobalNumThreads{}))};
+    namespace detail
+    {
+        template<typename T_IdxFn, typename T_ExtentFn>
+        struct ThreadGroupFn
+        {
+            constexpr ThreadGroupFn(T_IdxFn const& idxFn, T_ExtentFn const& extentFn)
+                : m_idxFn{idxFn}
+                , m_extentFn{extentFn}
+            {
+            }
 
-    constexpr auto overDataFrames = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
-        DictEntry(extentFn, idxTrait::DataFrameCount{}),
-        DictEntry(threadCountFn, idxTrait::GlobalNumThreadBlocks{}))};
+            constexpr auto getThreadSpace(auto const& acc) const
+            {
+                return ThreadSpace{m_idxFn(acc), m_extentFn(acc)};
+            }
 
-    constexpr auto withinDataFrame = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
-        DictEntry(extentFn, idxTrait::DataFrameExtent{}),
-        DictEntry(threadCountFn, idxTrait::NumThreadsInBlock{}))};
+        private:
+            T_IdxFn const m_idxFn;
+            T_ExtentFn const m_extentFn;
+        };
 
-    constexpr auto overThreadRange = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::GlobalThreadIdx{}),
-        DictEntry(extentFn, idxTrait::GlobalNumThreads{}),
-        DictEntry(threadCountFn, idxTrait::GlobalNumThreads{}))};
+        template<typename T_ExtentFn>
+        struct IdxRangeFn
+        {
+            constexpr IdxRangeFn(T_ExtentFn const& extentFn) : m_extentFn{extentFn}
+            {
+            }
 
-    constexpr auto overThreadBlocks = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::GlobalThreadBlockIdx{}),
-        DictEntry(extentFn, idxTrait::GlobalNumThreadBlocks{}),
-        DictEntry(threadCountFn, idxTrait::GlobalNumThreadBlocks{}))};
+            constexpr auto getIdxRange(auto const& acc) const
+            {
+                return IdxRange{m_extentFn(acc)};
+            }
 
-    constexpr auto withinThreadBlock = Dict{std::make_tuple(
-        DictEntry(firstFn, idxTrait::ThreadIdxInBlock{}),
-        DictEntry(extentFn, idxTrait::NumThreadsInBlock{}),
-        DictEntry(threadCountFn, idxTrait::NumThreadsInBlock{}))};
+        private:
+            T_ExtentFn const m_extentFn;
+        };
+    } // namespace detail
+
+    template<typename T_ThreadGroup, typename T_IdxRange>
+    struct DomainSpec
+    {
+        constexpr DomainSpec(T_ThreadGroup const& threadGroup, T_IdxRange const& idxRange)
+            : m_threadGroup{threadGroup}
+            , m_idxRange{idxRange}
+        {
+        }
+
+        constexpr auto over(auto const& idxRange) const
+        {
+            return DomainSpec<T_ThreadGroup, ALPAKA_TYPE(idxRange)>{m_threadGroup, idxRange};
+        }
+
+    private:
+        friend internal::MakeIter;
+
+        constexpr auto getIdxRange(auto const& acc) const
+        {
+            return m_idxRange;
+        }
+
+        constexpr auto getIdxRange(auto const& acc) const
+            requires(requires { std::declval<T_IdxRange>().getIdxRange(acc); })
+        {
+            return m_idxRange.getIdxRange(acc);
+        }
+
+        constexpr auto getThreadSpace(auto const& acc) const
+        {
+            return m_threadGroup;
+        }
+
+        constexpr auto getThreadSpace(auto const& acc) const
+            requires(requires { std::declval<T_ThreadGroup>().getThreadSpace(acc); })
+        {
+            return m_threadGroup.getThreadSpace(acc);
+        }
+
+        T_ThreadGroup m_threadGroup;
+        T_IdxRange m_idxRange;
+    };
+
+    constexpr auto gridThreads = detail::ThreadGroupFn{idxTrait::GlobalThreadIdx{}, idxTrait::GlobalNumThreads{}};
+    constexpr auto blockThreads = detail::ThreadGroupFn{idxTrait::ThreadIdxInBlock{}, idxTrait::NumThreadsInBlock{}};
+
+    constexpr auto overDataRange = DomainSpec{gridThreads, detail::IdxRangeFn{idxTrait::DataExtent{}}};
+
+    constexpr auto overDataFrames = DomainSpec{gridThreads, detail::IdxRangeFn{idxTrait::DataFrameCount{}}};
+
+    constexpr auto withinDataFrame = DomainSpec{blockThreads, detail::IdxRangeFn{idxTrait::DataFrameExtent{}}};
+
+    constexpr auto overThreadRange = DomainSpec{gridThreads, detail::IdxRangeFn{idxTrait::GlobalNumThreads{}}};
+
+    constexpr auto overThreadBlocks = DomainSpec{gridThreads, detail::IdxRangeFn{idxTrait::GlobalNumThreadBlocks{}}};
+
+    constexpr auto withinThreadBlock = DomainSpec{blockThreads, detail::IdxRangeFn{idxTrait::NumThreadsInBlock{}}};
 
 } // namespace alpaka::onAcc::iter

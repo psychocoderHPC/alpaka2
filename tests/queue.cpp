@@ -260,7 +260,7 @@ struct IotaKernelNDSelection
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numFrames) const
     {
-        for(auto frameIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames, numFrames)[T_Selection{}])
+        for(auto frameIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames.over(IdxRange{numFrames}))[T_Selection{}])
         {
             for(auto elemIdx : onAcc::makeIter(acc, onAcc::iter::withinDataFrame))
                 if(linearize(acc[frame::extent], elemIdx) == 1u)
