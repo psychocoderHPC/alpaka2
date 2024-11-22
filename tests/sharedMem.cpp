@@ -29,7 +29,7 @@ struct SharedBlockIotaKernel
         // auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
         auto& shared = declareSharedVar<uint32_t[T_blockSize]>(acc);
 
-        for(auto blockIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames, numBlocks))
+        for(auto blockIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames.over(IdxRange{numBlocks})))
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
