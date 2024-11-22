@@ -10,10 +10,10 @@
 #include "alpaka/core/PP.hpp"
 #include "alpaka/core/Utility.hpp"
 #include "alpaka/core/common.hpp"
+#include "alpaka/mem/FlatIdxContainer.hpp"
 #include "alpaka/mem/IdxRange.hpp"
-#include "alpaka/mem/LinearizedIdxContainer.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
-#include "alpaka/mem/TilingIdxContainer.hpp"
+#include "alpaka/mem/TiledIdxContainer.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
@@ -22,11 +22,11 @@
 #include <ranges>
 #include <sstream>
 
-namespace alpaka::iter
+namespace alpaka::onAcc::iter
 {
-    namespace layout
+    namespace idxLayout
     {
-        struct Stride
+        struct Strided
         {
             static constexpr auto adjust(
                 concepts::Vector auto const& strideVec,
@@ -37,8 +37,6 @@ namespace alpaka::iter
                 return std::make_tuple(firstVec * strideVec, extentVec, threadCount * strideVec);
             }
         };
-
-        constexpr auto stride = Stride{};
 
         struct Contigious
         {
@@ -54,18 +52,19 @@ namespace alpaka::iter
             }
         };
 
-        constexpr auto contigious = Contigious{};
-
-        struct Optimize
+        struct Optimized
         {
         };
 
-        constexpr auto optimize = Optimize{};
-    } // namespace layout
+    } // namespace idxLayout
+
+    constexpr auto Strided = idxLayout::Strided{};
+    constexpr auto Contigious = idxLayout::Contigious{};
+    constexpr auto Optimized = idxLayout::Optimized{};
 
     namespace traverse
     {
-        struct Linearized
+        struct Flat
         {
             ALPAKA_FN_HOST_ACC static constexpr auto make(
                 auto const& idxRange,
@@ -73,11 +72,9 @@ namespace alpaka::iter
                 auto const& idxMapper,
                 concepts::CVector auto const& cSelect)
             {
-                return LinearizedIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
+                return FlatIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
             }
         };
-
-        constexpr auto linearized = Linearized{};
 
         struct Tiled
         {
@@ -87,12 +84,13 @@ namespace alpaka::iter
                 auto const& idxMapper,
                 concepts::CVector auto const& cSelect)
             {
-                return TilingIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
+                return TiledIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
             }
         };
-
-        constexpr auto tiled = Tiled{};
     } // namespace traverse
+
+    constexpr auto flat = traverse::Flat{};
+    constexpr auto tiled = traverse::Tiled{};
 
     namespace trait
     {
@@ -102,17 +100,17 @@ namespace alpaka::iter
         };
 
         template<>
-        struct IsIdxMapping<layout::Stride> : std::true_type
+        struct IsIdxMapping<idxLayout::Strided> : std::true_type
         {
         };
 
         template<>
-        struct IsIdxMapping<layout::Optimize> : std::true_type
+        struct IsIdxMapping<idxLayout::Optimized> : std::true_type
         {
         };
 
         template<>
-        struct IsIdxMapping<layout::Contigious> : std::true_type
+        struct IsIdxMapping<idxLayout::Contigious> : std::true_type
         {
         };
 
@@ -125,7 +123,7 @@ namespace alpaka::iter
         };
 
         template<>
-        struct IsIdxTraversing<traverse::Linearized> : std::true_type
+        struct IsIdxTraversing<traverse::Flat> : std::true_type
         {
         };
 
@@ -245,7 +243,7 @@ namespace alpaka::iter
             {
                 constexpr auto operator()(T_Acc const&, T_Api) const
                 {
-                    return layout::Stride{};
+                    return idxLayout::Strided{};
                 }
             };
         };
@@ -255,7 +253,7 @@ namespace alpaka::iter
         {
             constexpr auto operator()(T_Acc const&, api::Cpu) const
             {
-                return layout::Contigious{};
+                return idxLayout::Contigious{};
             }
         };
 
@@ -301,7 +299,7 @@ namespace alpaka::iter
                     T_IdxMapping idxMapping,
                     alpaka::concepts::Vector auto const& offset,
                     alpaka::concepts::Vector auto const& extent) const
-                    requires std::is_same_v<ALPAKA_TYPE(idxMapping), layout::Optimize>
+                    requires std::is_same_v<ALPAKA_TYPE(idxMapping), idxLayout::Optimized>
                 {
                     static_assert(
                         std::is_same_v<typename ALPAKA_TYPE(offset)::type, typename ALPAKA_TYPE(extent)::type>);
@@ -362,4 +360,4 @@ namespace alpaka::iter
         DictEntry(extentFn, idxTrait::NumThreadsInBlock{}),
         DictEntry(threadCountFn, idxTrait::NumThreadsInBlock{}))};
 
-} // namespace alpaka::iter
+} // namespace alpaka::onAcc::iter

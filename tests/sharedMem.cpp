@@ -29,18 +29,18 @@ struct SharedBlockIotaKernel
         // auto& shared = acc.template allocVar<uint32_t[T_blockSize]>();
         auto& shared = declareSharedVar<uint32_t[T_blockSize]>(acc);
 
-        for(auto blockIdx : onAcc::makeIter(acc, iter::overDataFrames, numBlocks))
+        for(auto blockIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames, numBlocks))
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
-            for(auto inBlockOffset : onAcc::makeIter(acc, iter::withinDataFrame))
+            for(auto inBlockOffset : onAcc::makeIter(acc, onAcc::iter::withinDataFrame))
             {
                 uint32_t id = (T_blockSize - 1u - inBlockOffset).x();
                 shared[id] = id;
             }
             // acc.sync();
             syncBlockThreads(acc);
-            for(auto inBlockOffset : onAcc::makeIter(acc, alpaka::iter::withinDataFrame))
+            for(auto inBlockOffset : onAcc::makeIter(acc, onAcc::iter::withinDataFrame))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + shared[inBlockOffset.x()]).x();
             }

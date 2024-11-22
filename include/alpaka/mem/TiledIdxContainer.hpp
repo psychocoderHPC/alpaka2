@@ -20,7 +20,7 @@
 #include <ranges>
 #include <sstream>
 
-namespace alpaka::iter
+namespace alpaka::onAcc::iter
 {
     namespace detail
     {
@@ -58,11 +58,11 @@ namespace alpaka::iter
     } // namespace detail
 
     template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, concepts::CVector T_CSelect>
-    class TilingIdxContainer : private T_IdxMapperFn
+    class TiledIdxContainer : private T_IdxMapperFn
     {
         void _()
         {
-            static_assert(std::ranges::forward_range<TilingIdxContainer>);
+            static_assert(std::ranges::forward_range<TiledIdxContainer>);
         }
 
     public:
@@ -70,7 +70,7 @@ namespace alpaka::iter
         static constexpr uint32_t dim = T_IdxRange::dim();
         using IdxVecType = Vec<IdxType, dim>;
 
-        ALPAKA_FN_ACC inline TilingIdxContainer(
+        ALPAKA_FN_ACC inline TiledIdxContainer(
             T_IdxRange const& idxRange,
             T_ThreadSpace const& threadSpace,
             T_IdxMapperFn idxMapping,
@@ -91,7 +91,7 @@ namespace alpaka::iter
          */
         class const_iterator_end
         {
-            friend class TilingIdxContainer;
+            friend class TiledIdxContainer;
 
             void _()
             {
@@ -135,7 +135,7 @@ namespace alpaka::iter
 
         class const_iterator
         {
-            friend class TilingIdxContainer;
+            friend class TiledIdxContainer;
             friend class const_iterator_end;
 
             static constexpr uint32_t iterDim = T_CSelect::dim();
@@ -260,7 +260,7 @@ namespace alpaka::iter
 
         ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const
         {
-            return TilingIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
+            return TiledIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
                 m_idxRange,
                 m_threadSpace,
                 T_IdxMapperFn{});
@@ -270,4 +270,4 @@ namespace alpaka::iter
         T_IdxRange m_idxRange;
         T_ThreadSpace m_threadSpace;
     };
-} // namespace alpaka::iter
+} // namespace alpaka::onAcc::iter
