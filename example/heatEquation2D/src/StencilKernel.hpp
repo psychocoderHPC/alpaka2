@@ -36,37 +36,35 @@ struct StencilKernel
         double const dy,
         double const dt) const -> void
     {
-        auto sdata = alpaka::onAcc::declareSharedMdArray<double>(acc, sharedMemExtents);
+        using namespace alpaka;
+
+        auto sdata = onAcc::declareSharedMdArray<double>(acc, sharedMemExtents);
 
         // Get indexes
-        auto const gridBlockIdx = acc[alpaka::layer::block].idx();
+        auto const gridBlockIdx = acc[layer::block].idx();
         auto const blockStartIdx = gridBlockIdx * chunkSize;
 
-        for(auto idx2d :
-            alpaka::onAcc::makeIdxMap(acc, alpaka::onAcc::worker::threadsInBlock, alpaka::IdxRange{sharedMemExtents}))
+        for(auto idx2d : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{sharedMemExtents}))
         {
             auto bufIdx = idx2d + blockStartIdx;
             sdata[idx2d] = uCurrBuf[bufIdx];
         }
 
-        alpaka::onAcc::syncBlockThreads(acc);
+        onAcc::syncBlockThreads(acc);
 
         // Each kernel executes one element
         double const rX = dt / (dx * dx);
         double const rY = dt / (dy * dy);
 
-        constexpr auto top = alpaka::CVec<uint32_t, -1u, 0u>{};
-        constexpr auto bottom = alpaka::CVec<uint32_t, 1u, 0u>{};
-        constexpr auto left = alpaka::CVec<uint32_t, 0u, -1u>{};
-        constexpr auto right = alpaka::CVec<uint32_t, 0u, 1u>{};
+        constexpr auto top = CVec<uint32_t, -1u, 0u>{};
+        constexpr auto bottom = CVec<uint32_t, 1u, 0u>{};
+        constexpr auto left = CVec<uint32_t, 0u, -1u>{};
+        constexpr auto right = CVec<uint32_t, 0u, 1u>{};
 
         // go over only core cells
-        // alpaka::Vec{1, 1}; offset for halo above and to the left
-        for(auto idx2D : alpaka::onAcc::makeIdxMap(
-                acc,
-                alpaka::onAcc::worker::threadsInBlock,
-                alpaka::IdxRange{chunkSize} >> 1u,
-                alpaka::onAcc::iter::tiled))
+        // Vec{1, 1}; offset for halo above and to the left
+        for(auto idx2D :
+            onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{chunkSize} >> 1u, onAcc::iter::tiled))
         {
             auto bufIdx = idx2D + blockStartIdx;
 
