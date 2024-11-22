@@ -43,7 +43,7 @@ struct StencilKernel
         auto const blockStartIdx = gridBlockIdx * chunkSize;
 
         for(auto idx2d :
-            alpaka::onAcc::makeIter(acc, alpaka::onAcc::worker::threadsInBlock, alpaka::IdxRange{sharedMemExtents}))
+            alpaka::onAcc::makeIdxMap(acc, alpaka::onAcc::worker::threadsInBlock, alpaka::IdxRange{sharedMemExtents}))
         {
             auto bufIdx = idx2d + blockStartIdx;
             sdata[idx2d] = uCurrBuf[bufIdx];
@@ -62,7 +62,7 @@ struct StencilKernel
 
         // go over only core cells
         // alpaka::Vec{1, 1}; offset for halo above and to the left
-        for(auto idx2D : alpaka::onAcc::makeIter(
+        for(auto idx2D : alpaka::onAcc::makeIdxMap(
                 acc,
                 alpaka::onAcc::worker::threadsInBlock,
                 alpaka::IdxRange{chunkSize} >> 1u,
