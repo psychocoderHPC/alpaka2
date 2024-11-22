@@ -35,7 +35,7 @@ namespace alpaka::onAcc
     template<
         iter::concepts::IdxTraversing T_Traverse = iter::traverse::Flat,
         iter::concepts::IdxMapping T_IdxMapping = iter::idxLayout::Optimized>
-    ALPAKA_FN_HOST_ACC constexpr auto makeIter(
+    ALPAKA_FN_HOST_ACC constexpr auto makeIdxMap(
         auto const& acc,
         auto const workGroup,
         auto const range,
