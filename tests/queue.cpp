@@ -107,7 +107,7 @@ struct IotaKernel
     {
         // check that frame extent keeps compile time const-ness
         static_assert(alpaka::concepts::CVector<ALPAKA_TYPE(acc[frame::extent])>);
-        for(auto i : onAcc::makeIter(acc, onAcc::iter::overDataRange))
+        for(auto i : onAcc::makeIter(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
         {
             out[i.x()] = i.x();
         }
@@ -158,7 +158,7 @@ struct IotaKernelND
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
     {
-        for(auto i : onAcc::makeIter(acc, onAcc::iter::overDataRange))
+        for(auto i : onAcc::makeIter(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
         {
             out[i] = i;
         }
@@ -260,9 +260,9 @@ struct IotaKernelNDSelection
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numFrames) const
     {
-        for(auto frameIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames.over(IdxRange{numFrames}))[T_Selection{}])
+        for(auto frameIdx : onAcc::makeIter(acc, onAcc::worker::blocksInGrid, IdxRange{numFrames})[T_Selection{}])
         {
-            for(auto elemIdx : onAcc::makeIter(acc, onAcc::iter::withinDataFrame))
+            for(auto elemIdx : onAcc::makeIter(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
                 if(linearize(acc[frame::extent], elemIdx) == 1u)
                 {
                     out[frameIdx] = frameIdx;

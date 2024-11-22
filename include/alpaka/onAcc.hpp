@@ -37,15 +37,17 @@ namespace alpaka::onAcc
         iter::concepts::IdxMapping T_IdxMapping = iter::idxLayout::Optimized>
     ALPAKA_FN_HOST_ACC constexpr auto makeIter(
         auto const& acc,
-        auto rangeOps,
+        auto const workGroup,
+        auto const range,
         T_Traverse traverse = T_Traverse{},
         T_IdxMapping idxMapping = T_IdxMapping{})
     {
-        return iter::internal::MakeIter::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(rangeOps), T_Traverse, T_IdxMapping>{}(
-            acc,
-            rangeOps,
-            traverse,
-            idxMapping);
+        return iter::internal::MakeIter::
+            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(iter::DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+                acc,
+                iter::DomainSpec{workGroup, range},
+                traverse,
+                idxMapping);
     }
 
 } // namespace alpaka::onAcc
