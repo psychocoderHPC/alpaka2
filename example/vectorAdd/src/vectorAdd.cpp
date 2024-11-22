@@ -32,7 +32,8 @@ public:
 
         // The uniformElements range for loop takes care automatically of the blocks, threads and elements in the
         // kernel launch grid.
-        for(auto i : alpaka::onAcc::makeIter(acc, alpaka::onAcc::iter::overDataRange, numElements))
+        for(auto i :
+            alpaka::onAcc::makeIter(acc, alpaka::onAcc::iter::overDataRange.over(alpaka::IdxRange{numElements})))
         {
             C[i] = A[i] + B[i];
         }
