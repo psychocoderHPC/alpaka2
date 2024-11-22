@@ -28,12 +28,13 @@ public:
     ALPAKA_FN_ACC auto operator()(auto const& acc, auto const A, auto const B, auto C, auto const& numElements) const
         -> void
     {
+        using namespace alpaka;
         static_assert(ALPAKA_TYPE(numElements)::dim() == 1, "The VectorAddKernel expects 1-dimensional indices!");
 
         // The uniformElements range for loop takes care automatically of the blocks, threads and elements in the
         // kernel launch grid.
         for(auto i :
-            alpaka::onAcc::makeIdxMap(acc, alpaka::onAcc::worker::threadsInGrid, alpaka::IdxRange{numElements}))
+            onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{numElements}))
         {
             C[i] = A[i] + B[i];
         }
