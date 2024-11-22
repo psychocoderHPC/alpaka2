@@ -24,11 +24,11 @@ struct BlockIotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numBlocks) const
     {
-        for(auto blockIdx : onAcc::makeIter(acc, iter::overDataFrames, numBlocks))
+        for(auto blockIdx : onAcc::makeIter(acc, onAcc::iter::overDataFrames, numBlocks))
         {
             auto const numDataElemInBlock = acc[frame::extent];
             auto blockOffset = blockIdx * numDataElemInBlock;
-            for(auto inBlockOffset : onAcc::makeIter(acc, iter::withinDataFrame))
+            for(auto inBlockOffset : onAcc::makeIter(acc, onAcc::iter::withinDataFrame))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + inBlockOffset).x();
             }
