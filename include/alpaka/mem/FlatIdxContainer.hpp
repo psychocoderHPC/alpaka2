@@ -20,15 +20,15 @@
 #include <ranges>
 #include <sstream>
 
-namespace alpaka::iter
+namespace alpaka::onAcc::iter
 {
 
     template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, concepts::CVector T_CSelect>
-    class LinearizedIdxContainer : private T_IdxMapperFn
+    class FlatIdxContainer : private T_IdxMapperFn
     {
         void _()
         {
-            static_assert(std::ranges::forward_range<LinearizedIdxContainer>);
+            static_assert(std::ranges::forward_range<FlatIdxContainer>);
         }
 
     public:
@@ -36,7 +36,7 @@ namespace alpaka::iter
         static constexpr uint32_t dim = T_IdxRange::dim();
         using IdxVecType = Vec<IdxType, dim>;
 
-        ALPAKA_FN_ACC inline LinearizedIdxContainer(
+        ALPAKA_FN_ACC inline FlatIdxContainer(
             T_IdxRange const& idxRange,
             T_ThreadSpace const& threadSpace,
             T_IdxMapperFn idxMapping,
@@ -57,7 +57,7 @@ namespace alpaka::iter
          */
         class const_iterator_end
         {
-            friend class LinearizedIdxContainer;
+            friend class FlatIdxContainer;
 
             void _()
             {
@@ -101,7 +101,7 @@ namespace alpaka::iter
 
         class const_iterator
         {
-            friend class LinearizedIdxContainer;
+            friend class FlatIdxContainer;
             friend class const_iterator_end;
 
             static constexpr uint32_t iterDim = T_CSelect::dim();
@@ -204,7 +204,7 @@ namespace alpaka::iter
 
         ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const
         {
-            return LinearizedIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
+            return FlatIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
                 m_idxRange,
                 m_threadSpace,
                 T_IdxMapperFn{});
@@ -214,4 +214,4 @@ namespace alpaka::iter
         T_IdxRange m_idxRange;
         T_ThreadSpace m_threadSpace;
     };
-} // namespace alpaka::iter
+} // namespace alpaka::onAcc::iter
