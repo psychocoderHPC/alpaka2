@@ -12,6 +12,7 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/mem/IdxRange.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
+#include "alpaka/mem/layout.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
@@ -58,7 +59,7 @@ namespace alpaka::onAcc::iter
     } // namespace detail
 
     template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, concepts::CVector T_CSelect>
-    class TiledIdxContainer : private T_IdxMapperFn
+    class TiledIdxContainer
     {
         void _()
         {
@@ -75,8 +76,7 @@ namespace alpaka::onAcc::iter
             T_ThreadSpace const& threadSpace,
             T_IdxMapperFn idxMapping,
             T_CSelect const& = T_CSelect{})
-            : T_IdxMapperFn{std::move(idxMapping)}
-            , m_idxRange(idxRange)
+            : m_idxRange(idxRange)
             , m_threadSpace{threadSpace}
         {
             //  std::cout << "iter:" << m_idxRange.toString() << " " << m_threadSpace.toString() << std::endl;
@@ -240,22 +240,42 @@ namespace alpaka::onAcc::iter
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            auto [first, extent, stride] = this->adjust(
-                m_idxRange.m_stride,
-                m_idxRange.distance(),
-                m_threadSpace.m_threadIdx,
-                m_threadSpace.m_threadCount);
-            return const_iterator(m_idxRange.m_begin, first, extent, stride);
+            if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
+            {
+                return const_iterator(
+                    m_idxRange.m_begin,
+                    m_threadSpace.m_threadIdx * m_idxRange.m_stride,
+                    m_idxRange.distance(),
+                    m_threadSpace.m_threadCount * m_idxRange.m_stride);
+            }
+            else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
+            {
+                auto extent = m_idxRange.distance();
+                auto numElements = core::divCeil(extent, m_idxRange.m_stride * m_threadSpace.m_threadCount);
+                auto first = m_threadSpace.m_threadIdx * numElements * m_idxRange.m_stride;
+
+                return const_iterator(
+                    m_idxRange.m_begin,
+                    first,
+                    extent.min(first + numElements * m_idxRange.m_stride),
+                    m_idxRange.m_stride);
+            }
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            auto [_, extent, __] = this->adjust(
-                m_idxRange.m_stride,
-                m_idxRange.distance(),
-                m_threadSpace.m_threadIdx,
-                m_threadSpace.m_threadCount);
-            return const_iterator_end(m_idxRange.m_begin + extent);
+            if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
+            {
+                return const_iterator_end(m_idxRange.m_begin + m_idxRange.distance());
+            }
+            else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
+            {
+                auto extent = m_idxRange.distance();
+                auto numElements = core::divCeil(extent, m_idxRange.m_stride * m_threadSpace.m_threadCount);
+                auto first = m_threadSpace.m_threadIdx * numElements * m_idxRange.m_stride;
+
+                return const_iterator_end(m_idxRange.m_begin + extent.min(first + numElements * m_idxRange.m_stride));
+            }
         }
 
         ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const
