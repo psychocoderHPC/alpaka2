@@ -135,7 +135,7 @@ TEMPLATE_LIST_TEST_CASE("iota", "", TestApis)
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = onHost::alloc<uint32_t>(cpuDevice, extent);
+    auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
 
     constexpr auto frameSize = CVec<uint32_t, 4u>{};
     onHost::enqueue(
@@ -188,7 +188,7 @@ TEMPLATE_LIST_TEST_CASE("iota2D", "", TestApis)
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = onHost::alloc<Vec<uint32_t, 2u>>(cpuDevice, extent);
+    auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
 
     wait(queue);
     constexpr auto frameSize = Vec{2u, 4u};
@@ -232,7 +232,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D", "", TestApis)
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = onHost::alloc<Vec<uint32_t, 3u>>(cpuDevice, extent);
+    auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
 
     wait(queue);
     constexpr auto frameSize = Vec{2u, 4u, 8u};
@@ -295,7 +295,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = onHost::alloc<Vec<uint32_t, 3u>>(cpuDevice, numBlocks);
+    auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
 
     wait(queue);
     constexpr auto frameSize = Vec{1u, 1u, 2u};

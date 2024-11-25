@@ -87,12 +87,34 @@ namespace alpaka::onHost
         return alpaka::internal::getApi(*any.get());
     }
 
+    /** allocate memory on the given device
+     *
+     * @tparam T_Type type of the data elements
+     * @param device device handle
+     * @param extents number of elements for each dimension
+     * @return memory owning view to the allocated memory
+     */
     template<typename T_Type>
-    inline auto alloc(auto const& any, auto const& extents)
+    inline auto alloc(auto const& device, alpaka::concepts::Vector auto const& extents)
     {
-        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*any.get())>, ALPAKA_TYPE(extents)>{}(
-            *any.get(),
+        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*device.get())>, ALPAKA_TYPE(extents)>{}(
+            *device.get(),
             extents);
+    }
+
+    /** allocate memory on the given device based on a view
+     *
+     * Derives type and extents of the memory from the view.
+     * The content of the memory is not copied to the created allocated memory.
+     *
+     * @param device device handle
+     * @param view memory where properties will be derived from
+     *
+     * @return memory owning view to the allocated memory
+     */
+    inline auto allocMirror(auto const& device, auto const& view)
+    {
+        return alloc<typename ALPAKA_TYPE(view)::type>(device, view.getExtents());
     }
 
     inline auto memcpy(concepts::QueueHandle auto& queue, auto& dest, auto const& source, auto const& extents)
