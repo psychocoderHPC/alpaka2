@@ -109,6 +109,7 @@ struct IotaKernel
         static_assert(alpaka::concepts::CVector<ALPAKA_TYPE(acc[frame::extent])>);
         for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
         {
+            //            std::cout<<i<<std::endl;
             out[i.x()] = i.x();
         }
     }
@@ -128,7 +129,7 @@ TEMPLATE_LIST_TEST_CASE("iota", "", TestApis)
     std::cout << getName(platform) << " " << device.getName() << std::endl;
 
     Queue queue = device.makeQueue();
-    constexpr Vec extent = Vec{128u};
+    constexpr Vec extent = Vec{12u};
     std::cout << "exec=" << core::demangledName(exec) << std::endl;
     auto dBuff = onHost::alloc<uint32_t>(device, extent);
 
