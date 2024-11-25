@@ -12,6 +12,7 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/mem/IdxRange.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
+#include "alpaka/mem/layout.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
@@ -64,8 +65,7 @@ namespace alpaka::onAcc::iter
                 static_assert(std::forward_iterator<const_iterator_end>);
             }
 
-            ALPAKA_FN_ACC inline const_iterator_end(concepts::Vector auto const& extent)
-                : m_extentSlowDim{extent.select(T_CSelect{})[0]}
+            ALPAKA_FN_ACC inline const_iterator_end(IdxType const& end) : m_extentSlowDim{end}
             {
             }
 
@@ -87,7 +87,7 @@ namespace alpaka::onAcc::iter
 
             constexpr bool operator==(const_iterator const& other) const
             {
-                return (m_extentSlowDim <= other.slowCurrent);
+                return (m_extentSlowDim <= other.slowCurrent());
             }
 
             constexpr bool operator!=(const_iterator const& other) const
@@ -113,28 +113,31 @@ namespace alpaka::onAcc::iter
             }
 
             constexpr const_iterator(
-                concepts::Vector auto const offset,
-                concepts::Vector auto const first,
-                concepts::Vector auto const extent,
-                concepts::Vector auto const stride)
-                : m_current{linearize(stride.select(T_CSelect{}), first.select(T_CSelect{}))}
-                , m_stride{stride.select(T_CSelect{}).product()}
-                , m_extent{extent.select(T_CSelect{})}
-                , m_offset(first + offset)
+                concepts::Vector auto offsetMD,
+                IdxType const current,
+                IdxType const stride,
+                IdxType const end,
+                concepts::Vector auto const extentMD,
+                concepts::Vector auto const strideMD)
+                : m_offsetMD{offsetMD}
+                , m_current{current}
+                , m_end{end}
+                , m_stride{stride}
+                , m_extentMD{extentMD}
+                , m_strideMD{strideMD}
             {
-                m_offset.ref(T_CSelect{}) -= first.select(T_CSelect{});
             }
 
             ALPAKA_FN_ACC constexpr IdxType slowCurrent() const
             {
-                return (**this)[T_CSelect{}[0]];
+                return m_current;
             }
 
         public:
             constexpr IdxVecType operator*() const
             {
-                auto result = m_offset;
-                result.ref(T_CSelect{}) += mapToND(m_extent, m_current);
+                auto result = m_offsetMD;
+                result.ref(T_CSelect{}) += mapToND(m_extentMD, m_current) * m_strideMD;
                 return result;
             }
 
@@ -174,32 +177,82 @@ namespace alpaka::onAcc::iter
             }
 
         private:
+            IdxVecType m_offsetMD;
             // modified by the pre/post-increment operator
             IdxType m_current;
             // non-const to support iterator copy and assignment
+            IdxType m_end;
             IdxType m_stride;
-            IterIdxVecType m_extent;
-            IdxVecType m_offset;
+            IterIdxVecType m_extentMD;
+            IterIdxVecType m_strideMD;
         };
 
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
-            auto [first, extent, stride] = this->adjust(
-                m_idxRange.m_stride,
-                m_idxRange.distance(),
-                m_threadSpace.m_threadIdx,
-                m_threadSpace.m_threadCount);
-            return const_iterator(m_idxRange.m_begin, first, extent, stride);
+            if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
+            {
+                auto groupOffset = m_threadSpace.m_threadIdx * m_idxRange.m_stride;
+                groupOffset.ref(T_CSelect{}) -= groupOffset.select(T_CSelect{});
+
+                auto begin = m_idxRange.m_begin + groupOffset;
+
+                auto linearCurrent = linearize(
+                    m_threadSpace.m_threadCount.select(T_CSelect{}),
+                    m_threadSpace.m_threadIdx.select(T_CSelect{}));
+                auto linearStride = m_threadSpace.m_threadCount.select(T_CSelect{}).product();
+                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
+                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+
+                return const_iterator(begin, linearCurrent, linearStride, extentMD.product(), extentMD, strideMD);
+            }
+            else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
+            {
+                auto groupOffset = m_threadSpace.m_threadIdx * m_idxRange.m_stride;
+                groupOffset.ref(T_CSelect{}) -= groupOffset.select(T_CSelect{});
+
+                auto begin = m_idxRange.m_begin + groupOffset;
+
+                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
+                auto numElements = core::divCeil(
+                    m_idxRange.distance().select(T_CSelect{}).product(),
+                    (m_threadSpace.m_threadCount.select(T_CSelect{}).product() * strideMD.product()));
+                auto linearCurrent = linearize(
+                                         m_threadSpace.m_threadCount.select(T_CSelect{}),
+                                         m_threadSpace.m_threadIdx.select(T_CSelect{}))
+                                     * numElements;
+                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+                return const_iterator(
+                    begin,
+                    linearCurrent,
+                    IdxType{1u},
+                    std::min(linearCurrent + numElements, extentMD.product()),
+                    extentMD,
+                    strideMD);
+            }
         }
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
-            auto [_, extent, __] = this->adjust(
-                m_idxRange.m_stride,
-                m_idxRange.distance(),
-                m_threadSpace.m_threadIdx,
-                m_threadSpace.m_threadCount);
-            return const_iterator_end(m_idxRange.m_begin + extent);
+            if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
+            {
+                auto extentMD = core::divCeil(
+                    m_idxRange.distance().select(T_CSelect{}),
+                    m_idxRange.m_stride.select(T_CSelect{}));
+                return const_iterator_end(extentMD.product());
+            }
+            else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
+            {
+                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
+                auto numElements = core::divCeil(
+                    m_idxRange.distance().select(T_CSelect{}).product(),
+                    (m_threadSpace.m_threadCount.select(T_CSelect{}).product() * strideMD.product()));
+                auto linearCurrent = linearize(
+                                         m_threadSpace.m_threadCount.select(T_CSelect{}),
+                                         m_threadSpace.m_threadIdx.select(T_CSelect{}))
+                                     * numElements;
+                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+                return const_iterator_end(std::min(linearCurrent + numElements, extentMD.product()));
+            }
         }
 
         ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const

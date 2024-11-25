@@ -14,6 +14,7 @@
 #include "alpaka/mem/IdxRange.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
 #include "alpaka/mem/TiledIdxContainer.hpp"
+#include "alpaka/mem/layout.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
@@ -26,44 +27,6 @@ namespace alpaka::onAcc
 {
     namespace iter
     {
-        namespace idxLayout
-        {
-            struct Strided
-            {
-                static constexpr auto adjust(
-                    concepts::Vector auto const& strideVec,
-                    concepts::Vector auto const& extentVec,
-                    concepts::Vector auto const& firstVec,
-                    concepts::Vector auto const& threadCount)
-                {
-                    return std::make_tuple(firstVec * strideVec, extentVec, threadCount * strideVec);
-                }
-            };
-
-            struct Contigious
-            {
-                static constexpr auto adjust(
-                    concepts::Vector auto const& strideVec,
-                    concepts::Vector auto const& extentVec,
-                    concepts::Vector auto const& firstVec,
-                    concepts::Vector auto const& threadCount)
-                {
-                    auto numElements = core::divCeil(extentVec, threadCount * strideVec);
-                    auto first = firstVec * numElements * strideVec;
-                    return std::make_tuple(first, extentVec.min(first + numElements * strideVec), strideVec);
-                }
-            };
-
-            struct Optimized
-            {
-            };
-
-        } // namespace idxLayout
-
-        constexpr auto Strided = idxLayout::Strided{};
-        constexpr auto Contigious = idxLayout::Contigious{};
-        constexpr auto Optimized = idxLayout::Optimized{};
-
         namespace traverse
         {
             struct Flat
@@ -89,10 +52,11 @@ namespace alpaka::onAcc
                     return TiledIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
                 }
             };
-        } // namespace traverse
 
-        constexpr auto flat = traverse::Flat{};
-        constexpr auto tiled = traverse::Tiled{};
+            constexpr auto flat = Flat{};
+            constexpr auto tiled = Tiled{};
+
+        } // namespace traverse
 
         namespace trait
         {
@@ -102,17 +66,17 @@ namespace alpaka::onAcc
             };
 
             template<>
-            struct IsIdxMapping<idxLayout::Strided> : std::true_type
+            struct IsIdxMapping<layout::Strided> : std::true_type
             {
             };
 
             template<>
-            struct IsIdxMapping<idxLayout::Optimized> : std::true_type
+            struct IsIdxMapping<layout::Optimized> : std::true_type
             {
             };
 
             template<>
-            struct IsIdxMapping<idxLayout::Contigious> : std::true_type
+            struct IsIdxMapping<layout::Contigious> : std::true_type
             {
             };
 
@@ -245,7 +209,7 @@ namespace alpaka::onAcc
                 {
                     constexpr auto operator()(T_Acc const&, T_Api) const
                     {
-                        return idxLayout::Strided{};
+                        return layout::Strided{};
                     }
                 };
             };
@@ -255,7 +219,7 @@ namespace alpaka::onAcc
             {
                 constexpr auto operator()(T_Acc const&, api::Cpu) const
                 {
-                    return idxLayout::Contigious{};
+                    return layout::Contigious{};
                 }
             };
 
@@ -279,7 +243,7 @@ namespace alpaka::onAcc
                         T_DomainSpec const& domainSpec,
                         [[maybe_unused]] T_Traverse traverse,
                         T_IdxMapping idxMapping) const
-                        requires std::is_same_v<ALPAKA_TYPE(idxMapping), idxLayout::Optimized>
+                        requires std::is_same_v<ALPAKA_TYPE(idxMapping), layout::Optimized>
                     {
                         auto adjIdxMapping = adjustMapping(acc, acc[object::api]);
                         auto const idxRange = domainSpec.getIdxRange(acc);
@@ -296,6 +260,7 @@ namespace alpaka::onAcc
                     ALPAKA_FN_HOST_ACC constexpr auto operator()(
                         T_Acc const& acc,
                         T_DomainSpec const& domainSpec,
+                        [[maybe_unused]] T_Traverse traverse,
                         T_IdxMapping idxMapping) const
                     {
                         auto const idxRange = domainSpec.getIdxRange(acc);
