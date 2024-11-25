@@ -76,8 +76,8 @@ auto example(T_Cfg const& cfg) -> int
 
     // Allocate 3 host memory buffers
     auto bufHostA = alpaka::onHost::alloc<Data>(devHost, extent);
-    auto bufHostB = alpaka::onHost::alloc<Data>(devHost, extent);
-    auto bufHostC = alpaka::onHost::alloc<Data>(devHost, extent);
+    auto bufHostB = alpaka::onHost::allocMirror(devHost, bufHostA);
+    auto bufHostC = alpaka::onHost::allocMirror(devHost, bufHostA);
 
     // C++14 random generator for uniformly distributed numbers in {1,..,42}
     std::random_device rd{};
@@ -92,9 +92,9 @@ auto example(T_Cfg const& cfg) -> int
     }
 
     // Allocate 3 buffers on the accelerator
-    auto bufAccA = alpaka::onHost::alloc<Data>(devAcc, extent);
-    auto bufAccB = alpaka::onHost::alloc<Data>(devAcc, extent);
-    auto bufAccC = alpaka::onHost::alloc<Data>(devAcc, extent);
+    auto bufAccA = alpaka::onHost::allocMirror(devAcc, bufHostA);
+    auto bufAccB = alpaka::onHost::allocMirror(devAcc, bufHostB);
+    auto bufAccC = alpaka::onHost::allocMirror(devAcc, bufHostC);
 
     // Copy Host -> Acc
     alpaka::onHost::memcpy(queue, bufAccA, bufHostA);

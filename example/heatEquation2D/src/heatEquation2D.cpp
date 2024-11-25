@@ -87,8 +87,8 @@ auto example(T_Cfg const& cfg) -> int
     auto uBufHost = alpaka::onHost::alloc<double>(devHost, extent);
 
     // Accelerator buffer
-    auto uCurrBufAcc = alpaka::onHost::alloc<double>(devAcc, extent);
-    auto uNextBufAcc = alpaka::onHost::alloc<double>(devAcc, extent);
+    auto uCurrBufAcc = alpaka::onHost::allocMirror(devAcc, uBufHost);
+    auto uNextBufAcc = alpaka::onHost::allocMirror(devAcc, uBufHost);
 
     auto const pitchCurrAcc{uCurrBufAcc.getPitches()};
     auto const pitchNextAcc{uNextBufAcc.getPitches()};

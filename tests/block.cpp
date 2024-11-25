@@ -67,7 +67,7 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
 
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
-    auto hBuff = onHost::alloc<uint32_t>(cpuDevice, dataExtent);
+    auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
     wait(queue);
 
     onHost::enqueue(
