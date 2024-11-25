@@ -24,11 +24,20 @@ struct BlockIotaKernel
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numBlocks) const
     {
-        for(auto blockIdx : onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{numBlocks}))
+        auto const numDataElemInBlock = acc[frame::extent];
+        for(auto blockIdx : onAcc::makeIdxMap(
+                acc,
+                onAcc::worker::blocksInGrid,
+                IdxRange{ALPAKA_TYPE(numBlocks)::all(0), numBlocks * numDataElemInBlock, numDataElemInBlock},
+                onAcc::iter::traverse::tiled,
+                onAcc::iter::layout::contigious))
         {
-            auto const numDataElemInBlock = acc[frame::extent];
-            auto blockOffset = blockIdx * numDataElemInBlock;
-            for(auto inBlockOffset : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
+            auto blockOffset = blockIdx;
+            for(auto inBlockOffset : onAcc::makeIdxMap(
+                    acc,
+                    onAcc::worker::threadsInBlock,
+                    onAcc::range::frameExtent,
+                    onAcc::iter::traverse::tiled))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + inBlockOffset).x();
             }
@@ -50,8 +59,8 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
     std::cout << getName(platform) << " " << device.getName() << std::endl;
 
     Queue queue = device.makeQueue();
-    constexpr Vec numBlocks = Vec{256u};
-    constexpr Vec blockExtent = Vec{128u};
+    constexpr Vec numBlocks = Vec{9u};
+    constexpr Vec blockExtent = Vec{4u};
     constexpr Vec dataExtent = numBlocks * blockExtent;
     std::cout << "block iota exec=" << core::demangledName(exec) << std::endl;
     auto dBuff = onHost::alloc<uint32_t>(device, dataExtent);

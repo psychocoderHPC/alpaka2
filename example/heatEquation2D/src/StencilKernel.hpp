@@ -32,44 +32,47 @@ struct StencilKernel
         auto uNextBuf,
         alpaka::concepts::Vector auto const chunkSize,
         alpaka::concepts::CVector auto sharedMemExtents,
+        alpaka::concepts::Vector auto numNodes,
         double const dx,
         double const dy,
         double const dt) const -> void
     {
         using namespace alpaka;
-
         auto sdata = onAcc::declareSharedMdArray<double>(acc, sharedMemExtents);
-
-        // Get indexes
-        auto const gridBlockIdx = acc[layer::block].idx();
-        auto const blockStartIdx = gridBlockIdx * chunkSize;
-
-        for(auto idx2d : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{sharedMemExtents}))
+        for(auto blockStartIdx :
+            onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{Vec{0u, 0u}, numNodes, chunkSize}))
         {
-            auto bufIdx = idx2d + blockStartIdx;
-            sdata[idx2d] = uCurrBuf[bufIdx];
-        }
+            // avoid data race with the stencil calculation at the end
+            onAcc::syncBlockThreads(acc);
 
-        onAcc::syncBlockThreads(acc);
+            for(auto idx2d : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{sharedMemExtents}))
+            {
+                auto bufIdx = idx2d + blockStartIdx;
+                sdata[idx2d] = uCurrBuf[bufIdx];
+            }
 
-        // Each kernel executes one element
-        double const rX = dt / (dx * dx);
-        double const rY = dt / (dy * dy);
+            onAcc::syncBlockThreads(acc);
 
-        constexpr auto top = CVec<uint32_t, -1u, 0u>{};
-        constexpr auto bottom = CVec<uint32_t, 1u, 0u>{};
-        constexpr auto left = CVec<uint32_t, 0u, -1u>{};
-        constexpr auto right = CVec<uint32_t, 0u, 1u>{};
+            // Each kernel executes one element
+            double const rX = dt / (dx * dx);
+            double const rY = dt / (dy * dy);
 
-        // go over only core cells
-        // Vec{1, 1}; offset for halo above and to the left
-        for(auto idx2D :
-            onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{chunkSize} >> 1u, onAcc::iter::tiled))
-        {
-            auto bufIdx = idx2D + blockStartIdx;
+            constexpr auto xDir = CVec<uint32_t, 0u, 1u>{};
+            constexpr auto yDir = CVec<uint32_t, 1u, 0u>{};
 
-            uNextBuf[bufIdx] = sdata[idx2D] * (1.0 - 2.0 * rX - 2.0 * rY) + sdata[idx2D + left] * rX
-                               + sdata[idx2D + right] * rX + sdata[idx2D + top] * rY + sdata[idx2D + bottom] * rY;
+            // go over only core cells
+            // Vec{1, 1}; offset for halo above and to the left
+            for(auto idx2D : onAcc::makeIdxMap(
+                    acc,
+                    onAcc::worker::threadsInBlock,
+                    IdxRange{chunkSize} >> 1u,
+                    onAcc::iter::traverse::tiled))
+            {
+                auto bufIdx = idx2D + blockStartIdx;
+
+                uNextBuf[bufIdx] = sdata[idx2D] * (1.0 - 2.0 * rX - 2.0 * rY) + sdata[idx2D - xDir] * rX
+                                   + sdata[idx2D + xDir] * rX + sdata[idx2D - yDir] * rY + sdata[idx2D + yDir] * rY;
+            }
         }
     }
 };

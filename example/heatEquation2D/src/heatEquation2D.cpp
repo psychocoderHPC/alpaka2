@@ -123,6 +123,7 @@ auto example(T_Cfg const& cfg) -> int
     StencilKernel stencilKernel;
     BoundaryKernel boundaryKernel;
 
+    auto dataBlockingStancil = alpaka::DataBlocking{numChunks, chunkSize};
     auto dataBlocking = alpaka::DataBlocking{numChunks, chunkSize};
 
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -134,16 +135,19 @@ auto example(T_Cfg const& cfg) -> int
         alpaka::onHost::enqueue(
             computeQueue,
             exec,
-            dataBlocking,
+            dataBlockingStancil,
             KernelBundle{
                 stencilKernel,
                 uCurrBufAcc.getMdSpan(),
                 uNextBufAcc.getMdSpan(),
                 chunkSize,
                 sharedMemExtents,
+                numNodes,
                 dx,
                 dy,
                 dt});
+
+        // std::cout<<"_--"<<std::endl;
         // Apply boundaries
         alpaka::onHost::enqueue(
             computeQueue,
