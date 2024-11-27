@@ -39,7 +39,9 @@ namespace alpaka::onHost
             Device(concepts::PlatformHandle auto platform, uint32_t const idx)
                 : m_platform(std::move(platform))
                 , m_idx(idx)
+                , m_properties{getDeviceProperties(m_platform, m_idx)}
             {
+                m_properties.m_name += " id=" + std::to_string(m_idx);
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(idx));
             }
 
@@ -64,6 +66,7 @@ namespace alpaka::onHost
 
             Handle<T_Platform> m_platform;
             uint32_t m_idx = 0u;
+            DeviceProperties m_properties;
             std::vector<std::weak_ptr<cuda::Queue<Device>>> queues;
             std::mutex queuesGuard;
 
@@ -76,7 +79,7 @@ namespace alpaka::onHost
 
             std::string getName() const
             {
-                return std::string("cuda::Device id=") + std::to_string(m_idx);
+                return m_properties.m_name;
             }
 
             friend struct onHost::internal::GetNativeHandle;
@@ -100,6 +103,7 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::Alloc;
             friend struct alpaka::internal::GetApi;
+            friend struct internal::GetDeviceProperties;
         };
     } // namespace cuda
 } // namespace alpaka::onHost
@@ -172,6 +176,15 @@ namespace alpaka::onHost
                     pitches,
                     deleter);
                 return onHost::View<std::decay_t<decltype(data)>, T_Extents>(data);
+            }
+        };
+
+        template<typename T_Platform>
+        struct GetDeviceProperties::Op<cuda::Device<T_Platform>>
+        {
+            DeviceProperties operator()(cuda::Device<T_Platform> const& device) const
+            {
+                return device.m_properties;
             }
         };
     } // namespace internal

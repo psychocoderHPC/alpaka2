@@ -98,6 +98,8 @@ namespace alpaka::onHost
                 devices[idx] = newDevice;
                 return newDevice;
             }
+
+            friend struct internal::GetDeviceProperties;
         };
     } // namespace cuda
 
@@ -109,6 +111,25 @@ namespace alpaka::onHost
             auto operator()(api::Cuda const&) const
             {
                 return onHost::make_sharedSingleton<cuda::Platform>();
+            }
+        };
+
+        template<>
+        struct GetDeviceProperties::Op<cuda::Platform>
+        {
+            DeviceProperties operator()(cuda::Platform const& platform, uint32_t deviceIdx) const
+            {
+                using TApi = typename cuda::Platform::TApi;
+                typename TApi::DeviceProp_t devProp;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::getDeviceProperties(&devProp, deviceIdx));
+
+                auto prop = DeviceProperties{};
+                prop.m_name = devProp.name;
+                prop.m_maxThreadsPerBlock = devProp.maxThreadsPerBlock;
+                prop.m_warpSize = devProp.warpSize;
+                prop.m_multiProcessorCount = devProp.multiProcessorCount;
+
+                return prop;
             }
         };
     } // namespace internal
