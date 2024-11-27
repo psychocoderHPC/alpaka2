@@ -50,6 +50,9 @@ namespace alpaka::onHost
             {
                 internal::GetNativeHandle::Op<T>{}(device)
             };
+            {
+                internal::GetDeviceProperties::Op<T>{}(device)
+            };
         };
 
         template<typename T>

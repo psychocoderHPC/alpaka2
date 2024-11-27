@@ -56,7 +56,7 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
     Platform platform = makePlatform(api);
     Device device = platform.makeDevice(0);
 
-    std::cout << getName(platform) << " " << device.getName() << std::endl;
+    std::cout << getName(platform) << "\n" << getDeviceProperties(device) << std::endl;
 
     Queue queue = device.makeQueue();
     constexpr Vec numBlocks = Vec{9u};

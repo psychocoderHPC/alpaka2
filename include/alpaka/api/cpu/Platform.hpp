@@ -6,6 +6,7 @@
 
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/Device.hpp"
+#include "alpaka/api/cpu/sysInfo.hpp"
 #include "alpaka/internal.hpp"
 #include "alpaka/onHost.hpp"
 #include "alpaka/onHost/Handle.hpp"
@@ -74,6 +75,8 @@ namespace alpaka::onHost
                 device = newDevice;
                 return newDevice;
             }
+
+            friend struct internal::GetDeviceProperties;
         };
     } // namespace cpu
 
@@ -85,6 +88,21 @@ namespace alpaka::onHost
             auto operator()(auto&&) const
             {
                 return make_sharedSingleton<cpu::Platform>();
+            }
+        };
+
+        template<>
+        struct GetDeviceProperties::Op<cpu::Platform>
+        {
+            DeviceProperties operator()(cpu::Platform const& platform, uint32_t deviceIdx) const
+            {
+                auto prop = DeviceProperties{};
+                prop.m_name = getCpuName();
+                prop.m_maxThreadsPerBlock = std::numeric_limits<uint32_t>::max();
+                prop.m_warpSize = 1u;
+                prop.m_multiProcessorCount = std::thread::hardware_concurrency();
+
+                return prop;
             }
         };
     } // namespace internal

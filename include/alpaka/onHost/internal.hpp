@@ -4,10 +4,12 @@
 
 #pragma once
 
-#include "Handle.hpp"
 #include "alpaka/Blocking.hpp"
 #include "alpaka/KernelBundle.hpp"
 #include "alpaka/core/common.hpp"
+#include "alpaka/onHost/DeviceProperties.hpp"
+#include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/concepts.hpp"
 
 namespace alpaka::onHost
 {
@@ -203,6 +205,17 @@ namespace alpaka::onHost
             struct Op
             {
                 void operator()(T_Queue& queue, T_Dest&, T_Source const&, T_Extents const&) const;
+            };
+        };
+
+        struct GetDeviceProperties
+        {
+            template<typename T_Any>
+            struct Op
+            {
+                DeviceProperties operator()(auto const& platform, uint32_t) const;
+
+                DeviceProperties operator()(auto const& device) const;
             };
         };
     } // namespace internal

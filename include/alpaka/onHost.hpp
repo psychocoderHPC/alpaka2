@@ -130,4 +130,14 @@ namespace alpaka::onHost
     {
         return memcpy(queue, dest, source, dest.getExtents());
     }
+
+    inline auto getDeviceProperties(concepts::PlatformHandle auto const& platform, uint32_t idx)
+    {
+        return internal::GetDeviceProperties::Op<ALPAKA_TYPE(*platform.get())>{}(*platform.get(), idx);
+    }
+
+    inline auto getDeviceProperties(concepts::DeviceHandle auto const& device)
+    {
+        return internal::GetDeviceProperties::Op<ALPAKA_TYPE(*device.get())>{}(*device.get());
+    }
 } // namespace alpaka::onHost

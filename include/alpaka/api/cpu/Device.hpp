@@ -6,9 +6,11 @@
 
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/Queue.hpp"
+#include "alpaka/api/cpu/sysInfo.hpp"
 #include "alpaka/internal.hpp"
 #include "alpaka/onHost.hpp"
 #include "alpaka/onHost/Device.hpp"
+#include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/Queue.hpp"
 #include "alpaka/onHost/mem/Data.hpp"
@@ -30,7 +32,9 @@ namespace alpaka::onHost
             Device(concepts::PlatformHandle auto platform, uint32_t const idx)
                 : m_platform(std::move(platform))
                 , m_idx(idx)
+                , m_properties{getDeviceProperties(m_platform, m_idx)}
             {
+                m_properties.m_name += " id=" + std::to_string(m_idx);
             }
 
             Device(Device const&) = delete;
@@ -54,6 +58,7 @@ namespace alpaka::onHost
 
             Handle<T_Platform> m_platform;
             uint32_t m_idx = 0u;
+            DeviceProperties m_properties;
             std::weak_ptr<cpu::Queue<Device>> queue;
 
             std::shared_ptr<Device> getSharedPtr()
@@ -65,7 +70,7 @@ namespace alpaka::onHost
 
             std::string getName() const
             {
-                return std::string("cpu::Device id=") + std::to_string(m_idx);
+                return m_properties.m_name;
             }
 
             friend struct internal::GetNativeHandle;
@@ -91,10 +96,12 @@ namespace alpaka::onHost
 
             friend struct internal::Alloc;
             friend struct alpaka::internal::GetApi;
+            friend struct internal::GetDeviceProperties;
         };
     } // namespace cpu
 
     namespace trait
+
     {
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<exec::CpuSerial, cpu::Device<T_Platform>> : std::true_type
@@ -198,6 +205,15 @@ namespace alpaka::onHost
                 {
                     return ThreadBlocking{UniVec{dataBlocking.m_numBlocks}, UniVec{dataBlocking.m_numThreads}};
                 }
+            }
+        };
+
+        template<typename T_Platform>
+        struct GetDeviceProperties::Op<cpu::Device<T_Platform>>
+        {
+            DeviceProperties operator()(cpu::Device<T_Platform> const& device) const
+            {
+                return device.m_properties;
             }
         };
     } // namespace internal
