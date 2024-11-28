@@ -186,12 +186,66 @@ namespace alpaka::onAcc
                 }
             };
 
-            struct ThreadIndexInBlock
+            struct ThreadIdxInBlock
             {
                 template<typename T_Acc>
                 constexpr auto operator()(T_Acc const& acc) const
                 {
                     return acc[layer::thread].idx();
+                }
+            };
+
+            struct LinearizedBlockIdx
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{linearize(BlockCount{}(acc), BlockIdx{}(acc))};
+                }
+            };
+
+            struct LinearizedBlockCount
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{BlockCount{}(acc).product()};
+                }
+            };
+
+            struct LinearizedThreadIdxInBlock
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{linearize(ThreadCountInBlock{}(acc), ThreadIdxInBlock{}(acc))};
+                }
+            };
+
+            struct LinearizedThreadCountInBlock
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{ThreadCountInBlock{}(acc).product()};
+                }
+            };
+
+            struct LinearGridThreadIdx
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{linearize(GridThreadCount{}(acc), GridThreadIdx{}(acc))};
+                }
+            };
+
+            struct LinearGridThreadCount
+            {
+                template<typename T_Acc>
+                constexpr auto operator()(T_Acc const& acc) const
+                {
+                    return Vec{GridThreadCount{}(acc).product()};
                 }
             };
         } // namespace idxTrait
@@ -373,7 +427,15 @@ namespace alpaka::onAcc
             = iter::WorkerGroup{iter::idxTrait::GridThreadIdx{}, iter::idxTrait::GridThreadCount{}};
         constexpr auto blocksInGrid = iter::WorkerGroup{iter::idxTrait::BlockIdx{}, iter::idxTrait::BlockCount{}};
         constexpr auto threadsInBlock
-            = iter::WorkerGroup{iter::idxTrait::ThreadIndexInBlock{}, iter::idxTrait::ThreadCountInBlock{}};
+            = iter::WorkerGroup{iter::idxTrait::ThreadIdxInBlock{}, iter::idxTrait::ThreadCountInBlock{}};
+
+        constexpr auto linearThreadsInGrid
+            = iter::WorkerGroup{iter::idxTrait::LinearGridThreadIdx{}, iter::idxTrait::LinearGridThreadCount{}};
+        constexpr auto linearThreadsInBlock = iter::WorkerGroup{
+            iter::idxTrait::LinearizedThreadIdxInBlock{},
+            iter::idxTrait::LinearizedThreadCountInBlock{}};
+        constexpr auto linearBlocksInGrid
+            = iter::WorkerGroup{iter::idxTrait::LinearizedBlockIdx{}, iter::idxTrait::LinearizedBlockCount{}};
     } // namespace worker
 
     namespace range

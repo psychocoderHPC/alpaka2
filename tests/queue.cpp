@@ -261,13 +261,20 @@ struct IotaKernelNDSelection
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto numFrames) const
     {
-        for(auto frameIdx : onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{numFrames})[T_Selection{}])
+        for(auto fameBaseIdx :
+            onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, onAcc::range::frameCount)[CVec<uint32_t, 0u>{}])
         {
-            for(auto elemIdx : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
-                if(linearize(acc[frame::extent], elemIdx) == 1u)
-                {
-                    out[frameIdx] = frameIdx;
-                }
+            for(auto frameIdx : onAcc::makeIdxMap(
+                    acc,
+                    onAcc::iter::WorkerGroup{fameBaseIdx, acc[layer::block].count()},
+                    IdxRange{numFrames})[T_Selection{}])
+            {
+                for(auto elemIdx : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
+                    if(linearize(acc[frame::extent], elemIdx) == 1u)
+                    {
+                        out[frameIdx] = frameIdx;
+                    }
+            }
         }
     }
 };

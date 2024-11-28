@@ -109,6 +109,7 @@ auto example(T_Cfg const& cfg) -> int
     constexpr Idx ySize = 16u;
     constexpr Idx halo = 2u;
     constexpr auto chunkSize = CVec<Idx, ySize, xSize>{};
+    constexpr auto numNodesWithHalo = numNodes + halo;
 
     constexpr IdxVec numChunks{
         alpaka::core::divCeil(numNodes[0], chunkSize[0]),
@@ -123,8 +124,11 @@ auto example(T_Cfg const& cfg) -> int
     StencilKernel stencilKernel;
     BoundaryKernel boundaryKernel;
 
-    auto dataBlockingStancil = alpaka::DataBlocking{numChunks, chunkSize};
-    auto dataBlocking = alpaka::DataBlocking{numChunks, chunkSize};
+    auto dataBlockingStencil = alpaka::DataBlocking{numChunks, chunkSize};
+
+    constexpr auto longestSide = std::max(numNodesWithHalo.y(), numNodesWithHalo.x());
+    auto dataBlockingBorder
+        = alpaka::DataBlocking{Vec{longestSide / chunkSize.x()}, Vec{std::max(chunkSize.y(), chunkSize.x())}};
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -135,7 +139,7 @@ auto example(T_Cfg const& cfg) -> int
         alpaka::onHost::enqueue(
             computeQueue,
             exec,
-            dataBlockingStancil,
+            dataBlockingStencil,
             KernelBundle{
                 stencilKernel,
                 uCurrBufAcc.getMdSpan(),
@@ -147,13 +151,12 @@ auto example(T_Cfg const& cfg) -> int
                 dy,
                 dt});
 
-        // std::cout<<"_--"<<std::endl;
         // Apply boundaries
         alpaka::onHost::enqueue(
             computeQueue,
             exec,
-            dataBlocking,
-            KernelBundle{boundaryKernel, uNextBufAcc.data(), chunkSize, pitchNextAcc, step, dx, dy, dt});
+            dataBlockingBorder,
+            KernelBundle{boundaryKernel, uNextBufAcc.getMdSpan(), chunkSize, numNodesWithHalo, step, dx, dy, dt});
 
 #ifdef PNGWRITER_ENABLED
         if((step - 1) % 100 == 0)
