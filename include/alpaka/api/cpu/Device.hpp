@@ -7,6 +7,7 @@
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/Queue.hpp"
 #include "alpaka/api/cpu/sysInfo.hpp"
+#include "alpaka/core/Utility.hpp"
 #include "alpaka/internal.hpp"
 #include "alpaka/onHost.hpp"
 #include "alpaka/onHost/Device.hpp"
@@ -97,6 +98,7 @@ namespace alpaka::onHost
             friend struct internal::Alloc;
             friend struct alpaka::internal::GetApi;
             friend struct internal::GetDeviceProperties;
+            friend struct internal::AdjustThreadBlocking;
         };
     } // namespace cpu
 
@@ -170,13 +172,36 @@ namespace alpaka::onHost
             Op<cpu::Device<T_Platform>, T_Mapping, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             auto operator()(
-                cpu::Device<T_Platform> const& queue,
+                cpu::Device<T_Platform> const& device,
                 T_Mapping const& executor,
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
+                auto numThreadBlocks = dataBlocking.m_numBlocks;
+#if 0
+                using IdxType = typename T_NumBlocks::type;
+                // @todo get this number from device properties
+                static auto const maxBlocks = device.m_properties.m_multiProcessorCount;
+
+
+                while(numThreadBlocks.product() > maxBlocks)
+                {
+                    uint32_t maxIdx = 0u;
+                    auto maxValue = numThreadBlocks[0];
+                    for(auto i = 0u; i < T_NumBlocks::dim(); ++i)
+                        if(maxValue < numThreadBlocks[i])
+                        {
+                            maxIdx = i;
+                            maxValue = numThreadBlocks[i];
+                        }
+                    if(numThreadBlocks.product() > maxBlocks)
+                        numThreadBlocks[maxIdx] = core::divCeil(numThreadBlocks[maxIdx], IdxType{2u});
+
+                   // std::cout <<dataBlocking.m_numBlocks <<" to "<< numThreadBlocks << std::endl;
+                }
+#endif
                 auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
-                return ThreadBlocking{dataBlocking.m_numBlocks, numThreads};
+                return ThreadBlocking{numThreadBlocks, numThreads};
             }
         };
 
@@ -188,7 +213,7 @@ namespace alpaka::onHost
             T_KernelBundle>
         {
             auto operator()(
-                cpu::Device<T_Platform> const& queue,
+                cpu::Device<T_Platform> const& device,
                 exec::CpuOmpBlocksAndThreads const& executor,
                 DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const

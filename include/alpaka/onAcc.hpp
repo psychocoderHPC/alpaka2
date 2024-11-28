@@ -50,4 +50,22 @@ namespace alpaka::onAcc
                 idxMapping);
     }
 
+    template<
+        iter::concepts::IdxTraversing T_Traverse = iter::traverse::Tiled,
+        iter::concepts::IdxMapping T_IdxMapping = iter::layout::Optimized>
+    ALPAKA_FN_HOST_ACC constexpr auto makeIdxMap(
+        auto const& acc,
+        auto const workGroup,
+        concepts::HasStaticDim auto const range,
+        T_Traverse traverse = T_Traverse{},
+        T_IdxMapping idxMapping = T_IdxMapping{}) requires(ALPAKA_TYPE(range)::dim() == 1u)
+    {
+        return iter::internal::MakeIter::
+            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(iter::DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+                acc,
+                iter::DomainSpec{workGroup, range},
+                traverse,
+                idxMapping);
+    }
+
 } // namespace alpaka::onAcc

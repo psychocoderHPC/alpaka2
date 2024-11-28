@@ -30,6 +30,9 @@ namespace alpaka
         template<typename T>
         concept HasGet = requires(T t) { t.get(); };
 
+        template<typename T>
+        concept HasStaticDim = requires(T t) { T::dim(); };
+
 
         template<typename T>
         concept Api = requires(T t) { requires HasStaticName<T>; };
