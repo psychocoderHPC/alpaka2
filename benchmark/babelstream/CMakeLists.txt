@@ -2,10 +2,8 @@
 # Copyright 2023 Erik Zenker, Benjamin Worpitz, Jan Stephan, Bernhard Manfred Gruber
 # SPDX-License-Identifier: ISC
 #
-
 cmake_minimum_required(VERSION 3.25)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
 project(babelstream LANGUAGES CXX)
 
 if(NOT TARGET alpaka::alpaka)
@@ -19,29 +17,25 @@ if(NOT TARGET alpaka::alpaka)
     endif()
 endif()
 
-
 set(_TARGET_NAME "babelstream")
-append_recursive_files_add_to_src_group("src/" "src/" "cpp" _FILES_SOURCE)
 
-alpaka_add_executable(
-    ${_TARGET_NAME}
-    ${_FILES_SOURCE})
+file(GLOB_RECURSE _FILES_SOURCE "./src/*.cpp")
 
-target_include_directories(
- ${_TARGET_NAME}
- PRIVATE "src")
-
-target_link_libraries(
-    ${_TARGET_NAME}
-    PRIVATE common)
-
+alpaka_add_executable(${_TARGET_NAME} ${_FILES_SOURCE})
+target_include_directories(${_TARGET_NAME} PRIVATE "src")
+target_link_libraries(${_TARGET_NAME} PRIVATE PRIVATE alpaka::alpaka)
+target_link_libraries(${_TARGET_NAME} PRIVATE Catch2::Catch2WithMain)
 set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER benchmarks/babelstream)
+
+if(alpaka_TESTING)
+    catch_discover_tests(${_TARGET_NAME})
+endif()
 
 #Run as a ctest
 if(alpaka_CI)
     # Only run for release builds since this is a benchmark
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
-       add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME})
+        add_test(NAME ${_TARGET_NAME} COMMAND ${_TARGET_NAME})
     endif()
 else()
     # For a normal benchmark test, number of samples should be equal to the default value.
