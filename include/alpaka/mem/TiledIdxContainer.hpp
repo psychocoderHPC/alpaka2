@@ -64,6 +64,9 @@ namespace alpaka::onAcc::iter
         void _()
         {
             static_assert(std::ranges::forward_range<TiledIdxContainer>);
+            static_assert(std::ranges::borrowed_range<TiledIdxContainer>);
+            static_assert(std::ranges::range<TiledIdxContainer>);
+            static_assert(std::ranges::input_range<TiledIdxContainer>);
         }
 
     public:
@@ -81,6 +84,9 @@ namespace alpaka::onAcc::iter
         {
             //  std::cout << "iter:" << m_idxRange.toString() << " " << m_threadSpace.toString() << std::endl;
         }
+
+        constexpr TiledIdxContainer(TiledIdxContainer const&) = default;
+        constexpr TiledIdxContainer(TiledIdxContainer&&) = default;
 
         class const_iterator;
 
@@ -144,6 +150,7 @@ namespace alpaka::onAcc::iter
             void _()
             {
                 static_assert(std::forward_iterator<const_iterator>);
+                static_assert(std::input_iterator<const_iterator>);
             }
 
             constexpr const_iterator(

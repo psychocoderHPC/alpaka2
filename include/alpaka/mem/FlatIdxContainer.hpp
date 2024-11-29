@@ -30,6 +30,9 @@ namespace alpaka::onAcc::iter
         void _()
         {
             static_assert(std::ranges::forward_range<FlatIdxContainer>);
+            static_assert(std::ranges::borrowed_range<FlatIdxContainer>);
+            static_assert(std::ranges::range<FlatIdxContainer>);
+            static_assert(std::ranges::input_range<FlatIdxContainer>);
         }
 
     public:
@@ -49,6 +52,9 @@ namespace alpaka::onAcc::iter
             //  std::cout << "iter:" << m_idxRange.toString() << " " << m_threadSpace.toString() << std::endl;
         }
 
+        constexpr FlatIdxContainer(FlatIdxContainer const&) = default;
+        constexpr FlatIdxContainer(FlatIdxContainer&&) = default;
+
         class const_iterator;
 
         /** special implementation to define the end
@@ -63,6 +69,7 @@ namespace alpaka::onAcc::iter
             void _()
             {
                 static_assert(std::forward_iterator<const_iterator_end>);
+                static_assert(std::input_iterator<const_iterator_end>);
             }
 
             ALPAKA_FN_ACC inline const_iterator_end(IdxType const& end) : m_extentSlowDim{end}
@@ -110,6 +117,7 @@ namespace alpaka::onAcc::iter
             void _()
             {
                 static_assert(std::forward_iterator<const_iterator>);
+                static_assert(std::input_iterator<const_iterator>);
             }
 
             constexpr const_iterator(
