@@ -70,12 +70,22 @@ struct InitKernel
     //! \param initialA the value to set all items in the vector a
     //! \param initialB the value to set all items in the vector b
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T* b, T* c, T initialA, T initialB, T initialC) const
+    ALPAKA_FN_ACC void operator()(
+        TAcc const& acc,
+        T* a,
+        T* b,
+        T* c,
+        T initialA,
+        T initialB,
+        T initialC,
+        auto arraySize) const
     {
-        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        a[i] = initialA;
-        b[i] = initialB;
-        c[i] = initialC;
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+        {
+            a[i] = initialA;
+            b[i] = initialB;
+            c[i] = initialC;
+        }
     }
 };
 
@@ -89,10 +99,10 @@ struct CopyKernel
     //! \param a Pointer for vector a
     //! \param c Pointer for vector c
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T* c) const
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T* c, auto arraySize) const
     {
-        auto const [index] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        c[index] = a[index];
+        for(auto [index] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+            c[index] = a[index];
     }
 };
 
@@ -106,11 +116,11 @@ struct MultKernel
     //! \param c Pointer for vector c
     //! \param b Pointer for result vector b
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* b, T* const c) const
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* b, T* const c, auto arraySize) const
     {
         T const scalar = static_cast<T>(scalarVal);
-        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        b[i] = scalar * c[i];
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+            b[i] = scalar * c[i];
     }
 };
 
@@ -125,10 +135,10 @@ struct AddKernel
     //! \param b Pointer for vector b
     //! \param c Pointer for result vector c
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* c) const
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* c, auto arraySize) const
     {
-        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        c[i] = a[i] + b[i];
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+            c[i] = a[i] + b[i];
     }
 };
 
@@ -143,11 +153,11 @@ struct TriadKernel
     //! \param b Pointer for vector b
     //! \param c Pointer for result vector c
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T const* b, T const* c) const
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T const* b, T const* c, auto arraySize) const
     {
         T const scalar = static_cast<T>(scalarVal);
-        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        a[i] = b[i] + scalar * c[i];
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+            a[i] = b[i] + scalar * c[i];
     }
 };
 
@@ -155,11 +165,11 @@ struct TriadKernel
 struct NstreamKernel
 {
     template<typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T const* b, T const* c) const
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T* a, T const* b, T const* c, auto arraySize) const
     {
         T const scalar = static_cast<T>(scalarVal);
-        auto const [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        a[i] += b[i] + scalar * c[i];
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+            a[i] += b[i] + scalar * c[i];
     }
 };
 
@@ -179,27 +189,64 @@ struct DotKernel
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* sum, auto arraySize) const
     {
         auto tbSum = onAcc::declareSharedMdArray<T>(acc, CVec<uint32_t, blockThreadExtentMain>{});
+#if 1
+        auto numFrames = Vec{acc[frame::count]};
+        auto frameExtent = Vec{acc[frame::extent]};
 
-        auto [i] = acc[layer::block].idx() * acc[layer::thread].count() + acc[layer::thread].idx();
-        auto const [local_i] = acc[layer::thread].idx();
-        auto const [totalThreads] = acc[layer::thread].count() * acc[layer::block].count();
+        auto traverseInFrame = onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{frameExtent});
+        /* init shared memory
+         * no need to synchronize because after the loop because the same index map will be used to access the shared
+         * memory in the tribble loop.
+         */
+        for(auto [elemIdxInFrame] : traverseInFrame)
+        {
+            tbSum[elemIdxInFrame] = T{0};
+        }
 
-        T threadSum = 0;
-        for(; i < arraySize.x(); i += totalThreads)
+        auto traverseOverFrames = onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{numFrames});
+
+        for(auto frameIdx : traverseOverFrames)
+        {
+            for(auto elemIdxInFrame : traverseInFrame)
+            {
+                for(auto [i] : onAcc::makeIdxMap(
+                        acc,
+                        onAcc::iter::WorkerGroup{frameIdx * frameExtent + elemIdxInFrame, numFrames * frameExtent},
+                        IdxRange{arraySize}))
+                {
+                    tbSum[elemIdxInFrame] += a[i] * b[i];
+                }
+            }
+        }
+
+        // aggregate for each thread but skip the first shared memory slot
+        for(auto [elemIdxInFrame] :
+            onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{acc[layer::thread].count(), frameExtent}))
+        {
+            tbSum[acc[layer::thread].idx()] += tbSum[elemIdxInFrame];
+        }
+
+#else
+        // this version is shorter in code but runs into floating point stability issues due to to long aggregation of
+        // value by a single thread
+        auto threadSum = T{0};
+        for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
+        {
             threadSum += a[i] * b[i];
-        tbSum[local_i] = threadSum;
-
+        }
+        for(auto [local_i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::threadsInBlock))
+        {
+            tbSum[local_i] = threadSum;
+        }
+#endif
+        auto const [local_i] = acc[layer::thread].idx();
         auto const [blockSize] = acc[layer::thread].count();
         for(auto offset = blockSize / 2; offset > 0; offset /= 2)
         {
             onAcc::syncBlockThreads(acc);
             if(local_i < offset)
-            {
-                // read from shared memory and sum
                 tbSum[local_i] += tbSum[local_i + offset];
-            }
         }
-
         if(local_i == 0)
             sum[acc[layer::block].idx().x()] = tbSum[local_i];
     }
@@ -219,19 +266,12 @@ void testKernels(auto cfg)
     auto api = cfg[object::api];
     auto exec = cfg[object::exec];
 
-
-    std::cout << api.getName() << std::endl;
-
     onHost::Platform platform = onHost::makePlatform(api);
     onHost::Device devAcc = platform.makeDevice(0);
 
     std::cout << getName(platform) << "\n" << getDeviceProperties(devAcc) << std::endl;
 
-    auto possibleMappings = supportedMappings(devAcc);
-
-    // select the first mapping of all possible active mappings for the device
-    auto mapping = std::get<0>(possibleMappings);
-    std::cout << "used mapping " << core::demangledName(mapping) << std::endl;
+    std::cout << "used exec " << core::demangledName(exec) << std::endl;
 
     // A MetaData class instance to keep the benchmark info and results to print later. Does not include intermediate
     // runtime data.
@@ -277,6 +317,7 @@ void testKernels(auto cfg)
     auto measureKernelExec = [&](auto&& kernelFunc, [[maybe_unused]] auto&& kernelLabel)
     {
         double runtime = 0.0;
+        onHost::wait(queue);
         auto start = std::chrono::high_resolution_clock::now();
         kernelFunc();
         onHost::wait(queue);
@@ -314,7 +355,7 @@ void testKernels(auto cfg)
         [&]()
         {
             queue.enqueue(
-                mapping,
+                exec,
                 dataBlocking,
                 KernelBundle{
                     InitKernel{},
@@ -323,7 +364,8 @@ void testKernels(auto cfg)
                     std::data(bufAccOutputC),
                     static_cast<DataType>(initA),
                     static_cast<DataType>(initB),
-                    static_cast<DataType>(initC)});
+                    static_cast<DataType>(initC),
+                    arraySize});
         },
         "InitKernel");
 
@@ -331,7 +373,7 @@ void testKernels(auto cfg)
     metaData.setItem(BMInfoDataType::WorkDivInit, dataBlocking);
 
     // Dot kernel result
-    DataType resultDot = static_cast<DataType>(0.0f);
+    DataType resultDot = static_cast<DataType>(0.0);
 
     // Main for loop to run the kernel-sequence
     for(auto i = 0; i < numberOfRuns; i++)
@@ -343,9 +385,9 @@ void testKernels(auto cfg)
                 [&]()
                 {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlocking,
-                        KernelBundle{CopyKernel(), std::data(bufAccInputA), std::data(bufAccOutputC)});
+                        KernelBundle{CopyKernel(), std::data(bufAccInputA), std::data(bufAccOutputC), arraySize});
                 },
                 "CopyKernel");
 
@@ -353,11 +395,12 @@ void testKernels(auto cfg)
             measureKernelExec(
                 [&]() {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlocking,
                         MultKernel(),
                         std::data(bufAccInputB),
-                        std::data(bufAccOutputC));
+                        std::data(bufAccOutputC),
+                        arraySize);
                 },
                 "MultKernel");
 
@@ -366,13 +409,14 @@ void testKernels(auto cfg)
                 [&]()
                 {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlocking,
                         KernelBundle{
                             AddKernel(),
                             std::data(bufAccInputA),
                             std::data(bufAccInputB),
-                            std::data(bufAccOutputC)});
+                            std::data(bufAccOutputC),
+                            arraySize});
                 },
                 "AddKernel");
         }
@@ -384,13 +428,14 @@ void testKernels(auto cfg)
                 [&]()
                 {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlocking,
                         KernelBundle{
                             TriadKernel(),
                             std::data(bufAccInputA),
                             std::data(bufAccInputB),
-                            std::data(bufAccOutputC)});
+                            std::data(bufAccOutputC),
+                            arraySize});
                 },
                 "TriadKernel");
         }
@@ -410,7 +455,7 @@ void testKernels(auto cfg)
                 [&]()
                 {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlockingDot,
                         KernelBundle{
                             DotKernel(), // Dot kernel
@@ -436,10 +481,10 @@ void testKernels(auto cfg)
                 [&]()
                 {
                     queue.enqueue(
-                        mapping,
+                        exec,
                         dataBlocking,
                         KernelBundle{
-                            DotKernel(), // Dot kernel
+                            NstreamKernel(),
                             std::data(bufAccInputA),
                             std::data(bufAccInputB),
                             std::data(bufAccOutputC),
@@ -555,7 +600,7 @@ void testKernels(auto cfg)
     metaData.setItem(BMInfoDataType::DataType, dataTypeStr);
     // Device and accelerator
     metaData.setItem(BMInfoDataType::DeviceName, onHost::getName(devAcc));
-    metaData.setItem(BMInfoDataType::AcceleratorType, core::demangledName(mapping));
+    metaData.setItem(BMInfoDataType::AcceleratorType, core::demangledName(exec));
     // XML reporter of catch2 always converts to Nano Seconds
     metaData.setItem(BMInfoDataType::TimeUnit, "Nano Seconds");
 
