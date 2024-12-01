@@ -7,7 +7,7 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/Blocking.hpp"
+#    include "alpaka/ThreadSpec.hpp"
 #    include "alpaka/Vec.hpp"
 #    include "alpaka/api/cpu/IdxLayer.hpp"
 #    include "alpaka/api/cpu/block/mem/SingleThreadStaticShared.hpp"
@@ -28,7 +28,7 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct OmpBlocks
         {
-            constexpr OmpBlocks(ThreadBlocking<T_NumBlocks, T_NumThreads> threadBlocking)
+            constexpr OmpBlocks(ThreadSpec<T_NumBlocks, T_NumThreads> threadBlocking)
                 : m_threadBlocking{std::move(threadBlocking)}
             {
             }
@@ -40,7 +40,7 @@ namespace alpaka::onHost
 
             void operator()(auto const& kernelBundle, auto const& dict) const
             {
-                using NumThreadsVecType = typename ThreadBlocking<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
+                using NumThreadsVecType = typename ThreadSpec<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
 
                 if(m_threadBlocking.m_numThreads.product() != 1u)
                     throw std::runtime_error("Thread block extent must be 1.");
@@ -72,7 +72,7 @@ namespace alpaka::onHost
                 }
             }
 
-            ThreadBlocking<T_NumBlocks, T_NumThreads> m_threadBlocking;
+            ThreadSpec<T_NumBlocks, T_NumThreads> m_threadBlocking;
         };
     } // namespace cpu
 

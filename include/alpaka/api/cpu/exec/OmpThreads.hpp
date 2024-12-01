@@ -7,7 +7,7 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/Blocking.hpp"
+#    include "alpaka/ThreadSpec.hpp"
 #    include "alpaka/Vec.hpp"
 #    include "alpaka/api/cpu/IdxLayer.hpp"
 #    include "alpaka/api/cpu/block/mem/OmpStaticShared.hpp"
@@ -28,7 +28,7 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct OmpThreads
         {
-            constexpr OmpThreads(ThreadBlocking<T_NumBlocks, T_NumThreads> threadBlocking)
+            constexpr OmpThreads(ThreadSpec<T_NumBlocks, T_NumThreads> threadBlocking)
                 : m_threadBlocking{std::move(threadBlocking)}
             {
             }
@@ -64,8 +64,7 @@ namespace alpaka::onHost
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                         auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::OmpSync{}};
 
-                        using NumThreadsVecType =
-                            typename ThreadBlocking<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
+                        using NumThreadsVecType = typename ThreadSpec<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
                         using ThreadIdxType = typename NumThreadsVecType::type;
 #    pragma omp for
                         for(ThreadIdxType i = 0; i < blockCountND.product(); ++i)
@@ -94,7 +93,7 @@ namespace alpaka::onHost
                 }
             }
 
-            ThreadBlocking<T_NumBlocks, T_NumThreads> m_threadBlocking;
+            ThreadSpec<T_NumBlocks, T_NumThreads> m_threadBlocking;
         };
     } // namespace cpu
 

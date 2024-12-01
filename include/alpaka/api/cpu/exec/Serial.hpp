@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "alpaka/Blocking.hpp"
+#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/Vec.hpp"
 #include "alpaka/api/cpu/IdxLayer.hpp"
 #include "alpaka/api/cpu/block/mem/SingleThreadStaticShared.hpp"
@@ -24,9 +24,9 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct Serial
         {
-            using NumThreadsVecType = typename ThreadBlocking<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
+            using NumThreadsVecType = typename ThreadSpec<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
 
-            constexpr Serial(ThreadBlocking<T_NumBlocks, T_NumThreads> threadBlocking)
+            constexpr Serial(ThreadSpec<T_NumBlocks, T_NumThreads> threadBlocking)
                 : m_threadBlocking{std::move(threadBlocking)}
             {
             }
@@ -61,7 +61,7 @@ namespace alpaka::onHost
                     });
             }
 
-            ThreadBlocking<T_NumBlocks, T_NumThreads> m_threadBlocking;
+            ThreadSpec<T_NumBlocks, T_NumThreads> m_threadBlocking;
         };
     } // namespace cpu
 

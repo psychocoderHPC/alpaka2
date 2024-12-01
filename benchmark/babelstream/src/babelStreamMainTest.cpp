@@ -308,7 +308,7 @@ void testKernels(auto cfg)
     auto bufHostOutputC = onHost::allocMirror(devHost, bufAccOutputC);
 
     auto numBlocks = arraySize / static_cast<Idx>(blockThreadExtentMain);
-    auto dataBlocking = alpaka::DataBlocking{numBlocks, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+    auto dataBlocking = alpaka::FrameSpec{numBlocks, Vec{static_cast<Idx>(blockThreadExtentMain)}};
 
     // To record runtime data generated while running the kernels
     RuntimeResults runtimeResults;
@@ -441,12 +441,11 @@ void testKernels(auto cfg)
         }
         if(kernelsToBeExecuted == KernelsToRun::All)
         {
-            auto dataBlockingDot = DataBlocking{
-                Vec{static_cast<Idx>(dotGridBlockExtent)},
-                Vec{static_cast<Idx>(blockThreadExtentMain)}};
+            auto dataBlockingDot
+                = FrameSpec{Vec{static_cast<Idx>(dotGridBlockExtent)}, Vec{static_cast<Idx>(blockThreadExtentMain)}};
 
             // Vector of sums of each block
-            auto bufAccSumPerBlock = onHost::alloc<DataType>(devAcc, dataBlockingDot.m_numBlocks);
+            auto bufAccSumPerBlock = onHost::alloc<DataType>(devAcc, dataBlockingDot.m_numFrames);
             auto bufHostSumPerBlock = onHost::allocMirror(devHost, bufAccSumPerBlock);
 
 
@@ -466,7 +465,7 @@ void testKernels(auto cfg)
                     onHost::memcpy(queue, bufHostSumPerBlock, bufAccSumPerBlock);
                     onHost::wait(queue);
                     DataType const* sumPtr = std::data(bufHostSumPerBlock);
-                    resultDot = std::reduce(sumPtr, sumPtr + dataBlockingDot.m_numBlocks.x(), DataType{0});
+                    resultDot = std::reduce(sumPtr, sumPtr + dataBlockingDot.m_numFrames.x(), DataType{0});
                 },
                 "DotKernel");
 

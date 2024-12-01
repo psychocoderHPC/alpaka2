@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/FrameSpec.hpp"
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/exec/OmpBlocks.hpp"
 #include "alpaka/api/cpu/exec/OmpThreads.hpp"
@@ -79,7 +80,7 @@ namespace alpaka::onHost
             template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
             void enqueue(
                 auto const executor,
-                ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
+                ThreadSpec<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 auto kernelBundle)
             {
                 m_workerThread.submit(
@@ -90,20 +91,16 @@ namespace alpaka::onHost
                     });
             }
 
-            template<typename T_Mapping, alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_BlockSize>
-            void enqueue(
-                T_Mapping const executor,
-                DataBlocking<T_NumBlocks, T_BlockSize> dataBlocking,
-                auto kernelBundle)
+            template<typename T_Mapping, alpaka::concepts::Vector T_NumFrames, alpaka::concepts::Vector T_FrameExtent>
+            void enqueue(T_Mapping const executor, FrameSpec<T_NumFrames, T_FrameExtent> frameSpec, auto kernelBundle)
             {
-                auto threadBlocking
-                    = internal::adjustThreadBlocking(*m_device.get(), executor, dataBlocking, kernelBundle);
+                auto threadBlocking = internal::adjustThreadSpec(*m_device.get(), executor, frameSpec, kernelBundle);
                 m_workerThread.submit(
                     [=, kernel = std::move(kernelBundle)]()
                     {
                         auto moreLayer = Dict{
-                            DictEntry(frame::count, dataBlocking.m_numBlocks),
-                            DictEntry(frame::extent, dataBlocking.m_blockSize),
+                            DictEntry(frame::count, frameSpec.m_numFrames),
+                            DictEntry(frame::extent, frameSpec.m_frameExtent),
                             DictEntry(object::api, api::cpu),
                             DictEntry(object::exec, executor)};
                         onAcc::Acc acc = makeAcc(executor, threadBlocking);

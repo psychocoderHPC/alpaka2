@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "alpaka/Blocking.hpp"
 #include "alpaka/KernelBundle.hpp"
+#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/Handle.hpp"
 

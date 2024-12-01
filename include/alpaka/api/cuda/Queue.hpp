@@ -10,6 +10,7 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
+#    include "alpaka/FrameSpec.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/api/cuda/IdxLayer.hpp"
@@ -108,7 +109,7 @@ namespace alpaka::onHost
         __global__ void gpuKernel(
             TKernelBundle const kernelBundle,
             T_NumFrames const numFrames,
-            T_FrameSize const framesSize)
+            T_FrameSize const frameExtent)
         {
             auto acc = onAcc::Acc{
                 Dict{
@@ -116,7 +117,7 @@ namespace alpaka::onHost
                     DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
                     DictEntry(layer::shared, onAcc::cuda::StaticShared{}),
                     DictEntry(frame::count, numFrames),
-                    DictEntry(frame::extent, framesSize),
+                    DictEntry(frame::extent, frameExtent),
                     DictEntry(action::sync, onAcc::cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
                     DictEntry(object::exec, exec::gpuCuda)},
@@ -163,7 +164,7 @@ namespace alpaka::onHost
                 typename... T_Args>
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
+                ThreadSpec<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 T_KernelBundle kernelBundle,
                 T_Args const&... args) const
             {
@@ -201,36 +202,36 @@ namespace alpaka::onHost
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, ThreadBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, ThreadSpec<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
                 exec::GpuCuda const,
-                ThreadBlocking<T_NumBlocks, T_NumThreads> const& threadBlocking,
+                ThreadSpec<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 T_KernelBundle kernelBundle) const
             {
                 cuda::CallKernel{}(queue, threadBlocking, std::move(kernelBundle));
             }
         };
 
-        template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
+        template<typename T_Device, typename T_NumFrames, typename T_FrameExtent, typename T_KernelBundle>
         struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, FrameSpec<T_NumFrames, T_FrameExtent>, T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
                 exec::GpuCuda const executor,
-                DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                FrameSpec<T_NumFrames, T_FrameExtent> const& frameSpec,
                 T_KernelBundle kernelBundle) const
             {
                 auto threadBlocking
-                    = internal::adjustThreadBlocking(*queue.m_device.get(), executor, dataBlocking, kernelBundle);
+                    = internal::adjustThreadSpec(*queue.m_device.get(), executor, frameSpec, kernelBundle);
                 cuda::CallKernel{}(
                     queue,
                     threadBlocking,
                     std::move(kernelBundle),
-                    dataBlocking.m_numBlocks,
-                    dataBlocking.m_blockSize);
+                    frameSpec.m_numFrames,
+                    frameSpec.m_frameExtent);
             }
         };
 

@@ -124,11 +124,11 @@ auto example(T_Cfg const& cfg) -> int
     StencilKernel stencilKernel;
     BoundaryKernel boundaryKernel;
 
-    auto dataBlockingStencil = alpaka::DataBlocking{numChunks, chunkSize};
+    auto dataBlockingStencil = alpaka::FrameSpec{numChunks, chunkSize};
 
     constexpr auto longestSide = std::max(numNodesWithHalo.y(), numNodesWithHalo.x());
     auto dataBlockingBorder
-        = alpaka::DataBlocking{Vec{longestSide / chunkSize.x()}, Vec{std::max(chunkSize.y(), chunkSize.x())}};
+        = alpaka::FrameSpec{Vec{longestSide / chunkSize.x()}, Vec{std::max(chunkSize.y(), chunkSize.x())}};
 
     auto startTime = std::chrono::high_resolution_clock::now();
 

@@ -17,7 +17,7 @@ using namespace alpaka;
 TEST_CASE("exec::cpuSerial", "")
 {
 #if 0
-    auto acc = makeAcc(exec::cpuSerial, ThreadBlocking{Vec{4}, Vec{1}});
+    auto acc = makeAcc(exec::cpuSerial, ThreadSpec{Vec{4}, Vec{1}});
     acc(KernelBundle{[](auto const& acc)
                      {
                          std::cout << "blockIdx = " << acc[layer::block].idx()
