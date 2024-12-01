@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "alpaka/FrameSpec.hpp"
+#include "FrameSpec.hpp"
+#include "ThreadSpec.hpp"
 #include "alpaka/KernelBundle.hpp"
-#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/Handle.hpp"

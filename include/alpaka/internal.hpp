@@ -5,9 +5,9 @@
 #pragma once
 
 #include "alpaka/KernelBundle.hpp"
-#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/ThreadSpec.hpp"
 
 namespace alpaka
 {

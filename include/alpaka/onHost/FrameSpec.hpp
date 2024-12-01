@@ -4,15 +4,15 @@
 
 #pragma once
 
-#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/Vec.hpp"
 #include "alpaka/concepts.hpp"
 #include "alpaka/core/common.hpp"
+#include "alpaka/onHost/ThreadSpec.hpp"
 
 #include <cstdint>
 #include <ostream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<alpaka::concepts::Vector T_NumFrames, alpaka::concepts::Vector T_FrameExtent>
     struct FrameSpec
@@ -64,4 +64,4 @@ namespace alpaka
     {
         return s << "frames=" << d.m_numFrames << " frameExtent=" << d.m_frameExtent;
     }
-} // namespace alpaka
+} // namespace alpaka::onHost

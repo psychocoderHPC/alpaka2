@@ -10,7 +10,6 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
-#    include "alpaka/FrameSpec.hpp"
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/api/cuda/IdxLayer.hpp"
@@ -19,6 +18,7 @@
 #    include "alpaka/core/UniformCudaHip.hpp"
 #    include "alpaka/internal.hpp"
 #    include "alpaka/onHost.hpp"
+#    include "alpaka/onHost/FrameSpec.hpp"
 #    include "alpaka/onHost/Handle.hpp"
 #    include "alpaka/onHost/internal.hpp"
 

@@ -7,7 +7,6 @@
 #include "alpaka/core/common.hpp"
 #if ALPAKA_OMP
 
-#    include "alpaka/ThreadSpec.hpp"
 #    include "alpaka/Vec.hpp"
 #    include "alpaka/api/cpu/IdxLayer.hpp"
 #    include "alpaka/api/cpu/block/mem/OmpStaticShared.hpp"
@@ -15,6 +14,7 @@
 #    include "alpaka/core/Dict.hpp"
 #    include "alpaka/meta/NdLoop.hpp"
 #    include "alpaka/onAcc/Acc.hpp"
+#    include "alpaka/onHost/ThreadSpec.hpp"
 #    include "alpaka/tag.hpp"
 
 #    include <cassert>

@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <ostream>
 
-namespace alpaka
+namespace alpaka::onHost
 {
     template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
     struct ThreadSpec
@@ -37,4 +37,4 @@ namespace alpaka
 
     template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
     ThreadSpec(T_NumBlocks const&, T_NumThreads const&) -> ThreadSpec<T_NumBlocks, T_NumThreads>;
-} // namespace alpaka
+} // namespace alpaka::onHost

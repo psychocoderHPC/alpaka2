@@ -308,7 +308,7 @@ void testKernels(auto cfg)
     auto bufHostOutputC = onHost::allocMirror(devHost, bufAccOutputC);
 
     auto numBlocks = arraySize / static_cast<Idx>(blockThreadExtentMain);
-    auto dataBlocking = alpaka::FrameSpec{numBlocks, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+    auto dataBlocking = onHost::FrameSpec{numBlocks, Vec{static_cast<Idx>(blockThreadExtentMain)}};
 
     // To record runtime data generated while running the kernels
     RuntimeResults runtimeResults;
@@ -441,8 +441,9 @@ void testKernels(auto cfg)
         }
         if(kernelsToBeExecuted == KernelsToRun::All)
         {
-            auto dataBlockingDot
-                = FrameSpec{Vec{static_cast<Idx>(dotGridBlockExtent)}, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+            auto dataBlockingDot = onHost::FrameSpec{
+                Vec{static_cast<Idx>(dotGridBlockExtent)},
+                Vec{static_cast<Idx>(blockThreadExtentMain)}};
 
             // Vector of sums of each block
             auto bufAccSumPerBlock = onHost::alloc<DataType>(devAcc, dataBlockingDot.m_numFrames);
