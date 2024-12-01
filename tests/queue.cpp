@@ -266,7 +266,7 @@ struct IotaKernelNDSelection
         {
             for(auto frameIdx : onAcc::makeIdxMap(
                     acc,
-                    onAcc::iter::WorkerGroup{fameBaseIdx, acc[layer::block].count()},
+                    onAcc::WorkerGroup{fameBaseIdx, acc[layer::block].count()},
                     IdxRange{numFrames})[T_Selection{}])
             {
                 for(auto elemIdx : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))

@@ -21,7 +21,7 @@
 #include <ranges>
 #include <sstream>
 
-namespace alpaka::onAcc::iter
+namespace alpaka::onAcc
 {
     namespace detail
     {
@@ -242,7 +242,7 @@ namespace alpaka::onAcc::iter
             // non-const to support iterator copy and assignment
             IterIdxVecType m_stride;
             IterIdxVecType m_extent;
-            iter::detail::ReducedVector<IdxType, iterDim> m_first;
+            detail::ReducedVector<IdxType, iterDim> m_first;
         };
 
         ALPAKA_FN_ACC inline const_iterator begin() const
@@ -297,4 +297,4 @@ namespace alpaka::onAcc::iter
         T_IdxRange m_idxRange;
         T_ThreadSpace m_threadSpace;
     };
-} // namespace alpaka::onAcc::iter
+} // namespace alpaka::onAcc

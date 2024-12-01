@@ -21,7 +21,7 @@
 #include <ranges>
 #include <sstream>
 
-namespace alpaka::onAcc::iter
+namespace alpaka::onAcc
 {
 
     template<typename T_IdxRange, typename T_ThreadSpace, typename T_IdxMapperFn, concepts::CVector T_CSelect>
@@ -275,4 +275,4 @@ namespace alpaka::onAcc::iter
         T_IdxRange m_idxRange;
         T_ThreadSpace m_threadSpace;
     };
-} // namespace alpaka::onAcc::iter
+} // namespace alpaka::onAcc

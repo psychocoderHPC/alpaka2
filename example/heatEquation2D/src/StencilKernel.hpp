@@ -66,7 +66,7 @@ struct StencilKernel
                     acc,
                     onAcc::worker::threadsInBlock,
                     IdxRange{chunkSize} >> 1u,
-                    onAcc::iter::traverse::tiled))
+                    onAcc::traverse::tiled))
             {
                 auto bufIdx = idx2D + blockStartIdx;
 

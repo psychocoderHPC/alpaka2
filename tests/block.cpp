@@ -29,15 +29,15 @@ struct BlockIotaKernel
                 acc,
                 onAcc::worker::blocksInGrid,
                 IdxRange{ALPAKA_TYPE(numBlocks)::all(0), numBlocks * numDataElemInBlock, numDataElemInBlock},
-                onAcc::iter::traverse::tiled,
-                onAcc::iter::layout::contigious))
+                onAcc::traverse::tiled,
+                onAcc::layout::contigious))
         {
             auto blockOffset = blockIdx;
             for(auto inBlockOffset : onAcc::makeIdxMap(
                     acc,
                     onAcc::worker::threadsInBlock,
                     onAcc::range::frameExtent,
-                    onAcc::iter::traverse::tiled))
+                    onAcc::traverse::tiled))
             {
                 out[blockOffset + inBlockOffset] = (blockOffset + inBlockOffset).x();
             }
