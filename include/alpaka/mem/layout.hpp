@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace alpaka::onAcc::iter
+namespace alpaka::onAcc
 {
     namespace layout
     {
@@ -25,4 +25,4 @@ namespace alpaka::onAcc::iter
         constexpr auto optimized = Optimized{};
 
     } // namespace layout
-} // namespace alpaka::onAcc::iter
+} // namespace alpaka::onAcc

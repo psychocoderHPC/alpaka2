@@ -21,7 +21,7 @@ namespace alpaka::onAcc
         return internalCompute::declareSharedVar<T>(acc);
     }
 
-    template<typename T, concepts::CVector T_Extent>
+    template<typename T, alpaka::concepts::CVector T_Extent>
     constexpr decltype(auto) declareSharedMdArray(auto const& acc, T_Extent const& extent)
     {
         using CArrayType = typename CArrayType<T, T_Extent>::type;
@@ -33,8 +33,8 @@ namespace alpaka::onAcc
      * is popping up and generated code is wrong.
      */
     template<
-        iter::concepts::IdxTraversing T_Traverse = iter::traverse::Flat,
-        iter::concepts::IdxMapping T_IdxMapping = iter::layout::Optimized>
+        concepts::IdxTraversing T_Traverse = traverse::Flat,
+        concepts::IdxMapping T_IdxMapping = layout::Optimized>
     ALPAKA_FN_HOST_ACC constexpr auto makeIdxMap(
         auto const& acc,
         auto const workGroup,
@@ -42,28 +42,28 @@ namespace alpaka::onAcc
         T_Traverse traverse = T_Traverse{},
         T_IdxMapping idxMapping = T_IdxMapping{})
     {
-        return iter::internal::MakeIter::
-            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(iter::DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+        return internal::MakeIter::
+            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
                 acc,
-                iter::DomainSpec{workGroup, range},
+                DomainSpec{workGroup, range},
                 traverse,
                 idxMapping);
     }
 
     template<
-        iter::concepts::IdxTraversing T_Traverse = iter::traverse::Tiled,
-        iter::concepts::IdxMapping T_IdxMapping = iter::layout::Optimized>
+        concepts::IdxTraversing T_Traverse = traverse::Tiled,
+        concepts::IdxMapping T_IdxMapping = layout::Optimized>
     ALPAKA_FN_HOST_ACC constexpr auto makeIdxMap(
         auto const& acc,
         auto const workGroup,
-        concepts::HasStaticDim auto const range,
+        alpaka::concepts::HasStaticDim auto const range,
         T_Traverse traverse = T_Traverse{},
         T_IdxMapping idxMapping = T_IdxMapping{}) requires(ALPAKA_TYPE(range)::dim() == 1u)
     {
-        return iter::internal::MakeIter::
-            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(iter::DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+        return internal::MakeIter::
+            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
                 acc,
-                iter::DomainSpec{workGroup, range},
+                DomainSpec{workGroup, range},
                 traverse,
                 idxMapping);
     }

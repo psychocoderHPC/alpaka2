@@ -211,7 +211,7 @@ struct DotKernel
             {
                 for(auto [i] : onAcc::makeIdxMap(
                         acc,
-                        onAcc::iter::WorkerGroup{frameIdx * frameExtent + elemIdxInFrame, numFrames * frameExtent},
+                        onAcc::WorkerGroup{frameIdx * frameExtent + elemIdxInFrame, numFrames * frameExtent},
                         IdxRange{arraySize}))
                 {
                     tbSum[elemIdxInFrame] += a[i] * b[i];
