@@ -73,7 +73,7 @@ TEMPLATE_LIST_TEST_CASE("block iota", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{numBlocks / 2u, blockExtent},
+        alpaka::FrameSpec{numBlocks / 2u, blockExtent},
         KernelBundle{BlockIotaKernel{}, dBuff.getMdSpan(), numBlocks});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);

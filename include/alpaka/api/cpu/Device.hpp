@@ -98,7 +98,7 @@ namespace alpaka::onHost
             friend struct internal::Alloc;
             friend struct alpaka::internal::GetApi;
             friend struct internal::GetDeviceProperties;
-            friend struct internal::AdjustThreadBlocking;
+            friend struct internal::AdjustThreadSpec;
         };
     } // namespace cpu
 
@@ -168,16 +168,16 @@ namespace alpaka::onHost
             typename T_NumThreads,
             typename T_KernelBundle>
         requires exec::traits::isSeqMapping_v<T_Mapping>
-        struct AdjustThreadBlocking::
-            Op<cpu::Device<T_Platform>, T_Mapping, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+        struct AdjustThreadSpec::
+            Op<cpu::Device<T_Platform>, T_Mapping, FrameSpec<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             auto operator()(
                 cpu::Device<T_Platform> const& device,
                 T_Mapping const& executor,
-                DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
-                auto numThreadBlocks = dataBlocking.m_numBlocks;
+                auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
 #if 0
                 using IdxType = typename T_NumBlocks::type;
                 // @todo get this number from device properties
@@ -197,38 +197,39 @@ namespace alpaka::onHost
                     if(numThreadBlocks.product() > maxBlocks)
                         numThreadBlocks[maxIdx] = core::divCeil(numThreadBlocks[maxIdx], IdxType{2u});
 
-                   // std::cout <<dataBlocking.m_numBlocks <<" to "<< numThreadBlocks << std::endl;
                 }
 #endif
                 auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
-                return ThreadBlocking{numThreadBlocks, numThreads};
+                return ThreadSpec{numThreadBlocks, numThreads};
             }
         };
 
         template<typename T_Platform, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
-        struct AdjustThreadBlocking::Op<
+        struct AdjustThreadSpec::Op<
             cpu::Device<T_Platform>,
             exec::CpuOmpBlocksAndThreads,
-            DataBlocking<T_NumBlocks, T_NumThreads>,
+            FrameSpec<T_NumBlocks, T_NumThreads>,
             T_KernelBundle>
         {
             auto operator()(
                 cpu::Device<T_Platform> const& device,
                 exec::CpuOmpBlocksAndThreads const& executor,
-                DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
                 // universal vector type that both return produce the same result type.
-                using UniVec = typename ALPAKA_TYPE(dataBlocking.m_numBlocks)::UniVec;
+                using UniVec = typename ALPAKA_TYPE(dataBlocking.getThreadSpec().m_numBlocks)::UniVec;
 
-                if(dataBlocking.m_numThreads.product() > 4u)
+                if(dataBlocking.getThreadSpec().m_numThreads.product() > 4u)
                 {
                     auto const numThreads = UniVec::all(1);
-                    return ThreadBlocking{UniVec{dataBlocking.m_numBlocks}, numThreads};
+                    return ThreadSpec{UniVec{dataBlocking.getThreadSpec().m_numBlocks}, numThreads};
                 }
                 else
                 {
-                    return ThreadBlocking{UniVec{dataBlocking.m_numBlocks}, UniVec{dataBlocking.m_numThreads}};
+                    return ThreadSpec{
+                        UniVec{dataBlocking.getThreadSpec().m_numBlocks},
+                        UniVec{dataBlocking.getThreadSpec().m_numThreads}};
                 }
             }
         };

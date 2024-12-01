@@ -107,7 +107,7 @@ auto example(T_Cfg const& cfg) -> int
         = alpaka::KernelBundle{kernel, bufAccA.getMdSpan(), bufAccB.getMdSpan(), bufAccC.getMdSpan(), extent};
 
     alpaka::Vec<size_t, 1u> chunkSize = 256u;
-    auto dataBlocking = alpaka::DataBlocking{alpaka::core::divCeil(extent, chunkSize), chunkSize};
+    auto dataBlocking = alpaka::FrameSpec{alpaka::core::divCeil(extent, chunkSize), chunkSize};
 
     // Enqueue the kernel execution task
     {

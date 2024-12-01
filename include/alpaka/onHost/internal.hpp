@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "alpaka/Blocking.hpp"
+#include "alpaka/FrameSpec.hpp"
 #include "alpaka/KernelBundle.hpp"
+#include "alpaka/ThreadSpec.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/Handle.hpp"
@@ -143,33 +144,33 @@ namespace alpaka::onHost
                 KernelBundle<TKernelFn, TArgs...>>{}(queue, executor, blockCfg, std::move(kernelBundle));
         }
 
-        struct AdjustThreadBlocking
+        struct AdjustThreadSpec
         {
-            template<typename T_Device, typename T_Mapping, typename T_DataBlocking, typename T_KernelBundle>
+            template<typename T_Device, typename T_Mapping, typename T_FrameSpec, typename T_KernelBundle>
             struct Op
             {
                 auto operator()(
                     T_Device const&,
                     T_Mapping const& executor,
-                    T_DataBlocking const& blockCfg,
+                    T_FrameSpec const& blockCfg,
                     T_KernelBundle const& kernelBundle) const
                 {
-                    return ThreadBlocking{blockCfg.m_numBlocks, blockCfg.m_numThreads};
+                    return ThreadSpec{blockCfg.m_numBlocks, blockCfg.m_numThreads};
                 }
             };
         };
 
         template<typename T_NumBlocks, typename T_NumThreads, typename TKernelFn, typename... TArgs>
-        static auto adjustThreadBlocking(
+        static auto adjustThreadSpec(
             auto const& device,
             auto const& executor,
-            DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+            FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
             KernelBundle<TKernelFn, TArgs...> const& kernelBundle)
         {
-            return AdjustThreadBlocking::Op<
+            return AdjustThreadSpec::Op<
                 ALPAKA_TYPE(device),
                 ALPAKA_TYPE(executor),
-                DataBlocking<T_NumBlocks, T_NumThreads>,
+                FrameSpec<T_NumBlocks, T_NumThreads>,
                 KernelBundle<TKernelFn, TArgs...>>{}(device, executor, dataBlocking, kernelBundle);
         }
 

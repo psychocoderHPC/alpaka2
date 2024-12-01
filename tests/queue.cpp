@@ -69,12 +69,12 @@ void runPlatformCreationTest(auto exec, auto queue)
 {
     std::cout << "exec=" << core::demangledName(exec) << std::endl;
     std::cout << "start enqueue" << std::endl;
-    queue.enqueue(exec, ThreadBlocking{Vec{3, 3}, Vec{1, 1}}, PrintIdx{}, 42);
+    queue.enqueue(exec, ThreadSpec{Vec{3, 3}, Vec{1, 1}}, PrintIdx{}, 42);
     wait(queue);
     // queue.enqueue(exec::cpuOmpBlocks, Vec{3, 3}, Vec{1, 1}, KernelBundle{fn, 43});
     // queue.enqueue(exec::cpuOmpBlocks, Kernel{fn}.config(Vec{3, 3}, Vec{1, 1})(23));
 
-    enqueue(queue, exec, DataBlocking{Vec{3, 3}, Vec{2, 2}}, KernelBundle{PrintIdx{}, 43});
+    enqueue(queue, exec, FrameSpec{Vec{3, 3}, Vec{2, 2}}, KernelBundle{PrintIdx{}, 43});
     wait(queue);
 }
 
@@ -141,7 +141,7 @@ TEMPLATE_LIST_TEST_CASE("iota", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{extent / frameSize, frameSize},
+        alpaka::FrameSpec{extent / frameSize, frameSize},
         KernelBundle{IotaKernel{}, dBuff.getMdSpan(), extent.x()});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);
@@ -195,7 +195,7 @@ TEMPLATE_LIST_TEST_CASE("iota2D", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{extent / frameSize, frameSize},
+        alpaka::FrameSpec{extent / frameSize, frameSize},
         KernelBundle{IotaKernelND{}, dBuff.getMdSpan(), extent});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);
@@ -239,7 +239,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{extent / frameSize, frameSize},
+        alpaka::FrameSpec{extent / frameSize, frameSize},
         KernelBundle{IotaKernelND{}, dBuff.getMdSpan(), extent});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);
@@ -312,7 +312,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::DataBlocking{numBlocksReduced, frameSize},
+        alpaka::FrameSpec{numBlocksReduced, frameSize},
         KernelBundle{IotaKernelNDSelection<ALPAKA_TYPE(selection)>{}, dBuff.getMdSpan(), numBlocks});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);

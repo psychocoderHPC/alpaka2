@@ -104,7 +104,7 @@ namespace alpaka::onHost
             friend struct onHost::internal::Alloc;
             friend struct alpaka::internal::GetApi;
             friend struct internal::GetDeviceProperties;
-            friend struct internal::AdjustThreadBlocking;
+            friend struct internal::AdjustThreadSpec;
         };
     } // namespace cuda
 } // namespace alpaka::onHost
@@ -188,24 +188,24 @@ namespace alpaka::onHost
                 return device.m_properties;
             }
         };
-#    if 0
+#    if 1
         template<
             typename T_Platform,
             typename T_Mapping,
             typename T_NumBlocks,
             typename T_NumThreads,
             typename T_KernelBundle>
-        struct AdjustThreadBlocking::
-            Op<cuda::Device<T_Platform>, T_Mapping, DataBlocking<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+        struct AdjustThreadSpec::
+            Op<cuda::Device<T_Platform>, T_Mapping, FrameSpec<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
             auto operator()(
                 cuda::Device<T_Platform> const& device,
                 T_Mapping const& executor,
-                DataBlocking<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
-                auto numThreadBlocks = dataBlocking.m_numBlocks;
-#        if 0
+                auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
+#        if 1
                 using IdxType = typename T_NumBlocks::type;
                 // @todo get this number from device properties
                 static auto const maxBlocks = device.m_properties.m_multiProcessorCount * 16u;
@@ -223,9 +223,8 @@ namespace alpaka::onHost
                     if(numThreadBlocks.product() > maxBlocks)
                         numThreadBlocks[maxIdx] = core::divCeil(numThreadBlocks[maxIdx], IdxType{2u});
                 }
-                //  std::cout <<dataBlocking.m_numBlocks <<" to "<< numThreadBlocks << " "<<maxBlocks<<std::endl;
 #        endif
-                return ThreadBlocking{numThreadBlocks, dataBlocking.m_numThreads};
+                return ThreadSpec{numThreadBlocks, dataBlocking.getThreadSpec().m_numThreads};
             }
         };
 #    endif
