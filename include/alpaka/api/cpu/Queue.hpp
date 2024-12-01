@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "alpaka/FrameSpec.hpp"
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/exec/OmpBlocks.hpp"
 #include "alpaka/api/cpu/exec/OmpThreads.hpp"
@@ -13,6 +12,7 @@
 #include "alpaka/internal.hpp"
 #include "alpaka/meta/NdLoop.hpp"
 #include "alpaka/onHost.hpp"
+#include "alpaka/onHost/FrameSpec.hpp"
 #include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/internal.hpp"
 

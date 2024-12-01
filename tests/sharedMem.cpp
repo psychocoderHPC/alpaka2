@@ -76,7 +76,7 @@ TEMPLATE_LIST_TEST_CASE("block shared iota", "", TestApis)
     onHost::enqueue(
         queue,
         exec,
-        alpaka::FrameSpec{numBlocks / 2u, blockExtent},
+        FrameSpec{numBlocks / 2u, blockExtent},
         KernelBundle{SharedBlockIotaKernel<blockExtent.x()>{}, dBuff.getMdSpan(), numBlocks});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);

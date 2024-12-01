@@ -12,6 +12,8 @@
 #include <random>
 #include <typeinfo>
 
+using namespace alpaka;
+
 //! A vector addition kernel.
 class VectorAddKernel
 {
@@ -47,22 +49,21 @@ public:
 template<typename T_Cfg>
 auto example(T_Cfg const& cfg) -> int
 {
-    using IdxVec = alpaka::Vec<std::size_t, 1u>;
+    using IdxVec = Vec<std::size_t, 1u>;
 
-    auto api = cfg[alpaka::object::api];
-    auto exec = cfg[alpaka::object::exec];
+    auto api = cfg[object::api];
+    auto exec = cfg[object::exec];
 
     std::cout << api.getName() << std::endl;
 
-    std::cout << "Using alpaka accelerator: " << alpaka::core::demangledName(exec) << " for " << api.getName()
-              << std::endl;
+    std::cout << "Using alpaka accelerator: " << core::demangledName(exec) << " for " << api.getName() << std::endl;
 
     // Select a device
-    alpaka::onHost::Platform platform = alpaka::onHost::makePlatform(api);
-    alpaka::onHost::Device devAcc = platform.makeDevice(0);
+    onHost::Platform platform = onHost::makePlatform(api);
+    onHost::Device devAcc = platform.makeDevice(0);
 
     // Create a queue on the device
-    alpaka::onHost::Queue queue = devAcc.makeQueue();
+    onHost::Queue queue = devAcc.makeQueue();
 
     // Define the work division
     IdxVec const extent(123456);
@@ -71,13 +72,13 @@ auto example(T_Cfg const& cfg) -> int
     using Data = std::uint32_t;
 
     // Get the host device for allocating memory on the host.
-    alpaka::onHost::Platform platformHost = alpaka::onHost::makePlatform(alpaka::api::cpu);
-    alpaka::onHost::Device devHost = platformHost.makeDevice(0);
+    onHost::Platform platformHost = onHost::makePlatform(api::cpu);
+    onHost::Device devHost = platformHost.makeDevice(0);
 
     // Allocate 3 host memory buffers
-    auto bufHostA = alpaka::onHost::alloc<Data>(devHost, extent);
-    auto bufHostB = alpaka::onHost::allocMirror(devHost, bufHostA);
-    auto bufHostC = alpaka::onHost::allocMirror(devHost, bufHostA);
+    auto bufHostA = onHost::alloc<Data>(devHost, extent);
+    auto bufHostB = onHost::allocMirror(devHost, bufHostA);
+    auto bufHostC = onHost::allocMirror(devHost, bufHostA);
 
     // C++14 random generator for uniformly distributed numbers in {1,..,42}
     std::random_device rd{};
@@ -92,29 +93,29 @@ auto example(T_Cfg const& cfg) -> int
     }
 
     // Allocate 3 buffers on the accelerator
-    auto bufAccA = alpaka::onHost::allocMirror(devAcc, bufHostA);
-    auto bufAccB = alpaka::onHost::allocMirror(devAcc, bufHostB);
-    auto bufAccC = alpaka::onHost::allocMirror(devAcc, bufHostC);
+    auto bufAccA = onHost::allocMirror(devAcc, bufHostA);
+    auto bufAccB = onHost::allocMirror(devAcc, bufHostB);
+    auto bufAccC = onHost::allocMirror(devAcc, bufHostC);
 
     // Copy Host -> Acc
-    alpaka::onHost::memcpy(queue, bufAccA, bufHostA);
-    alpaka::onHost::memcpy(queue, bufAccB, bufHostB);
-    alpaka::onHost::memcpy(queue, bufAccC, bufHostC);
+    onHost::memcpy(queue, bufAccA, bufHostA);
+    onHost::memcpy(queue, bufAccB, bufHostB);
+    onHost::memcpy(queue, bufAccC, bufHostC);
 
     // Instantiate the kernel function object
     VectorAddKernel kernel;
     auto const taskKernel
-        = alpaka::KernelBundle{kernel, bufAccA.getMdSpan(), bufAccB.getMdSpan(), bufAccC.getMdSpan(), extent};
+        = KernelBundle{kernel, bufAccA.getMdSpan(), bufAccB.getMdSpan(), bufAccC.getMdSpan(), extent};
 
-    alpaka::Vec<size_t, 1u> chunkSize = 256u;
-    auto dataBlocking = alpaka::FrameSpec{alpaka::core::divCeil(extent, chunkSize), chunkSize};
+    Vec<size_t, 1u> chunkSize = 256u;
+    auto dataBlocking = onHost::FrameSpec{core::divCeil(extent, chunkSize), chunkSize};
 
     // Enqueue the kernel execution task
     {
-        alpaka::onHost::wait(queue);
+        onHost::wait(queue);
         auto const beginT = std::chrono::high_resolution_clock::now();
-        alpaka::onHost::enqueue(queue, exec, dataBlocking, taskKernel);
-        alpaka::onHost::wait(queue); // wait in case we are using an asynchronous queue to time actual kernel runtime
+        onHost::enqueue(queue, exec, dataBlocking, taskKernel);
+        onHost::wait(queue); // wait in case we are using an asynchronous queue to time actual kernel runtime
         auto const endT = std::chrono::high_resolution_clock::now();
         std::cout << "Time for kernel execution: " << std::chrono::duration<double>(endT - beginT).count() << 's'
                   << std::endl;
@@ -123,8 +124,8 @@ auto example(T_Cfg const& cfg) -> int
     // Copy back the result
     {
         auto beginT = std::chrono::high_resolution_clock::now();
-        alpaka::onHost::memcpy(queue, bufHostC, bufAccC);
-        alpaka::onHost::wait(queue);
+        onHost::memcpy(queue, bufHostC, bufAccC);
+        onHost::wait(queue);
         auto const endT = std::chrono::high_resolution_clock::now();
         std::cout << "Time for HtoD copy: " << std::chrono::duration<double>(endT - beginT).count() << 's'
                   << std::endl;
