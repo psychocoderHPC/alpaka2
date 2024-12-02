@@ -218,7 +218,8 @@ struct DotKernel
                 }
             }
         }
-
+        // sync is required because we do not know which thread wrote whcih value
+        onAcc::syncBlockThreads(acc);
         // aggregate for each thread but skip the first shared memory slot
         for(auto [elemIdxInFrame] :
             onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{acc[layer::thread].count(), frameExtent}))
