@@ -155,7 +155,7 @@ namespace alpaka::onHost
                     T_FrameSpec const& blockCfg,
                     T_KernelBundle const& kernelBundle) const
                 {
-                    return ThreadSpec{blockCfg.m_numBlocks, blockCfg.m_numThreads};
+                    return blockCfg.getThreadSpec();
                 }
             };
         };

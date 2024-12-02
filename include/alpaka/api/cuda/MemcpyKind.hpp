@@ -18,7 +18,10 @@ namespace alpaka::onHost
     namespace cuda
     {
         template<typename T_Dest, typename T_Source>
-        struct MemcpyKind;
+        struct MemcpyKind
+        {
+            static_assert(sizeof(T_Dest) && false, "Not supported memcpy kind.");
+        };
 
         template<>
         struct MemcpyKind<api::Cpu, api::Cuda>

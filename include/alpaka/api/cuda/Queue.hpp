@@ -97,6 +97,7 @@ namespace alpaka::onHost
 
             friend struct alpaka::internal::GetApi;
             friend struct onHost::internal::Memcpy;
+            friend struct onHost::internal::Memset;
             friend struct CallKernel;
         };
 
@@ -344,7 +345,7 @@ namespace alpaka::onHost
 
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memset3DAsync(
                         pitchedPtrVal,
-                        static_cast<int>(this->m_byte),
+                        static_cast<int>(byteValue),
                         extentVal,
                         internal::getNativeHandle(queue)));
                 }
