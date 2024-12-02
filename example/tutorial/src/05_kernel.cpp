@@ -82,9 +82,9 @@ void testVectorAddKernel(
     alpaka::onHost::Queue queue = device.makeQueue();
 
     // allocate input and output buffers on the device
-    auto in1_d = alpaka::onHost::allocMirror(host, in1_h);
-    auto in2_d = alpaka::onHost::allocMirror(host, in2_h);
-    auto out_d = alpaka::onHost::allocMirror(host, out_h);
+    auto in1_d = alpaka::onHost::allocMirror(device, in1_h);
+    auto in2_d = alpaka::onHost::allocMirror(device, in2_h);
+    auto out_d = alpaka::onHost::allocMirror(device, out_h);
 
     // copy the input data to the device; the size is known from the buffer objects
     alpaka::onHost::memcpy(queue, in1_d, in1_h);
@@ -186,9 +186,9 @@ void testVectorAddKernel3D(
     alpaka::onHost::Queue queue = device.makeQueue();
 
     // allocate input and output buffers on the device
-    auto in1_d = alpaka::onHost::allocMirror(host, in1_h);
-    auto in2_d = alpaka::onHost::allocMirror(host, in2_h);
-    auto out_d = alpaka::onHost::allocMirror(host, out_h);
+    auto in1_d = alpaka::onHost::allocMirror(device, in1_h);
+    auto in2_d = alpaka::onHost::allocMirror(device, in2_h);
+    auto out_d = alpaka::onHost::allocMirror(device, out_h);
 
     // copy the input data to the device; the size is known from the buffer objects
     alpaka::onHost::memcpy(queue, in1_d, in1_h);
@@ -249,7 +249,7 @@ int example(auto const cfg)
     std::cout << "Host:   " << alpaka::onHost::getName(host) << "\n\n";
 
     // use the first device
-    alpaka::onHost::Device device = host_platform.makeDevice(0);
+    alpaka::onHost::Device device = platform.makeDevice(0);
     std::cout << "Device: " << alpaka::onHost::getName(device) << "\n\n";
 
     testVectorAddKernel(host, device, computeExec);

@@ -24,7 +24,7 @@ int example(auto const apit)
     alpaka::onHost::Queue queue = host.makeQueue();
 
     std::cout << "Enqueue some work\n";
-#    if 0
+#if 0
     // host task enqueue is currently not implemented
     alpaka::enqueue(
         queue,
@@ -34,20 +34,18 @@ int example(auto const apit)
             std::this_thread::sleep_for(std::chrono::seconds(5u));
             std::cout << "  - host task complete\n";
         });
-#        endif
+#endif
     // wait for the work to complete
     std::cout << "Wait for the enqueue work to complete...\n";
     alpaka::onHost::wait(queue);
     std::cout << "All work has completed\n";
 
-return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 auto main() -> int
 {
     using namespace alpaka;
     // Execute the example once for each enabled API and executor.
-    return executeForEach(
-        [=](auto const& tag) { return example(tag); },
-        onHost::enabledApis);
+    return executeForEach([=](auto const& tag) { return example(tag); }, onHost::enabledApis);
 }

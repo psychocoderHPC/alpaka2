@@ -52,8 +52,8 @@ int example(auto const deviceApi)
     {
         // allocate a buffer of floats in global device memory
         auto device_buffer = alpaka::onHost::alloc<float>(device, Vec1D{size});
-        std::cout << "memory buffer on " << alpaka::onHost::getStaticName(alpaka::onHost::getApi(device_buffer)) << " at "
-                  << std::data(device_buffer) << "\n\n";
+        std::cout << "memory buffer on " << alpaka::onHost::getStaticName(alpaka::onHost::getApi(device_buffer))
+                  << " at " << std::data(device_buffer) << "\n\n";
 
         // set the device memory to all zeros (byte-wise, not element-wise)
         alpaka::onHost::memset(queue, device_buffer, 0x00);
@@ -84,7 +84,5 @@ auto main() -> int
 {
     using namespace alpaka;
     // Execute the example once for each enabled API and executor.
-    return executeForEach(
-        [=](auto const& tag) { return example(tag); },
-        onHost::enabledApis);
+    return executeForEach([=](auto const& tag) { return example(tag); }, onHost::enabledApis);
 }

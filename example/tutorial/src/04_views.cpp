@@ -54,7 +54,7 @@ int example(auto const deviceApi)
         std::cout << "memory buffer on " << alpaka::onHost::getStaticName(alpaka::onHost::getApi(device_buffer))
                   << " at " << std::data(device_buffer) << "\n\n";
 
-         // set the device memory to all zeros (byte-wise, not element-wise)
+        // set the device memory to all zeros (byte-wise, not element-wise)
         alpaka::onHost::memset(queue, device_buffer, 0x00);
 
         // create a view to the device data

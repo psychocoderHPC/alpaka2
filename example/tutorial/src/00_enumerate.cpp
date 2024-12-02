@@ -41,7 +41,5 @@ auto main() -> int
 {
     using namespace alpaka;
     // Execute the example once for each enabled API and executor.
-    return executeForEach(
-        [=](auto const& tag) { return example(tag); },
-        onHost::enabledApis);
+    return executeForEach([=](auto const& tag) { return example(tag); }, onHost::enabledApis);
 }
