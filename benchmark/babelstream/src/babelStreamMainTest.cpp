@@ -203,7 +203,11 @@ struct DotKernel
             tbSum[elemIdxInFrame] = T{0};
         }
 
-        auto traverseOverFrames = onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{numFrames});
+        auto const frameDataExtent = numFrames * frameExtent;
+        auto traverseOverFrames = onAcc::makeIdxMap(
+            acc,
+            onAcc::worker::blocksInGrid,
+            IdxRange{alpaka::CVec<uint32_t, 0u>{}, frameDataExtent, frameExtent});
 
         for(auto frameIdx : traverseOverFrames)
         {
@@ -211,7 +215,7 @@ struct DotKernel
             {
                 for(auto [i] : onAcc::makeIdxMap(
                         acc,
-                        onAcc::WorkerGroup{frameIdx * frameExtent + elemIdxInFrame, numFrames * frameExtent},
+                        onAcc::WorkerGroup{frameIdx + elemIdxInFrame, frameDataExtent},
                         IdxRange{arraySize}))
                 {
                     tbSum[elemIdxInFrame] += a[i] * b[i];
