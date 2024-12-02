@@ -63,7 +63,7 @@ namespace alpaka::onHost
                 static_cast<Parent>(*this),
                 std::move(executor),
                 blockCfg,
-                std::move(KernelBundle{f, args...}));
+                std::move(KernelBundle{std::forward<decltype(f)>(f), std::forward<decltype(args)>(args)...}));
         }
 
         template<typename TKernelFn, typename... TArgs>

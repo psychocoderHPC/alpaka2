@@ -209,6 +209,15 @@ namespace alpaka::onHost
             };
         };
 
+        struct Memset
+        {
+            template<typename T_Queue, typename T_Dest, typename T_Extents>
+            struct Op
+            {
+                void operator()(T_Queue& queue, T_Dest&, uint8_t, T_Extents const&) const;
+            };
+        };
+
         struct GetDeviceProperties
         {
             template<typename T_Any>

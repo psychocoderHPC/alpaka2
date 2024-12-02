@@ -18,6 +18,13 @@ namespace alpaka
     {
         struct Cuda
         {
+            using element_type = Cuda;
+
+            auto get() const
+            {
+                return this;
+            }
+
             void _()
             {
                 static_assert(concepts::Api<Cuda>);
