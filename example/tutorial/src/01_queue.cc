@@ -6,10 +6,11 @@
 
 #include <alpaka/alpaka.hpp>
 
+#include <chrono>
 #include <iostream>
-#include <vector>
+#include <thread>
 
-int example(auto const deviceApi)
+int example(auto const apit)
 {
     // the cpu api always has a single device
     alpaka::onHost::Platform host_platform = alpaka::onHost::makePlatform(alpaka::api::cpu);
@@ -19,22 +20,27 @@ int example(auto const deviceApi)
     std::cout << "Found 1 device:\n";
     std::cout << "  - " << alpaka::onHost::getName(host) << "\n\n";
 
-    // get all the devices on the accelerator platform
-    alpaka::onHost::Platform platform = alpaka::onHost::makePlatform(deviceApi);
-    alpaka::onHost::Device devAcc = platform.makeDevice(0);
+    // create a blocking host queue and submit some work to it
+    alpaka::onHost::Queue queue = host.makeQueue();
 
-    auto numDevice = alpaka::onHost::getDeviceCount(platform);
+    std::cout << "Enqueue some work\n";
+#    if 0
+    // host task enqueue is currently not implemented
+    alpaka::enqueue(
+        queue,
+        []() noexcept
+        {
+            std::cout << "  - host task running...\n";
+            std::this_thread::sleep_for(std::chrono::seconds(5u));
+            std::cout << "  - host task complete\n";
+        });
+#        endif
+    // wait for the work to complete
+    std::cout << "Wait for the enqueue work to complete...\n";
+    alpaka::onHost::wait(queue);
+    std::cout << "All work has completed\n";
 
-    std::cout << "Accelerator platform: " << alpaka::onHost::getName(platform) << '\n';
-    std::cout << "Found " << numDevice << " device(s):\n";
-
-    for(auto i = 0u; i < numDevice; ++i)
-    {
-        std::cout << "  - " << alpaka::onHost::getDeviceProperties(platform, i).getName() << '\n';
-        std::cout << '\n';
-    }
-
-    return EXIT_SUCCESS;
+return EXIT_SUCCESS;
 }
 
 auto main() -> int

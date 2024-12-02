@@ -1,74 +1,90 @@
-/* Copyright 2024 Andrea Bocci
-* SPDX-License-Identifier: Apache-2.0
+/* Copyright 2024 Andrea Bocci, René Widera
+ * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "config.h"
+
+#include <alpaka/alpaka.hpp>
 
 #include <cstdlib>
 #include <iostream>
 #include <vector>
 
-#include <alpaka/alpaka.hpp>
+int example(auto const deviceApi)
+{
+    // initialise the accelerator platform
+    alpaka::onHost::Platform platform = alpaka::onHost::makePlatform(deviceApi);
 
-#include "config.h"
+    // require at least one device
+    std::size_t n = alpaka::onHost::getDeviceCount(platform);
 
-int main() {
-  // initialise the accelerator platform
-  Platform platform;
+    if(n == 0)
+    {
+        return EXIT_FAILURE;
+    }
 
-  // require at least one device
-  std::size_t n = alpaka::getDevCount(platform);
-  if (n == 0) {
-    exit(EXIT_FAILURE);
-  }
+    // use the single host device
+    alpaka::onHost::Platform host_platform = alpaka::onHost::makePlatform(alpaka::api::cpu);
+    alpaka::onHost::Device host = host_platform.makeDevice(0);
 
-  // use the single host device
-  HostPlatform host_platform;
-  Host host = alpaka::getDevByIdx(host_platform, 0u);
-  std::cout << "Host:   " << alpaka::getName(host) << '\n';
+    std::cout << "Host platform: " << alpaka::onHost::getName(host_platform) << '\n';
+    std::cout << "Found 1 device:\n";
+    std::cout << "  - " << alpaka::onHost::getName(host) << "\n\n";
 
-  // allocate a buffer of floats in host memory, mapped to be efficiently copied to/from the device
-  uint32_t size = 42;
-  std::vector<float> host_data(size);
-  std::cout << "host vector at " << std::data(host_data) << "\n\n";
+    // allocate a buffer of floats in host memory
+    uint32_t size = 42;
+    auto host_buffer = alpaka::onHost::alloc<float>(host, alpaka::Vec{size});
+    std::cout << "host memory buffer at " << std::data(host_buffer) << "\n\n";
 
-  // fill the host buffers with values
-  for (uint32_t i = 0; i < size; ++i) {
-    host_data[i] = i;
-  }
+    // fill the host buffers with values
+    for(uint32_t i = 0; i < size; ++i)
+    {
+        host_buffer[i] = i;
+    }
 
-  // use the first device
-  Device device = alpaka::getDevByIdx(platform, 0u);
-  std::cout << "Device: " << alpaka::getName(device) << '\n';
+    // use the first device
+    alpaka::onHost::Device device = platform.makeDevice(0);
+    std::cout << "Device: " << alpaka::onHost::getName(device) << '\n';
 
-  // create a work queue
-  Queue queue{device};
+    // create a work queue
+    alpaka::onHost::Queue queue = device.makeQueue();
+    {
+        // allocate a buffer of floats in global device memory
+        auto device_buffer = alpaka::onHost::alloc<float>(device, Vec1D{size});
+        std::cout << "memory buffer on " << alpaka::onHost::getStaticName(alpaka::onHost::getApi(device_buffer))
+                  << " at " << std::data(device_buffer) << "\n\n";
 
-  {
-    // allocate a buffer of floats in global device memory, asynchronously
-    auto device_buffer = alpaka::allocAsyncBuf<float, uint32_t>(queue, size);
-    std::cout << "memory buffer on " << alpaka::getName(alpaka::getDev(device_buffer))
-              << " at " << std::data(device_buffer) << "\n\n";
+         // set the device memory to all zeros (byte-wise, not element-wise)
+        alpaka::onHost::memset(queue, device_buffer, 0x00);
 
-    // set the device memory to all zeros (byte-wise, not element-wise)
-    alpaka::memset(queue, device_buffer, 0x00);
+        // create a view to the device data
+        auto view = alpaka::onHost::View(device_buffer);
 
-    // create a read-only view to the device data
-    auto const_view = alpaka::ViewConst(device_buffer);
+        // copy the contents of the device buffer to the host buffer
+        alpaka::onHost::memcpy(queue, host_buffer, view);
 
-    // copy the contents of the device buffer to the host buffer
-    alpaka::memcpy(queue, host_data, const_view);
+        // the device buffer goes out of scope, but the memory is freed only
+        // once all enqueued operations have completed
+    }
 
-    // the device buffer goes out of scope, but the memory is freed only
-    // once all enqueued operations have completed
-  }
+    // wait for all operations to complete
+    alpaka::onHost::wait(queue);
 
-  // wait for all operations to complete
-  alpaka::wait(queue);
+    // read the content of the host buffer
+    for(uint32_t i = 0; i < size; ++i)
+    {
+        std::cout << host_buffer[i] << ' ';
+    }
+    std::cout << '\n';
 
-  // read the content of the host buffer
-  for (uint32_t i = 0; i < size; ++i) {
-    std::cout << host_data[i] << ' ';
-  }
-  std::cout << '\n';
+    std::cout << "All work has completed\n";
 
-  std::cout << "All work has completed\n";
+    return EXIT_SUCCESS;
+}
+
+auto main() -> int
+{
+    using namespace alpaka;
+    // Execute the example once for each enabled API and executor.
+    return executeForEach([=](auto const& tag) { return example(tag); }, onHost::enabledApis);
 }
