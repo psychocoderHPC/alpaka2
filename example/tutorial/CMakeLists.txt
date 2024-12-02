@@ -36,11 +36,11 @@ endif ()
 #-------------------------------------------------------------------------------
 # Add executable.
 
-file(GLOB_RECURSE tutorialSource "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
+file(GLOB_RECURSE tutorialSource "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 foreach (tutExampleFile ${tutorialSource})
     get_filename_component(tutFileName ${tutExampleFile} NAME)
-    string(REPLACE ".cc" "" tutName ${tutFileName})
+    string(REPLACE ".cpp" "" tutName ${tutFileName})
     alpaka_add_executable(${tutName} ${tutExampleFile})
     if (alpaka_TESTING)
         catch_discover_tests(${tutName})
