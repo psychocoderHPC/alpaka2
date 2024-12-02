@@ -16,6 +16,13 @@ namespace alpaka
     {
         struct Cpu
         {
+            using element_type = Cpu;
+
+            auto get() const
+            {
+                return this;
+            }
+
             void _()
             {
                 static_assert(concepts::Api<Cpu>);

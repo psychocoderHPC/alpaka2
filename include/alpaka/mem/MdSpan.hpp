@@ -201,12 +201,12 @@ namespace alpaka
             return *(m_ptr + idx.x());
         }
 
-        constexpr element_type const& operator[](index_type const& idx) const
+        constexpr element_type const& operator[](std::integral auto const& idx) const
         {
             return *(m_ptr + idx);
         }
 
-        constexpr reference operator[](index_type const& idx)
+        constexpr reference operator[](std::integral auto const& idx)
         {
             return *(m_ptr + idx);
         }

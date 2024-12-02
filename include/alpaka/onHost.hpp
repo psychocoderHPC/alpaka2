@@ -131,6 +131,21 @@ namespace alpaka::onHost
         return memcpy(queue, dest, source, dest.getExtents());
     }
 
+    inline auto memset(concepts::QueueHandle auto& queue, auto& dest, uint8_t byteValue, auto const& extents)
+    {
+        return internal::Memset::
+            Op<std::decay_t<decltype(*queue.get())>, std::decay_t<decltype(dest)>, std::decay_t<decltype(extents)>>{}(
+                *queue.get(),
+                dest,
+                byteValue,
+                extents);
+    }
+
+    inline auto memset(concepts::QueueHandle auto& queue, auto& dest, uint8_t byteValue)
+    {
+        return memset(queue, dest, byteValue, dest.getExtents());
+    }
+
     inline auto getDeviceProperties(concepts::PlatformHandle auto const& platform, uint32_t idx)
     {
         return internal::GetDeviceProperties::Op<ALPAKA_TYPE(*platform.get())>{}(*platform.get(), idx);

@@ -12,6 +12,11 @@ namespace alpaka::onHost
 {
     struct DeviceProperties
     {
+        auto getName() const
+        {
+            return m_name;
+        }
+
         std::string m_name;
         uint32_t m_multiProcessorCount;
         uint32_t m_warpSize;

@@ -299,6 +299,57 @@ namespace alpaka::onHost
                 }
             }
         };
+
+        template<typename T_Device, typename T_Dest, typename T_Extents>
+        struct Memset::Op<cuda::Queue<T_Device>, T_Dest, T_Extents>
+        {
+            void operator()(cuda::Queue<T_Device>& queue, T_Dest dest, uint8_t byteValue, T_Extents const& extents)
+                const
+            {
+                using TApi = typename cuda::Queue<T_Device>::TApi;
+
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::setDevice(onHost::getNativeHandle(queue.m_device)));
+
+                auto* destPtr = (void*) onHost::data(dest);
+
+                constexpr auto dim = extents.dim();
+                if constexpr(dim == 1u)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memsetAsync(
+                        destPtr,
+                        static_cast<int>(byteValue),
+                        extents.x() * sizeof(typename T_Dest::type),
+                        internal::getNativeHandle(queue)));
+                }
+                else if constexpr(dim == 2u)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memset2DAsync(
+                        destPtr,
+                        dest.getPitches().y(),
+                        static_cast<int>(byteValue),
+                        extents.x() * sizeof(typename T_Dest::type),
+                        extents.y(),
+                        internal::getNativeHandle(queue)));
+                }
+                else if constexpr(dim == 3u)
+                {
+                    typename TApi::PitchedPtr_t const pitchedPtrVal = TApi::makePitchedPtr(
+                        destPtr,
+                        dest.getPitches().y(),
+                        dest.getExtents().x(),
+                        dest.getExtents().y());
+
+                    typename TApi::Extent_t const extentVal
+                        = TApi::makeExtent(extents.x() * sizeof(typename T_Dest::type), extents.y(), extents.z());
+
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memset3DAsync(
+                        pitchedPtrVal,
+                        static_cast<int>(this->m_byte),
+                        extentVal,
+                        internal::getNativeHandle(queue)));
+                }
+            }
+        };
     } // namespace internal
 } // namespace alpaka::onHost
 #endif

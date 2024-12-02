@@ -34,12 +34,13 @@ namespace alpaka::onHost
 
         View& operator=(View const&) = default;
 
-        using type = typename T_Datahandle::element_type::type;
-
-        consteval uint32_t dim() const
+        static consteval uint32_t dim()
         {
             return T_Extents::dim();
         }
+
+        using type = typename T_Datahandle::element_type::type;
+        using index_type = typename T_Extents::type;
 
         auto getExtents() const
         {
@@ -65,6 +66,26 @@ namespace alpaka::onHost
         {
             auto* ptr = onHost::data(m_data);
             return alpaka::MdSpan{ptr, m_data->getExtents(), m_data->getPitches()};
+        }
+
+        decltype(auto) operator[](std::integral auto idx) const requires(dim() == 1u)
+        {
+            return data()[idx];
+        }
+
+        decltype(auto) operator[](std::integral auto idx) requires(dim() == 1u)
+        {
+            return data()[idx];
+        }
+
+        decltype(auto) operator[](alpaka::concepts::Vector auto idx) const
+        {
+            return getMdSpan()[idx];
+        }
+
+        decltype(auto) operator[](alpaka::concepts::Vector auto idx)
+        {
+            return getMdSpan()[idx];
         }
 
     private:
