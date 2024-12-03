@@ -168,8 +168,8 @@ namespace alpaka::onHost
             KernelBundle<TKernelFn, TArgs...> const& kernelBundle)
         {
             return AdjustThreadSpec::Op<
-                ALPAKA_TYPE(device),
-                ALPAKA_TYPE(executor),
+                ALPAKA_TYPEOF(device),
+                ALPAKA_TYPEOF(executor),
                 FrameSpec<T_NumBlocks, T_NumThreads>,
                 KernelBundle<TKernelFn, TArgs...>>{}(device, executor, dataBlocking, kernelBundle);
         }

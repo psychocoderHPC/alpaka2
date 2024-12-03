@@ -141,7 +141,7 @@ namespace alpaka::onHost
             void operator()(cpu::Queue<T_Device>& queue, T_Dest dest, T_Source const source, T_Extents const& extents)
                 const
             {
-                static_assert(std::is_same_v<ALPAKA_TYPE(dest), ALPAKA_TYPE(source)>);
+                static_assert(std::is_same_v<ALPAKA_TYPEOF(dest), ALPAKA_TYPEOF(source)>);
                 constexpr auto dim = dest.dim();
                 if constexpr(dim == 1u)
                 {

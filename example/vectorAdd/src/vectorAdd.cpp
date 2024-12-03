@@ -31,7 +31,7 @@ public:
         -> void
     {
         using namespace alpaka;
-        static_assert(ALPAKA_TYPE(numElements)::dim() == 1, "The VectorAddKernel expects 1-dimensional indices!");
+        static_assert(ALPAKA_TYPEOF(numElements)::dim() == 1, "The VectorAddKernel expects 1-dimensional indices!");
 
         // The uniformElements range for loop takes care automatically of the blocks, threads and elements in the
         // kernel launch grid.

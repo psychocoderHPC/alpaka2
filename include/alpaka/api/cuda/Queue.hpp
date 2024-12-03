@@ -250,8 +250,8 @@ namespace alpaka::onHost
                 auto* const srcPtr = (void*) onHost::data(source);
 
                 auto copyKind = cuda::MemcpyKind<
-                    ALPAKA_TYPE(alpaka::internal::getApi(dest)),
-                    ALPAKA_TYPE(alpaka::internal::getApi(source))>::kind;
+                    ALPAKA_TYPEOF(alpaka::internal::getApi(dest)),
+                    ALPAKA_TYPEOF(alpaka::internal::getApi(source))>::kind;
 
                 constexpr auto dim = extents.dim();
                 if constexpr(dim == 1u)

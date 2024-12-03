@@ -48,13 +48,13 @@ namespace alpaka
         template<concepts::TypeOrVector<typename T_End::type> T_OpType>
         ALPAKA_FN_HOST_ACC constexpr auto operator%(T_OpType const& rhs) const
         {
-            return IdxRange<T_End, T_Begin, ALPAKA_TYPE(m_stride * rhs)>{m_begin, m_end, m_stride * rhs};
+            return IdxRange<T_End, T_Begin, ALPAKA_TYPEOF(m_stride * rhs)>{m_begin, m_end, m_stride * rhs};
         }
 
         template<concepts::TypeOrVector<typename T_End::type> T_OpType>
         ALPAKA_FN_HOST_ACC constexpr auto operator>>(T_OpType const& rhs) const
         {
-            return IdxRange<ALPAKA_TYPE(m_end + rhs), ALPAKA_TYPE(m_begin + rhs), ALPAKA_TYPE(m_stride)>{
+            return IdxRange<ALPAKA_TYPEOF(m_end + rhs), ALPAKA_TYPEOF(m_begin + rhs), ALPAKA_TYPEOF(m_stride)>{
                 m_begin + rhs,
                 m_end + rhs,
                 m_stride};
@@ -63,7 +63,7 @@ namespace alpaka
         template<concepts::TypeOrVector<typename T_End::type> T_OpType>
         ALPAKA_FN_HOST_ACC constexpr auto operator<<(T_OpType const& rhs) const
         {
-            return IdxRange<ALPAKA_TYPE(m_end - rhs), ALPAKA_TYPE(m_begin - rhs), T_Stride>{
+            return IdxRange<ALPAKA_TYPEOF(m_end - rhs), ALPAKA_TYPEOF(m_begin - rhs), T_Stride>{
                 m_begin - rhs,
                 m_end - rhs,
                 m_stride};

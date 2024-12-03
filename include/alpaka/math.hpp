@@ -12,11 +12,11 @@ namespace alpaka::math
 {
     constexpr auto sin(auto const& arg)
     {
-        return internal::Sin::Op<ALPAKA_TYPE(apiCtx), ALPAKA_TYPE(arg)>{}(apiCtx, arg);
+        return internal::Sin::Op<ALPAKA_TYPEOF(apiCtx), ALPAKA_TYPEOF(arg)>{}(apiCtx, arg);
     }
 
     constexpr auto exp(auto const& arg)
     {
-        return internal::Exp::Op<ALPAKA_TYPE(apiCtx), ALPAKA_TYPE(arg)>{}(apiCtx, arg);
+        return internal::Exp::Op<ALPAKA_TYPEOF(apiCtx), ALPAKA_TYPEOF(arg)>{}(apiCtx, arg);
     }
 } // namespace alpaka::math
