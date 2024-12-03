@@ -37,7 +37,7 @@ struct CompileTimeKernel1D
         static_assert(cvec[0] == 23);
 
         auto selectVec = CVec<int, 0>{};
-        constexpr auto selectRes = vec.select(selectVec);
+        constexpr auto selectRes = vec[selectVec];
         static_assert(selectRes == Vec{3});
 
         constexpr auto typeLambda = [](auto const typeDummy) constexpr
@@ -114,7 +114,7 @@ struct CompileTimeKernel2D
         static_assert(linearize(cvec, Vec{0, 1}) == 1);
 
         auto selectVec = CVec<int, 1, 0>{};
-        constexpr auto selectRes = vec.select(selectVec);
+        constexpr auto selectRes = vec[selectVec];
         static_assert(selectRes == Vec{7, 3});
 
         constexpr auto iota2 = iotaCVec<int, 2u>();
@@ -206,11 +206,11 @@ struct CompileTimeKernel3D
         static_assert(linearize(cvec, Vec{0, 0, 1}) == 1);
 
         auto selectVec = CVec<int, 1, 2, 0>{};
-        constexpr auto selectRes = vec.select(selectVec);
+        constexpr auto selectRes = vec[selectVec];
         static_assert(selectRes == Vec{7, 5, 3});
 
         auto selectVec2 = CVec<int, 1, 2>{};
-        constexpr auto selectRes2 = vec.select(selectVec2);
+        constexpr auto selectRes2 = vec[selectVec2];
         static_assert(selectRes2 == Vec{7, 5});
 
 #if 0

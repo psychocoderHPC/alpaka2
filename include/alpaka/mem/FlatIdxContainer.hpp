@@ -200,35 +200,33 @@ namespace alpaka::onAcc
             if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
             {
                 auto groupOffset = m_threadSpace.m_threadIdx * m_idxRange.m_stride;
-                groupOffset.ref(T_CSelect{}) -= groupOffset.select(T_CSelect{});
+                groupOffset.ref(T_CSelect{}) -= groupOffset[T_CSelect{}];
 
                 auto begin = m_idxRange.m_begin + groupOffset;
 
-                auto linearCurrent = linearize(
-                    m_threadSpace.m_threadCount.select(T_CSelect{}),
-                    m_threadSpace.m_threadIdx.select(T_CSelect{}));
-                auto linearStride = m_threadSpace.m_threadCount.select(T_CSelect{}).product();
-                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
-                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+                auto linearCurrent
+                    = linearize(m_threadSpace.m_threadCount[T_CSelect{}], m_threadSpace.m_threadIdx[T_CSelect{}]);
+                auto linearStride = m_threadSpace.m_threadCount[T_CSelect{}].product();
+                auto strideMD = m_idxRange.m_stride[T_CSelect{}];
+                auto extentMD = core::divCeil(m_idxRange.distance()[T_CSelect{}], strideMD);
 
                 return const_iterator(begin, linearCurrent, linearStride, extentMD.product(), extentMD, strideMD);
             }
             else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
             {
                 auto groupOffset = m_threadSpace.m_threadIdx * m_idxRange.m_stride;
-                groupOffset.ref(T_CSelect{}) -= groupOffset.select(T_CSelect{});
+                groupOffset.ref(T_CSelect{}) -= groupOffset[T_CSelect{}];
 
                 auto begin = m_idxRange.m_begin + groupOffset;
 
-                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
+                auto strideMD = m_idxRange.m_stride[T_CSelect{}];
                 auto numElements = core::divCeil(
-                    m_idxRange.distance().select(T_CSelect{}).product(),
-                    (m_threadSpace.m_threadCount.select(T_CSelect{}).product() * strideMD.product()));
-                auto linearCurrent = linearize(
-                                         m_threadSpace.m_threadCount.select(T_CSelect{}),
-                                         m_threadSpace.m_threadIdx.select(T_CSelect{}))
-                                     * numElements;
-                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+                    m_idxRange.distance()[T_CSelect{}].product(),
+                    (m_threadSpace.m_threadCount[T_CSelect{}].product() * strideMD.product()));
+                auto linearCurrent
+                    = linearize(m_threadSpace.m_threadCount[T_CSelect{}], m_threadSpace.m_threadIdx[T_CSelect{}])
+                      * numElements;
+                auto extentMD = core::divCeil(m_idxRange.distance()[T_CSelect{}], strideMD);
                 return const_iterator(
                     begin,
                     linearCurrent,
@@ -243,22 +241,19 @@ namespace alpaka::onAcc
         {
             if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
             {
-                auto extentMD = core::divCeil(
-                    m_idxRange.distance().select(T_CSelect{}),
-                    m_idxRange.m_stride.select(T_CSelect{}));
+                auto extentMD = core::divCeil(m_idxRange.distance()[T_CSelect{}], m_idxRange.m_stride[T_CSelect{}]);
                 return const_iterator_end(extentMD.product());
             }
             else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
             {
-                auto strideMD = m_idxRange.m_stride.select(T_CSelect{});
+                auto strideMD = m_idxRange.m_stride[T_CSelect{}];
                 auto numElements = core::divCeil(
-                    m_idxRange.distance().select(T_CSelect{}).product(),
-                    (m_threadSpace.m_threadCount.select(T_CSelect{}).product() * strideMD.product()));
-                auto linearCurrent = linearize(
-                                         m_threadSpace.m_threadCount.select(T_CSelect{}),
-                                         m_threadSpace.m_threadIdx.select(T_CSelect{}))
-                                     * numElements;
-                auto extentMD = core::divCeil(m_idxRange.distance().select(T_CSelect{}), strideMD);
+                    m_idxRange.distance()[T_CSelect{}].product(),
+                    (m_threadSpace.m_threadCount[T_CSelect{}].product() * strideMD.product()));
+                auto linearCurrent
+                    = linearize(m_threadSpace.m_threadCount[T_CSelect{}], m_threadSpace.m_threadIdx[T_CSelect{}])
+                      * numElements;
+                auto extentMD = core::divCeil(m_idxRange.distance()[T_CSelect{}], strideMD);
                 return const_iterator_end(std::min(linearCurrent + numElements, extentMD.product()));
             }
         }
