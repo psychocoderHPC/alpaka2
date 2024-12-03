@@ -105,7 +105,7 @@ namespace alpaka::onAcc
             }
 
             ALPAKA_FN_ACC inline const_iterator_end(concepts::Vector auto const& extent)
-                : m_extentSlowDim{extent.select(T_CSelect{})[0]}
+                : m_extentSlowDim{extent[T_CSelect{}][0]}
             {
             }
 
@@ -159,9 +159,9 @@ namespace alpaka::onAcc
                 concepts::Vector auto const extent,
                 concepts::Vector auto const stride)
                 : m_current{first + offset}
-                , m_stride{stride.select(T_CSelect{})}
-                , m_extent{(extent + offset).select(T_CSelect{})}
-                , m_first((m_current).select(T_CSelect{}))
+                , m_stride{stride[T_CSelect{}]}
+                , m_extent{(extent + offset)[T_CSelect{}]}
+                , m_first((m_current)[T_CSelect{}])
             {
                 // range check required for 1 dimensional iterators
                 if constexpr(iterDim > 1u)
