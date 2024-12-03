@@ -12,9 +12,18 @@
 
 #include <algorithm>
 
-namespace alpaka::onHost
+namespace alpaka
 {
-    constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
+#if ALPAKA_LANG_CUDA && (ALPAKA_COMP_CLANG_CUDA || ALPAKA_COMP_NVCC) && __CUDA_ARCH__
+    constexpr auto apiCtx = api::cuda;
+#else
+    constexpr auto apiCtx = api::cpu;
+#endif
 
-    constexpr auto enabledApis = meta::filter([](auto api) { return isPlatformAvaiable(api); }, apis);
-} // namespace alpaka::onHost
+    namespace onHost
+    {
+        constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
+
+        constexpr auto enabledApis = meta::filter([](auto api) { return isPlatformAvaiable(api); }, apis);
+    } // namespace onHost
+} // namespace alpaka

@@ -15,6 +15,7 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/internal.hpp"
+#include "alpaka/math.hpp"
 #include "alpaka/math/constants.hpp"
 #include "alpaka/mem/Iter.hpp"
 #include "alpaka/onAcc.hpp"
