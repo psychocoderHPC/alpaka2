@@ -17,7 +17,7 @@
 ALPAKA_FN_HOST_ACC auto exactSolution(double const x, double const y, double const t) -> double
 {
     constexpr double pi = alpaka::math::constants::pi;
-    return std::exp(-pi * pi * t) * (std::sin(pi * x) + std::sin(pi * y));
+    return alpaka::math::exp(-pi * pi * t) * (alpaka::math::sin(pi * x) + alpaka::math::sin(pi * y));
 }
 
 //! Valdidate calculated solution in the buffer to the analytical solution at t=tMax
