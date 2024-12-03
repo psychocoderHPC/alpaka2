@@ -20,6 +20,7 @@
 #include "alpaka/mem/Iter.hpp"
 #include "alpaka/onAcc.hpp"
 #include "alpaka/onAcc/Acc.hpp"
+#include "alpaka/onAcc/atomic.hpp"
 #include "alpaka/onHost.hpp"
 #include "alpaka/onHost/Device.hpp"
 #include "alpaka/onHost/Platform.hpp"
