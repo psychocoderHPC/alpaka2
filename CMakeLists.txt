@@ -126,6 +126,38 @@ if(alpaka_API_CUDA)
     endif()
 endif()
 
+
+## search for aqtomic ref
+
+# Check for C++20 std::atomic_ref first
+try_compile(alpaka_HAS_STD_ATOMIC_REF # Result stored here
+        "${PROJECT_BINARY_DIR}/alpakaFeatureTests" # Binary directory for output file
+        SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tests/StdAtomicRef.cpp" # Source file
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED TRUE
+        CXX_EXTENSIONS FALSE)
+if(alpaka_HAS_STD_ATOMIC_REF AND (NOT alpaka_ACC_CPU_DISABLE_ATOMIC_REF))
+    message(STATUS "std::atomic_ref<T> found")
+    target_compile_definitions(alpaka INTERFACE ALPAKA_HAS_STD_ATOMIC_REF)
+else()
+    message(STATUS "std::atomic_ref<T> NOT found")
+endif()
+
+if(NOT alpaka_HAS_STD_ATOMIC_REF)
+    if(Boost_ATOMIC_FOUND)
+        message(STATUS "boost::atomic_ref<T> found")
+        target_link_libraries(alpaka INTERFACE Boost::atomic)
+    else()
+        message(STATUS "boost::atomic_ref<T> NOT found")
+    endif()
+endif()
+
+if((NOT alpaka_HAS_STD_ATOMIC_REF) AND (NOT Boost_ATOMIC_FOUND))
+    message(STATUS "atomic_ref<T> or boost::atomic_ref<T> was not found or manually disabled. Falling back to lock-based CPU atomics.")
+    target_compile_definitions(alpaka INTERFACE ALPAKA_DISABLE_ATOMIC_ATOMICREF)
+endif()
+
+
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # alpaka IDE target to make source browsable/editable in IDEs

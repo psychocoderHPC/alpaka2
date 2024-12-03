@@ -8,3 +8,4 @@
 #include "alpaka/api/cuda/Device.hpp"
 #include "alpaka/api/cuda/Platform.hpp"
 #include "alpaka/api/cuda/Queue.hpp"
+#include "alpaka/api/cuda/atomic.hpp"
