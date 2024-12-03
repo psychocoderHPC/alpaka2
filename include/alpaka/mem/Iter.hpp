@@ -277,7 +277,7 @@ namespace alpaka::onAcc
 
         constexpr auto adjustMapping(auto const& acc, auto api)
         {
-            return internal::AutoIndexMapping::Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(api)>{}(acc, api);
+            return internal::AutoIndexMapping::Op<ALPAKA_TYPEOF(acc), ALPAKA_TYPEOF(api)>{}(acc, api);
         }
 
         struct MakeIter
@@ -294,7 +294,8 @@ namespace alpaka::onAcc
                     T_Acc const& acc,
                     T_DomainSpec const& domainSpec,
                     [[maybe_unused]] T_Traverse traverse,
-                    T_IdxMapping idxMapping) const requires std::is_same_v<ALPAKA_TYPE(idxMapping), layout::Optimized>
+                    T_IdxMapping idxMapping) const
+                    requires std::is_same_v<ALPAKA_TYPEOF(idxMapping), layout::Optimized>
                 {
                     auto adjIdxMapping = adjustMapping(acc, acc[object::api]);
                     auto const idxRange = domainSpec.getIdxRange(acc);
@@ -304,8 +305,8 @@ namespace alpaka::onAcc
                         threadSpace,
                         adjIdxMapping,
                         iotaCVec<
-                            typename ALPAKA_TYPE(idxRange.distance())::type,
-                            ALPAKA_TYPE(idxRange.distance())::dim()>());
+                            typename ALPAKA_TYPEOF(idxRange.distance())::type,
+                            ALPAKA_TYPEOF(idxRange.distance())::dim()>());
                 }
 
                 ALPAKA_FN_HOST_ACC constexpr auto operator()(
@@ -321,8 +322,8 @@ namespace alpaka::onAcc
                         threadSpace,
                         idxMapping,
                         iotaCVec<
-                            typename ALPAKA_TYPE(idxRange.distance())::type,
-                            ALPAKA_TYPE(idxRange.distance())::dim()>());
+                            typename ALPAKA_TYPEOF(idxRange.distance())::type,
+                            ALPAKA_TYPEOF(idxRange.distance())::dim()>());
                 }
             };
         };

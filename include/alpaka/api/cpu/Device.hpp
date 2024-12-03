@@ -136,7 +136,8 @@ namespace alpaka::onHost
                     auto deleter = [](T_Type* ptr) { delete[](ptr); };
                     auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
                     auto data = std::make_shared<
-                        onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPE(pitches)>>(
+                        onHost::
+                            Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPEOF(pitches)>>(
                         device.getSharedPtr(),
                         ptr,
                         extents,
@@ -150,7 +151,8 @@ namespace alpaka::onHost
                     auto deleter = [](T_Type* ptr) { delete[](ptr); };
                     auto pitches = mem::calculatePitchesFromExtents<T_Type>(extents);
                     auto data = std::make_shared<
-                        onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPE(pitches)>>(
+                        onHost::
+                            Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPEOF(pitches)>>(
                         device.getSharedPtr(),
                         ptr,
                         extents,
@@ -218,7 +220,7 @@ namespace alpaka::onHost
                 T_KernelBundle const& kernelBundle) const
             {
                 // universal vector type that both return produce the same result type.
-                using UniVec = typename ALPAKA_TYPE(dataBlocking.getThreadSpec().m_numBlocks)::UniVec;
+                using UniVec = typename ALPAKA_TYPEOF(dataBlocking.getThreadSpec().m_numBlocks)::UniVec;
 
                 if(dataBlocking.getThreadSpec().m_numThreads.product() > 4u)
                 {

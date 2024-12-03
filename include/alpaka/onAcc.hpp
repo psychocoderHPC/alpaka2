@@ -43,7 +43,7 @@ namespace alpaka::onAcc
         T_IdxMapping idxMapping = T_IdxMapping{})
     {
         return internal::MakeIter::
-            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+            Op<ALPAKA_TYPEOF(acc), ALPAKA_TYPEOF(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
                 acc,
                 DomainSpec{workGroup, range},
                 traverse,
@@ -58,10 +58,10 @@ namespace alpaka::onAcc
         auto const workGroup,
         alpaka::concepts::HasStaticDim auto const range,
         T_Traverse traverse = T_Traverse{},
-        T_IdxMapping idxMapping = T_IdxMapping{}) requires(ALPAKA_TYPE(range)::dim() == 1u)
+        T_IdxMapping idxMapping = T_IdxMapping{}) requires(ALPAKA_TYPEOF(range)::dim() == 1u)
     {
         return internal::MakeIter::
-            Op<ALPAKA_TYPE(acc), ALPAKA_TYPE(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
+            Op<ALPAKA_TYPEOF(acc), ALPAKA_TYPEOF(DomainSpec{workGroup, range}), T_Traverse, T_IdxMapping>{}(
                 acc,
                 DomainSpec{workGroup, range},
                 traverse,

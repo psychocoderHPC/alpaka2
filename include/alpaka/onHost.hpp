@@ -97,7 +97,7 @@ namespace alpaka::onHost
     template<typename T_Type>
     inline auto alloc(auto const& device, alpaka::concepts::Vector auto const& extents)
     {
-        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*device.get())>, ALPAKA_TYPE(extents)>{}(
+        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*device.get())>, ALPAKA_TYPEOF(extents)>{}(
             *device.get(),
             extents);
     }
@@ -114,7 +114,7 @@ namespace alpaka::onHost
      */
     inline auto allocMirror(auto const& device, auto const& view)
     {
-        return alloc<typename ALPAKA_TYPE(view)::type>(device, view.getExtents());
+        return alloc<typename ALPAKA_TYPEOF(view)::type>(device, view.getExtents());
     }
 
     inline auto memcpy(concepts::QueueHandle auto& queue, auto& dest, auto const& source, auto const& extents)
@@ -148,11 +148,11 @@ namespace alpaka::onHost
 
     inline auto getDeviceProperties(concepts::PlatformHandle auto const& platform, uint32_t idx)
     {
-        return internal::GetDeviceProperties::Op<ALPAKA_TYPE(*platform.get())>{}(*platform.get(), idx);
+        return internal::GetDeviceProperties::Op<ALPAKA_TYPEOF(*platform.get())>{}(*platform.get(), idx);
     }
 
     inline auto getDeviceProperties(concepts::DeviceHandle auto const& device)
     {
-        return internal::GetDeviceProperties::Op<ALPAKA_TYPE(*device.get())>{}(*device.get());
+        return internal::GetDeviceProperties::Op<ALPAKA_TYPEOF(*device.get())>{}(*device.get());
     }
 } // namespace alpaka::onHost

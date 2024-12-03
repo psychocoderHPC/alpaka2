@@ -65,7 +65,7 @@ namespace alpaka
             constexpr T operator[](std::integral auto const idx) const
             {
                 T result;
-                using IdxType = ALPAKA_TYPE(idx);
+                using IdxType = ALPAKA_TYPEOF(idx);
                 std::apply(
                     [&result, idx](auto const&... v)
                     {
@@ -73,7 +73,7 @@ namespace alpaka
                         /**
                          *  sizeof() is required to return a bool which is deferred in the evaluation
                          */
-                        (void) (((idx == i++) && (result = ALPAKA_TYPE(v)::value, sizeof(IdxType))) || ...);
+                        (void) (((idx == i++) && (result = ALPAKA_TYPEOF(v)::value, sizeof(IdxType))) || ...);
                     },
                     Values{});
                 return result;
@@ -499,24 +499,24 @@ namespace alpaka
         template<typename T, T... T_values>
         constexpr auto select(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v) const
         {
-            using InType = ALPAKA_TYPE(v);
+            using InType = ALPAKA_TYPEOF(v);
             return Vec<T_Type, InType::dim()>{(*this)[T_values]...};
         }
 
         template<typename T, T... T_values>
         constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v)
         {
-            using InType = ALPAKA_TYPE(v);
+            using InType = ALPAKA_TYPEOF(v);
             auto array = std::array{std::ref((*this)[T_values])...};
-            return Vec<T_Type, InType::dim(), ALPAKA_TYPE(array)>{array};
+            return Vec<T_Type, InType::dim(), ALPAKA_TYPEOF(array)>{array};
         };
 
         template<typename T, T... T_values>
         constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v) const
         {
-            using InType = ALPAKA_TYPE(v);
+            using InType = ALPAKA_TYPEOF(v);
             auto array = std::array{std::ref((*this)[T_values])...};
-            return Vec<T_Type, InType::dim(), ALPAKA_TYPE(array)>{array};
+            return Vec<T_Type, InType::dim(), ALPAKA_TYPEOF(array)>{array};
         };
     };
 

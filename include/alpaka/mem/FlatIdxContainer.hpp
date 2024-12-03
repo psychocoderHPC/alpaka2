@@ -265,7 +265,7 @@ namespace alpaka::onAcc
 
         ALPAKA_FN_HOST_ACC constexpr auto operator[](concepts::CVector auto const iterDir) const
         {
-            return FlatIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPE(iterDir)>(
+            return FlatIdxContainer<T_IdxRange, T_ThreadSpace, T_IdxMapperFn, ALPAKA_TYPEOF(iterDir)>(
                 m_idxRange,
                 m_threadSpace,
                 T_IdxMapperFn{});

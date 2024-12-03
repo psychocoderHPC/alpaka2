@@ -106,7 +106,7 @@ struct IotaKernel
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, uint32_t outSize) const
     {
         // check that frame extent keeps compile time const-ness
-        static_assert(alpaka::concepts::CVector<ALPAKA_TYPE(acc[frame::extent])>);
+        static_assert(alpaka::concepts::CVector<ALPAKA_TYPEOF(acc[frame::extent])>);
         for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
         {
             //            std::cout<<i<<std::endl;
@@ -313,7 +313,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
         queue,
         exec,
         FrameSpec{numBlocksReduced, frameSize},
-        KernelBundle{IotaKernelNDSelection<ALPAKA_TYPE(selection)>{}, dBuff.getMdSpan(), numBlocks});
+        KernelBundle{IotaKernelNDSelection<ALPAKA_TYPEOF(selection)>{}, dBuff.getMdSpan(), numBlocks});
     onHost::memcpy(queue, hBuff, dBuff);
     wait(queue);
 #if 1
