@@ -107,7 +107,7 @@ struct IotaKernel
     {
         // check that frame extent keeps compile time const-ness
         static_assert(alpaka::concepts::CVector<ALPAKA_TYPEOF(acc[frame::extent])>);
-        for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
+        for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::totalFrameSpecExtent))
         {
             //            std::cout<<i<<std::endl;
             out[i.x()] = i.x();
@@ -159,7 +159,7 @@ struct IotaKernelND
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto outSize) const
     {
-        for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::dataExtent))
+        for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, onAcc::range::totalFrameSpecExtent))
         {
             out[i] = i;
         }
