@@ -266,8 +266,8 @@ struct IotaKernelNDSelection
         {
             for(auto frameIdx : onAcc::makeIdxMap(
                     acc,
-                    onAcc::WorkerGroup{fameBaseIdx, acc[layer::block].count()},
-                    IdxRange{numFrames})[T_Selection{}])
+                    onAcc::WorkerGroup{ALPAKA_TYPEOF(acc[layer::block].count())::all(0), acc[layer::block].count()},
+                    IdxRange{fameBaseIdx, numFrames})[T_Selection{}])
             {
                 for(auto elemIdx : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
                     if(linearize(acc[frame::extent], elemIdx) == 1u)
