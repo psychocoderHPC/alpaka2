@@ -112,7 +112,7 @@ namespace alpaka::onAcc
 
     namespace idxTrait
     {
-        struct DataExtent
+        struct TotalFrameSpecExtent
         {
             template<typename T_Acc>
             constexpr auto operator()(T_Acc const& acc) const
@@ -433,10 +433,10 @@ namespace alpaka::onAcc
 
     namespace range
     {
-        constexpr auto dataExtent = detail::IdxRangeFn{idxTrait::DataExtent{}};
+        constexpr auto totalFrameSpecExtent = detail::IdxRangeFn{idxTrait::TotalFrameSpecExtent{}};
         constexpr auto frameCount = detail::IdxRangeFn{idxTrait::FrameCount{}};
         constexpr auto frameExtent = detail::IdxRangeFn{idxTrait::FrameExtent{}};
-        constexpr auto threadInGrid = detail::IdxRangeFn{idxTrait::GridThreadCount{}};
+        constexpr auto threadsInGrid = detail::IdxRangeFn{idxTrait::GridThreadCount{}};
         constexpr auto blocksInGrid = detail::IdxRangeFn{idxTrait::BlockCount{}};
         constexpr auto threadsInBlock = detail::IdxRangeFn{idxTrait::ThreadCountInBlock{}};
     } // namespace range
