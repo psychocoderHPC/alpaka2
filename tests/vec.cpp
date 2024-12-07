@@ -213,6 +213,14 @@ struct CompileTimeKernel3D
         constexpr auto selectRes2 = vec[selectVec2];
         static_assert(selectRes2 == Vec{7, 5});
 
+        auto m0 = CVec<int, 1, 2, 0>{};
+        auto m1 = CVec<int, 1, 0>{};
+
+        constexpr auto r = getNotSelected(m0,m1);
+
+        static_assert(r == Vec{2});
+
+
 #if 0
 // add this to runtime etst as soon we add them back
          auto vecRT = Vec{3, 7, 5};

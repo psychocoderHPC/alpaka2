@@ -245,21 +245,53 @@ namespace alpaka::onAcc
             detail::ReducedVector<IdxType, iterDim> m_first;
         };
 
+        constexpr auto getTSpec(auto index, auto size) const
+        {
+            return std::make_tuple(index, size);
+        }
+
+        constexpr auto getTSpec(auto threadIdx, auto numThreads) const requires(dim > T_CSelect::dim())
+        {
+            auto allElements = iotaCVec<IdxType, dim>();
+
+            constexpr auto r = getNotSelected(allElements, T_CSelect{});
+
+            for(uint32_t x = 0u; x < r.dim(); ++x)
+            {
+                auto d = r[x];
+                auto old = threadIdx[d];
+                threadIdx[d] = 0u;
+                threadIdx[T_CSelect{}[0]] += old * numThreads[T_CSelect{}[0]];
+            }
+
+            for(uint32_t x = 0u; x < r.dim(); ++x)
+            {
+                auto d = r[x];
+                auto old = numThreads[d];
+                numThreads[d] = 1u;
+                numThreads[T_CSelect{}[0]] *= old;
+            }
+
+            return std::make_tuple(threadIdx, numThreads);
+        }
+
         ALPAKA_FN_ACC inline const_iterator begin() const
         {
+            auto [threadIdx,numThreads] = getTSpec(m_threadSpace.m_threadIdx,m_threadSpace.m_threadCount);
+
             if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
             {
                 return const_iterator(
                     m_idxRange.m_begin,
-                    m_threadSpace.m_threadIdx * m_idxRange.m_stride,
+                    threadIdx * m_idxRange.m_stride,
                     m_idxRange.distance(),
-                    m_threadSpace.m_threadCount * m_idxRange.m_stride);
+                    numThreads * m_idxRange.m_stride);
             }
             else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
             {
                 auto extent = m_idxRange.distance();
-                auto numElements = core::divCeil(extent, m_idxRange.m_stride * m_threadSpace.m_threadCount);
-                auto first = m_threadSpace.m_threadIdx * numElements * m_idxRange.m_stride;
+                auto numElements = core::divCeil(extent, m_idxRange.m_stride * numThreads);
+                auto first = threadIdx * numElements * m_idxRange.m_stride;
 
                 return const_iterator(
                     m_idxRange.m_begin,
@@ -271,6 +303,8 @@ namespace alpaka::onAcc
 
         ALPAKA_FN_ACC inline const_iterator_end end() const
         {
+            auto [threadIdx,numThreads] = getTSpec(m_threadSpace.m_threadIdx,m_threadSpace.m_threadCount);
+
             if constexpr(std::is_same_v<T_IdxMapperFn, layout::Strided>)
             {
                 return const_iterator_end(m_idxRange.m_begin + m_idxRange.distance());
@@ -278,8 +312,8 @@ namespace alpaka::onAcc
             else if constexpr(std::is_same_v<T_IdxMapperFn, layout::Contigious>)
             {
                 auto extent = m_idxRange.distance();
-                auto numElements = core::divCeil(extent, m_idxRange.m_stride * m_threadSpace.m_threadCount);
-                auto first = m_threadSpace.m_threadIdx * numElements * m_idxRange.m_stride;
+                auto numElements = core::divCeil(extent, m_idxRange.m_stride * numThreads);
+                auto first = threadIdx * numElements * m_idxRange.m_stride;
 
                 return const_iterator_end(m_idxRange.m_begin + extent.min(first + numElements * m_idxRange.m_stride));
             }

@@ -264,15 +264,21 @@ struct IotaKernelNDSelection
         for(auto fameBaseIdx :
             onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, onAcc::range::frameCount)[CVec<uint32_t, 0u>{}])
         {
+            /* Each thread block is iterating over the other dimension selected by T_Selection.
+             * Indecision
+             */
             for(auto frameIdx : onAcc::makeIdxMap(
                     acc,
-                    onAcc::WorkerGroup{ALPAKA_TYPEOF(acc[layer::block].count())::all(0), acc[layer::block].count()},
-                    IdxRange{fameBaseIdx, numFrames})[T_Selection{}])
+                    onAcc::WorkerGroup{numFrames.all(0), numFrames.all(1)},
+                    IdxRange{fameBaseIdx, numFrames} )[T_Selection{}])
             {
+                std::cout<<frameIdx<<std::endl;
                 for(auto elemIdx : onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, onAcc::range::frameExtent))
                     if(linearize(acc[frame::extent], elemIdx) == 1u)
                     {
-                        out[frameIdx] = frameIdx;
+                        onAcc::atomicAdd(&(out[frameIdx][0]),frameIdx[0]);
+                        onAcc::atomicAdd(&(out[frameIdx][1]),frameIdx[1]);
+                        onAcc::atomicAdd(&(out[frameIdx][2]),frameIdx[2]);
                     }
             }
         }
@@ -296,6 +302,8 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     constexpr Vec numBlocks = Vec{4u, 8u, 16u};
     auto numBlocksReduced = numBlocks;
     numBlocksReduced.ref(CVec<uint32_t, 2u, 1u>{}) = 1u;
+    //numBlocksReduced.y()=1;
+
     std::cout << numBlocksReduced << std::endl;
     std::cout << "exec=" << core::demangledName(exec) << std::endl;
     auto dBuff = onHost::alloc<Vec<uint32_t, 3u>>(device, numBlocks);
@@ -303,6 +311,7 @@ TEMPLATE_LIST_TEST_CASE("iota3D 2D iterate", "", TestApis)
     Platform cpuPlatform = makePlatform(api::cpu);
     Device cpuDevice = cpuPlatform.makeDevice(0);
     auto hBuff = onHost::allocMirror(cpuDevice, dBuff);
+    onHost::memset(queue, dBuff, 0u);
 
     wait(queue);
     constexpr auto frameSize = Vec{1u, 1u, 2u};

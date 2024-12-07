@@ -80,6 +80,7 @@ namespace alpaka
             }
         };
 
+
         template<typename T>
         struct IsTemplateSignatureStorage : std::false_type
         {
@@ -535,6 +536,65 @@ namespace alpaka
     {
         using IotaSeq = std::make_integer_sequence<size_t, T_dim>;
         return iotaCVecDo<T>(IotaSeq{});
+    }
+
+    template<typename AllowedIntegers>
+    struct contains
+    {
+    };
+
+    template<typename Int, Int... Is>
+    struct contains<CVec<Int, Is...>>
+    {
+        template<Int X>
+    static constexpr bool value = ((X == Is) || ...);
+    };
+
+    template<typename T1, typename T2>
+    struct combine
+    {
+    };
+
+    template<typename Int, Int... Is1, Int... Is2>
+    struct combine<CVec<Int, Is1...>, CVec<Int, Is2...>>
+    {
+        using type = CVec<Int, Is1..., Is2...>;
+    };
+
+    template<typename... Seqs>
+    struct concatenate;
+
+    template<typename First, typename... Rest>
+    struct concatenate<First, Rest...>
+    {
+        using type = typename combine<First, typename concatenate<Rest...>::type>::type;
+    };
+
+    template<typename Last>
+    struct concatenate<Last>
+    {
+        using type = Last;
+    };
+
+
+    template<typename T_V1, typename T_V2>
+    struct FilterValues;
+
+    template<typename T1, T1... T_values1, T1... T_values2>
+    struct FilterValues<CVec<T1, T_values1...>, CVec<T1, T_values2...>>
+    {
+        using m0 = CVec<T1, T_values1...>;
+
+        template<T1 N>
+        using select = std::conditional_t<contains<m0>::template value<N>, CVec<T1>, CVec<T1, N>>;
+
+
+        using type = concatenate<select<T_values2>...>::type;
+    };
+
+    consteval auto getNotSelected(auto large, auto small)
+    {
+        return typename FilterValues<ALPAKA_TYPEOF(small), ALPAKA_TYPEOF(large)>::type{};
     }
 
     template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
