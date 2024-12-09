@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/CVec.hpp"
 #include "alpaka/Vec.hpp"
 #include "alpaka/api/api.hpp"
 #include "alpaka/api/cpu.hpp"
