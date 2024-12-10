@@ -94,22 +94,33 @@ namespace alpaka
         namespace traits
         {
             template<typename T_Mapping>
-            struct IsSeqMapping : std::false_type
+            struct IsSeqExecutor : std::false_type
             {
             };
 
             template<>
-            struct IsSeqMapping<CpuSerial> : std::true_type
+            struct IsSeqExecutor<CpuSerial> : std::true_type
             {
             };
 
             template<>
-            struct IsSeqMapping<CpuOmpBlocks> : std::true_type
+            struct IsSeqExecutor<CpuOmpBlocks> : std::true_type
             {
             };
 
-            template<typename T_Mapping>
-            constexpr bool isSeqMapping_v = IsSeqMapping<T_Mapping>::value;
+            template<typename T_Exec>
+            constexpr bool isSeqExecutor_v = IsSeqExecutor<T_Exec>::value;
+
         } // namespace traits
     } // namespace exec
+
+    /** check if a executor can only be used with a single thred per block
+     *
+     * @return true if a block can only have a single thread, else false
+     */
+    template<typename T_Exec>
+    consteval bool isSeqExecutor(T_Exec exec)
+    {
+        return exec::traits::isSeqExecutor_v<T_Exec>;
+    }
 } // namespace alpaka
