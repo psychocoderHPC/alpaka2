@@ -169,7 +169,7 @@ namespace alpaka::onHost
             typename T_NumBlocks,
             typename T_NumThreads,
             typename T_KernelBundle>
-        requires exec::traits::isSeqMapping_v<T_Mapping>
+        requires exec::traits::isSeqExecutor_v<T_Mapping>
         struct AdjustThreadSpec::
             Op<cpu::Device<T_Platform>, T_Mapping, FrameSpec<T_NumBlocks, T_NumThreads>, T_KernelBundle>
         {
