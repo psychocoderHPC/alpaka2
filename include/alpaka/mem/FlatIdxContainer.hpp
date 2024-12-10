@@ -12,7 +12,7 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/mem/IdxRange.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
-#include "alpaka/mem/layout.hpp"
+#include "alpaka/onAcc/layout.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
