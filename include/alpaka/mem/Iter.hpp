@@ -10,11 +10,10 @@
 #include "alpaka/core/PP.hpp"
 #include "alpaka/core/Utility.hpp"
 #include "alpaka/core/common.hpp"
-#include "alpaka/mem/FlatIdxContainer.hpp"
 #include "alpaka/mem/IdxRange.hpp"
 #include "alpaka/mem/ThreadSpace.hpp"
-#include "alpaka/mem/TiledIdxContainer.hpp"
-#include "alpaka/mem/layout.hpp"
+#include "alpaka/onAcc/layout.hpp"
+#include "alpaka/onAcc/traverse.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cstdint>
@@ -25,37 +24,6 @@
 
 namespace alpaka::onAcc
 {
-    namespace traverse
-    {
-        struct Flat
-        {
-            ALPAKA_FN_HOST_ACC static constexpr auto make(
-                auto const& idxRange,
-                auto const& threadSpace,
-                auto const& idxMapper,
-                concepts::CVector auto const& cSelect)
-            {
-                return FlatIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
-            }
-        };
-
-        struct Tiled
-        {
-            ALPAKA_FN_HOST_ACC static constexpr auto make(
-                auto const& idxRange,
-                auto const& threadSpace,
-                auto const& idxMapper,
-                concepts::CVector auto const& cSelect)
-            {
-                return TiledIdxContainer{idxRange, threadSpace, idxMapper, cSelect};
-            }
-        };
-
-        constexpr auto flat = Flat{};
-        constexpr auto tiled = Tiled{};
-
-    } // namespace traverse
-
     namespace trait
     {
         template<typename T>
