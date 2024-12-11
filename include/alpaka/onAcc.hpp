@@ -20,17 +20,43 @@
 
 namespace alpaka::onAcc
 {
+    /** synchronize all threads within a thread block layer */
     constexpr void syncBlockThreads(auto const& acc)
     {
         internalCompute::syncBlockThreads(acc);
     }
 
+    /** create a variable located in the thread blocks shared memory
+     *
+     * @code{.cpp}
+     * // creates a reference to a float value
+     * auto& foo = declareSharedVar<float>(acc);
+     * @endcode
+     *
+     * @attention The data is not initialized it can contains garbage.
+     *
+     * @tparam T type which should be created, the constructor is not called
+     * @return result should be taken as reference
+     */
     template<typename T>
     constexpr decltype(auto) declareSharedVar(auto const& acc)
     {
         return internalCompute::declareSharedVar<T>(acc);
     }
 
+    /** creates an M-dimensional array
+     *
+     * @code{.cpp}
+     * // creates a MdSpan view to a float value
+     * auto fooArrayMd = declareSharedVar<float>(acc, CVec<uint32_t, 5, 8>{});
+     * @endcode
+     *
+     * @attention The data is not initialized it can contains garbage.
+     *
+     * @tparam T type which should be created, the constructor is not called
+     * @param extent M-dimensional extent in elements for each dimension, 1 - M dimensions are supported
+     * @return MdSpan non owning view to the corresponding data, you should NOT store a reference to the handle
+     */
     template<typename T, alpaka::concepts::CVector T_Extent>
     constexpr decltype(auto) declareSharedMdArray(auto const& acc, T_Extent const& extent)
     {
@@ -66,6 +92,11 @@ namespace alpaka::onAcc
                 idxLayout);
     }
 
+    /** specialization for 1-dimensional ranges
+     *
+     * It is using tiled iteration because there are no multiplications or divisions involved what is reducing the
+     * register footprint and number of calculation required.
+     */
     template<
         concepts::IdxTraversing T_Traverse = traverse::Tiled,
         concepts::IdxMapping T_IdxLayout = layout::Optimized>
