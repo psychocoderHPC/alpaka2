@@ -17,14 +17,31 @@
 
 namespace alpaka::onHost
 {
+    /** memory owning view
+     *
+     * This view is only holding a handle to the real data, copying the view is cheap.
+     * Owning mean that it is guaranteed that the lifetime of the data is defined by the lifetime of the view.
+     */
     template<typename T_Datahandle, typename T_Extents>
     struct View
     {
     public:
+        /** creates a view
+         *
+         * @param data handle to the physical data
+         * @param extents M-dimensional extents in elements of the view. Must be <= number of elements in the dat
+         * handle.
+         */
         View(T_Datahandle data, T_Extents const& extents) : m_data(std::move(data)), m_extents(extents)
         {
         }
 
+        /** creates a view
+         *
+         * Extents will be dirived from the data handle.
+         *
+         * @param data handle to the physical data
+         */
         View(T_Datahandle data) : m_data(std::move(data)), m_extents(m_data->m_extents)
         {
         }
@@ -32,6 +49,10 @@ namespace alpaka::onHost
         View(View const&) = default;
         View(View&&) = default;
 
+        /** shallow copy the handle
+         *
+         * It is not copying the data the view is pointing to.
+         */
         View& operator=(View const&) = default;
 
         static consteval uint32_t dim()
@@ -42,21 +63,25 @@ namespace alpaka::onHost
         using type = typename T_Datahandle::element_type::type;
         using index_type = typename T_Extents::type;
 
+        /** get the number of elements for each dimension */
         auto getExtents() const
         {
             return m_extents;
         }
 
+        /** Get the distance in bytes to move to the next element in the corresponding dimension. */
         auto getPitches() const
         {
             return m_data->getPitches();
         }
 
+        /** pointer to data */
         decltype(auto) data()
         {
             return onHost::data(m_data);
         }
 
+        /** pointer to data */
         decltype(auto) data() const
         {
             return onHost::data(m_data);
@@ -68,6 +93,10 @@ namespace alpaka::onHost
             return alpaka::MdSpan{ptr, m_data->getExtents(), m_data->getPitches()};
         }
 
+        /** access 1-dimensional data with a scalar index
+         *
+         * @{
+         */
         decltype(auto) operator[](std::integral auto idx) const requires(dim() == 1u)
         {
             return data()[idx];
@@ -78,6 +107,12 @@ namespace alpaka::onHost
             return data()[idx];
         }
 
+        /** @} */
+
+        /** access M-dimensional data with a vector index
+         *
+         * @{
+         */
         decltype(auto) operator[](alpaka::concepts::Vector auto idx) const
         {
             return getMdSpan()[idx];
@@ -87,6 +122,8 @@ namespace alpaka::onHost
         {
             return getMdSpan()[idx];
         }
+
+        /** @} */
 
     private:
         void _()

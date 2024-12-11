@@ -94,7 +94,7 @@ namespace alpaka::onHost
                 }
             };
 
-            static auto wait(auto&& any)
+            static void wait(auto&& any)
             {
                 return Op<std::decay_t<decltype(any)>>{}(any);
             }
