@@ -7,42 +7,14 @@
 #include "alpaka/api/api.hpp"
 #include "alpaka/api/trait.hpp"
 #include "alpaka/core/common.hpp"
+#include "alpaka/onAcc/atomicHierarchy.hpp"
 #include "alpaka/onAcc/atomicOp.hpp"
+#include "alpaka/onAcc/internal.hpp"
 
 #include <type_traits>
 
 namespace alpaka::onAcc
 {
-    //! Defines the parallelism hierarchy levels of alpaka
-    namespace hierarchy
-    {
-        struct Grids
-        {
-        };
-
-        constexpr auto grids = Grids{};
-
-        struct Blocks
-        {
-        };
-
-        constexpr auto blocks = Blocks{};
-
-        struct Threads
-        {
-        };
-
-        constexpr auto threads = Threads{};
-    } // namespace hierarchy
-
-    //! The atomic operation trait.
-    namespace trait
-    {
-        //! The atomic operation trait.
-        template<typename TOp, typename TAtomic, typename T, typename THierarchy, typename TSfinae = void>
-        struct AtomicOp;
-    } // namespace trait
-
     //! Executes the given operation atomically.
     //!
     //! \tparam TOp The operation type.
@@ -53,7 +25,10 @@ namespace alpaka::onAcc
     constexpr auto atomicOp(auto const& acc, T* const addr, T const& value, THierarchy const = THierarchy()) -> T
     {
         auto atomicImpl = trait::getAtomicImpl(acc[object::exec]);
-        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(atomicImpl), T, THierarchy>::atomicOp(atomicImpl, addr, value);
+        return internalCompute::Atomic::Op<TOp, ALPAKA_TYPEOF(atomicImpl), T, THierarchy>::atomicOp(
+            atomicImpl,
+            addr,
+            value);
     }
 
     //! Executes the given operation atomically.
@@ -72,7 +47,7 @@ namespace alpaka::onAcc
         THierarchy const = THierarchy()) -> T
     {
         auto atomicImpl = trait::getAtomicImpl(acc[object::exec]);
-        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(atomicImpl), T, THierarchy>::atomicOp(
+        return internalCompute::Atomic::Op<TOp, ALPAKA_TYPEOF(atomicImpl), T, THierarchy>::atomicOp(
             atomicImpl,
             addr,
             compare,

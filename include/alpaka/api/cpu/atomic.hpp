@@ -6,8 +6,9 @@
 
 #include "alpaka/api/cpu/tag.hpp"
 #include "alpaka/core/config.hpp"
-#include "alpaka/onAcc/atomic.hpp"
+#include "alpaka/onAcc/atomicHierarchy.hpp"
 #include "alpaka/onAcc/atomicOp.hpp"
+#include "alpaka/onAcc/internal.hpp"
 
 #include <array>
 #include <atomic>
@@ -49,11 +50,11 @@ namespace alpaka::onAcc
             "ALPAKA_DISABLE_ATOMIC_ATOMICREF.");
     }
 
-    namespace trait
+    namespace internalCompute
     {
         //! The CPU accelerators AtomicAdd.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicAdd, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicAdd, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -65,7 +66,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicSub.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicSub, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicSub, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -77,7 +78,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicMin.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicMin, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicMin, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -97,7 +98,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicMax.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicMax, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicMax, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -117,7 +118,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicExch.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicExch, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicExch, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -135,7 +136,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicInc.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicInc, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicInc, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -153,7 +154,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicDec.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicDec, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicDec, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -171,7 +172,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicAnd.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicAnd, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicAnd, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -183,7 +184,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicOr.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicOr, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicOr, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -195,7 +196,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicXor.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicXor, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicXor, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
@@ -207,7 +208,7 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicCas.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicCas, internal::StlAtomic, T, THierarchy>
+        struct Atomic::Op<AtomicCas, internal::StlAtomic, T, THierarchy>
         {
             ALPAKA_FN_HOST static auto atomicOp(
                 internal::StlAtomic const&,
@@ -233,7 +234,7 @@ namespace alpaka::onAcc
                 return old;
             }
         };
-    } // namespace trait
+    } // namespace internalCompute
 } // namespace alpaka::onAcc
 
 #endif
