@@ -48,63 +48,12 @@ namespace alpaka
 
     namespace exec
     {
-        struct CpuSerial
-        {
-        };
 
-        constexpr CpuSerial cpuSerial;
-
-        struct CpuOmpBlocks
-        {
-        };
-
-        constexpr CpuOmpBlocks cpuOmpBlocks;
-
-        struct CpuOmpBlocksAndThreads
-        {
-        };
-
-        constexpr CpuOmpBlocksAndThreads cpuOmpBlocksAndThreads;
-
-        struct GpuCuda
-        {
-        };
-
-        constexpr GpuCuda gpuCuda;
-
-        constexpr auto availableMappings = std::make_tuple(ALPAKA_PP_REMOVE_FIRST_COMMA(
-#ifndef ALPAKA_DISABLE_EXEC_CpuSerial
-            ,
-            cpuSerial
-#endif
-#ifndef ALPAKA_DISABLE_EXEC_CpuOmpBlocks
-            ,
-            cpuOmpBlocks
-#endif
-#ifndef ALPAKA_DISABLE_EXEC_CpuOmpBlocksAndThreads
-            ,
-            cpuOmpBlocksAndThreads
-#endif
-#ifndef ALPAKA_DISABLE_EXEC_GpuCuda
-            ,
-            gpuCuda
-#endif
-            ));
 
         namespace traits
         {
             template<typename T_Mapping>
             struct IsSeqExecutor : std::false_type
-            {
-            };
-
-            template<>
-            struct IsSeqExecutor<CpuSerial> : std::true_type
-            {
-            };
-
-            template<>
-            struct IsSeqExecutor<CpuOmpBlocks> : std::true_type
             {
             };
 

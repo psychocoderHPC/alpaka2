@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/api/cpu/tag.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/onAcc/atomic.hpp"
 #include "alpaka/onAcc/atomicOp.hpp"
@@ -52,9 +53,9 @@ namespace alpaka::onAcc
     {
         //! The CPU accelerators AtomicAdd.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicAdd, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicAdd, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -64,9 +65,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicSub.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicSub, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicSub, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -76,9 +77,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicMin.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicMin, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicMin, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -96,9 +97,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicMax.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicMax, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicMax, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -116,9 +117,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicExch.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicExch, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicExch, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -134,9 +135,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicInc.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicInc, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicInc, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -152,9 +153,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicDec.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicDec, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicDec, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -170,9 +171,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicAnd.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicAnd, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicAnd, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -182,9 +183,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicOr.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicOr, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicOr, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -194,9 +195,9 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicXor.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicXor, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicXor, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(internal::StlAtomic const&, T* const addr, T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
@@ -206,9 +207,13 @@ namespace alpaka::onAcc
 
         //! The CPU accelerators AtomicCas.
         template<typename T, typename THierarchy>
-        struct AtomicOp<AtomicCas, api::Cpu, T, THierarchy>
+        struct AtomicOp<AtomicCas, internal::StlAtomic, T, THierarchy>
         {
-            ALPAKA_FN_HOST static auto atomicOp(api::Cpu const&, T* const addr, T const& compare, T const& value) -> T
+            ALPAKA_FN_HOST static auto atomicOp(
+                internal::StlAtomic const&,
+                T* const addr,
+                T const& compare,
+                T const& value) -> T
             {
                 isSupportedByAtomicAtomicRef<T>();
                 detail::atomic_ref<T> ref(*addr);
