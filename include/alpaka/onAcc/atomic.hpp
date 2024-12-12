@@ -45,7 +45,7 @@ namespace alpaka::onAcc
     template<typename TOp, typename T, typename THierarchy = hierarchy::Grids>
     constexpr auto atomicOp(T* const addr, T const& value, THierarchy const& = THierarchy()) -> T
     {
-        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(apiCtx), T, THierarchy>::atomicOp(apiCtx, addr, value);
+        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(thisApi()), T, THierarchy>::atomicOp(thisApi(), addr, value);
     }
 
     //! Executes the given operation atomically.
@@ -58,7 +58,11 @@ namespace alpaka::onAcc
     template<typename TOp, typename T, typename THierarchy = hierarchy::Grids>
     constexpr auto atomicOp(T* const addr, T const& compare, T const& value, THierarchy const& = THierarchy()) -> T
     {
-        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(apiCtx), T, THierarchy>::atomicOp(apiCtx, addr, compare, value);
+        return trait::AtomicOp<TOp, ALPAKA_TYPEOF(thisApi()), T, THierarchy>::atomicOp(
+            thisApi(),
+            addr,
+            compare,
+            value);
     }
 
     //! Executes an atomic add operation.

@@ -9,3 +9,4 @@
 #include "alpaka/api/cuda/Platform.hpp"
 #include "alpaka/api/cuda/Queue.hpp"
 #include "alpaka/api/cuda/atomic.hpp"
+#include "alpaka/api/cuda/math.hpp"
