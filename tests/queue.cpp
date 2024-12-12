@@ -276,9 +276,9 @@ struct IotaKernelNDSelection
                     if(linearize(acc[frame::extent], elemIdx) == 1u)
                     {
                         // use atomics to detect data races where mre than one thread is updating the result
-                        onAcc::atomicAdd(&(out[frameIdx][0]), frameIdx[0]);
-                        onAcc::atomicAdd(&(out[frameIdx][1]), frameIdx[1]);
-                        onAcc::atomicAdd(&(out[frameIdx][2]), frameIdx[2]);
+                        onAcc::atomicAdd(acc, &(out[frameIdx][0]), frameIdx[0]);
+                        onAcc::atomicAdd(acc, &(out[frameIdx][1]), frameIdx[1]);
+                        onAcc::atomicAdd(acc, &(out[frameIdx][2]), frameIdx[2]);
                     }
             }
         }

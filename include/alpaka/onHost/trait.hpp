@@ -6,6 +6,7 @@
 
 #include "Handle.hpp"
 #include "alpaka/KernelBundle.hpp"
+#include "alpaka/api/executor.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/meta/filter.hpp"
 #include "alpaka/onHost/concepts.hpp"

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/api/cuda/atomicBuiltIn.hpp"
+#include "alpaka/api/cuda/tag.hpp"
 #include "alpaka/core/Unreachable.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/onAcc/atomic.hpp"
@@ -58,7 +59,7 @@ namespace alpaka::onAcc::trait
         struct EmulateAtomic : private EmulationBase
         {
         public:
-            static __device__ auto atomic(api::Cuda const ctx, T* const addr, T const& value) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const ctx, T* const addr, T const& value) -> T
             {
                 auto* const addressAsIntegralType = reinterpretAddress(addr);
                 using EmulatedType = std::decay_t<decltype(*addressAsIntegralType)>;
@@ -80,7 +81,8 @@ namespace alpaka::onAcc::trait
                     assumed = old;
                     T v = *(reinterpret_cast<T*>(&assumed));
                     TOp{}(&v, value);
-                    using Cas = alpaka::onAcc::trait::AtomicOp<AtomicCas, api::Cuda, EmulatedType, THierarchy>;
+                    using Cas
+                        = alpaka::onAcc::trait::AtomicOp<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>;
                     old = Cas::atomicOp(ctx, addressAsIntegralType, assumed, reinterpretValue(v));
                     // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
                 } while(assumed != old);
@@ -90,20 +92,22 @@ namespace alpaka::onAcc::trait
 
         //! Emulate AtomicCas with equivalent unisigned integral type
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicCas, api::Cuda, T, THierarchy> : private EmulationBase
+        struct EmulateAtomic<AtomicCas, internal::CudaHipAtomic, T, THierarchy> : private EmulationBase
         {
-            static __device__ auto atomic(api::Cuda const ctx, T* const addr, T const& compare, T const& value) -> T
+            static __device__ auto atomic(
+                internal::CudaHipAtomic const ctx,
+                T* const addr,
+                T const& compare,
+                T const& value) -> T
             {
                 auto* const addressAsIntegralType = reinterpretAddress(addr);
                 using EmulatedType = std::decay_t<decltype(*addressAsIntegralType)>;
                 EmulatedType reinterpretedCompare = reinterpretValue(compare);
                 EmulatedType reinterpretedValue = reinterpretValue(value);
 
-                auto old = alpaka::onAcc::trait::AtomicOp<AtomicCas, api::Cuda, EmulatedType, THierarchy>::atomicOp(
-                    ctx,
-                    addressAsIntegralType,
-                    reinterpretedCompare,
-                    reinterpretedValue);
+                auto old
+                    = alpaka::onAcc::trait::AtomicOp<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>::
+                        atomicOp(ctx, addressAsIntegralType, reinterpretedCompare, reinterpretedValue);
 
                 return *(reinterpret_cast<T*>(&old));
             }
@@ -111,11 +115,11 @@ namespace alpaka::onAcc::trait
 
         //! Emulate AtomicSub with atomicAdd
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicSub, api::Cuda, T, THierarchy>
+        struct EmulateAtomic<AtomicSub, internal::CudaHipAtomic, T, THierarchy>
         {
-            static __device__ auto atomic(api::Cuda const ctx, T* const addr, T const& value) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const ctx, T* const addr, T const& value) -> T
             {
-                return alpaka::onAcc::trait::AtomicOp<AtomicAdd, api::Cuda, T, THierarchy>::atomicOp(
+                return alpaka::onAcc::trait::AtomicOp<AtomicAdd, internal::CudaHipAtomic, T, THierarchy>::atomicOp(
                     ctx,
                     addr,
                     -value);
@@ -124,9 +128,14 @@ namespace alpaka::onAcc::trait
 
         //! AtomicDec can not be implemented for floating point types!
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicDec, api::Cuda, T, THierarchy, std::enable_if_t<std::is_floating_point_v<T>>>
+        struct EmulateAtomic<
+            AtomicDec,
+            internal::CudaHipAtomic,
+            T,
+            THierarchy,
+            std::enable_if_t<std::is_floating_point_v<T>>>
         {
-            static __device__ auto atomic(api::Cuda const&, T* const, T const&) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const&, T* const, T const&) -> T
             {
                 static_assert(!sizeof(T), "EmulateAtomic<AtomicDec> is not supported for floating point data types!");
                 return T{};
@@ -135,9 +144,14 @@ namespace alpaka::onAcc::trait
 
         //! AtomicInc can not be implemented for floating point types!
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicInc, api::Cuda, T, THierarchy, std::enable_if_t<std::is_floating_point_v<T>>>
+        struct EmulateAtomic<
+            AtomicInc,
+            internal::CudaHipAtomic,
+            T,
+            THierarchy,
+            std::enable_if_t<std::is_floating_point_v<T>>>
         {
-            static __device__ auto atomic(api::Cuda const&, T* const, T const&) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const&, T* const, T const&) -> T
             {
                 static_assert(!sizeof(T), "EmulateAtomic<AtomicInc> is not supported for floating point data types!");
                 return T{};
@@ -146,9 +160,14 @@ namespace alpaka::onAcc::trait
 
         //! AtomicAnd can not be implemented for floating point types!
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicAnd, api::Cuda, T, THierarchy, std::enable_if_t<std::is_floating_point_v<T>>>
+        struct EmulateAtomic<
+            AtomicAnd,
+            internal::CudaHipAtomic,
+            T,
+            THierarchy,
+            std::enable_if_t<std::is_floating_point_v<T>>>
         {
-            static __device__ auto atomic(api::Cuda const&, T* const, T const&) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const&, T* const, T const&) -> T
             {
                 static_assert(!sizeof(T), "EmulateAtomic<AtomicAnd> is not supported for floating point data types!");
                 return T{};
@@ -157,9 +176,14 @@ namespace alpaka::onAcc::trait
 
         //! AtomicOr can not be implemented for floating point types!
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicOr, api::Cuda, T, THierarchy, std::enable_if_t<std::is_floating_point_v<T>>>
+        struct EmulateAtomic<
+            AtomicOr,
+            internal::CudaHipAtomic,
+            T,
+            THierarchy,
+            std::enable_if_t<std::is_floating_point_v<T>>>
         {
-            static __device__ auto atomic(api::Cuda const&, T* const, T const&) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const&, T* const, T const&) -> T
             {
                 static_assert(!sizeof(T), "EmulateAtomic<AtomicOr> is not supported for floating point data types!");
                 return T{};
@@ -168,9 +192,14 @@ namespace alpaka::onAcc::trait
 
         //! AtomicXor can not be implemented for floating point types!
         template<typename T, typename THierarchy>
-        struct EmulateAtomic<AtomicXor, api::Cuda, T, THierarchy, std::enable_if_t<std::is_floating_point_v<T>>>
+        struct EmulateAtomic<
+            AtomicXor,
+            internal::CudaHipAtomic,
+            T,
+            THierarchy,
+            std::enable_if_t<std::is_floating_point_v<T>>>
         {
-            static __device__ auto atomic(api::Cuda const&, T* const, T const&) -> T
+            static __device__ auto atomic(internal::CudaHipAtomic const&, T* const, T const&) -> T
             {
                 static_assert(!sizeof(T), "EmulateAtomic<AtomicXor> is not supported for floating point data types!");
                 return T{};
@@ -185,16 +214,16 @@ namespace alpaka::onAcc::trait
     //   unsigned long int is a 64 or 32bit data type.
     // - Atomics which are not available as builtin atomic will be emulated.
     template<typename TOp, typename T, typename THierarchy>
-    struct AtomicOp<TOp, api::Cuda, T, THierarchy>
+    struct AtomicOp<TOp, internal::CudaHipAtomic, T, THierarchy>
     {
         static __device__ auto atomicOp(
-            api::Cuda const ctx,
+            internal::CudaHipAtomic const ctx,
             [[maybe_unused]] T* const addr,
             [[maybe_unused]] T const& value) -> T
         {
             static_assert(
                 sizeof(T) == 4u || sizeof(T) == 8u,
-                "atomicOp<TOp, api::Cuda, T>(atomic, addr, value) is not supported! Only 64 and "
+                "atomicOp<TOp, internal::CudaHipAtomic, T>(atomic, addr, value) is not supported! Only 64 and "
                 "32bit atomics are supported.");
 
             if constexpr(::AlpakaBuiltInAtomic<TOp, T, THierarchy>::value)
@@ -215,22 +244,22 @@ namespace alpaka::onAcc::trait
                 }
             }
 
-            return detail::EmulateAtomic<TOp, api::Cuda, T, THierarchy>::atomic(ctx, addr, value);
+            return detail::EmulateAtomic<TOp, internal::CudaHipAtomic, T, THierarchy>::atomic(ctx, addr, value);
         }
     };
 
     template<typename T, typename THierarchy>
-    struct AtomicOp<AtomicCas, api::Cuda, T, THierarchy>
+    struct AtomicOp<AtomicCas, internal::CudaHipAtomic, T, THierarchy>
     {
         static __device__ auto atomicOp(
-            [[maybe_unused]] api::Cuda const ctx,
+            [[maybe_unused]] internal::CudaHipAtomic const ctx,
             [[maybe_unused]] T* const addr,
             [[maybe_unused]] T const& compare,
             [[maybe_unused]] T const& value) -> T
         {
             static_assert(
                 sizeof(T) == 4u || sizeof(T) == 8u,
-                "atomicOp<AtomicCas, api::Cuda, T>(atomic, addr, compare, value) is not "
+                "atomicOp<AtomicCas, internal::CudaHipAtomic, T>(atomic, addr, compare, value) is not "
                 "supported! Only 64 and "
                 "32bit atomics are supported.");
 
@@ -255,7 +284,11 @@ namespace alpaka::onAcc::trait
                 }
             }
 
-            return detail::EmulateAtomic<AtomicCas, api::Cuda, T, THierarchy>::atomic(ctx, addr, compare, value);
+            return detail::EmulateAtomic<AtomicCas, internal::CudaHipAtomic, T, THierarchy>::atomic(
+                ctx,
+                addr,
+                compare,
+                value);
         }
     };
 } // namespace alpaka::onAcc::trait

@@ -18,7 +18,7 @@ namespace alpaka::trait
         template<typename T_Api>
         struct Op
         {
-            constexpr decltype(auto) operator()(alpaka::api::Cpu const) const
+            constexpr decltype(auto) operator()(T_Api const) const
             {
                 return alpaka::math::internal::stlMath;
             }
@@ -31,3 +31,28 @@ namespace alpaka::trait
         return GetMathImpl::Op<T_Api>{}(api);
     }
 } // namespace alpaka::trait
+
+namespace alpaka::onAcc::trait
+{
+    /** Defines the implementation used for atomic operations toghether with the used executor */
+    struct GetAtomicImpl
+    {
+        template<typename T_Executor>
+        struct Op
+        {
+            constexpr decltype(auto) operator()(T_Executor const) const
+            {
+                static_assert(
+                    sizeof(T_Executor) && false,
+                    "Atomic implementation for the current used executor is not defined.");
+                return 0;
+            }
+        };
+    };
+
+    template<typename T_Executor>
+    constexpr decltype(auto) getAtomicImpl(T_Executor const executor)
+    {
+        return GetAtomicImpl::Op<T_Executor>{}(executor);
+    }
+} // namespace alpaka::onAcc::trait
