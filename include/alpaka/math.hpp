@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/api/trait.hpp"
 #include "alpaka/math/math.hpp"
 
 #include <cmath>
@@ -12,11 +13,13 @@ namespace alpaka::math
 {
     constexpr auto sin(auto const& arg)
     {
-        return internal::Sin::Op<ALPAKA_TYPEOF(apiCtx), ALPAKA_TYPEOF(arg)>{}(apiCtx, arg);
+        auto const mathImpl = trait::getMathImpl(thisApi());
+        return internal::Sin::Op<ALPAKA_TYPEOF(mathImpl), ALPAKA_TYPEOF(arg)>{}(mathImpl, arg);
     }
 
     constexpr auto exp(auto const& arg)
     {
-        return internal::Exp::Op<ALPAKA_TYPEOF(apiCtx), ALPAKA_TYPEOF(arg)>{}(apiCtx, arg);
+        auto const mathImpl = trait::getMathImpl(thisApi());
+        return internal::Exp::Op<ALPAKA_TYPEOF(mathImpl), ALPAKA_TYPEOF(arg)>{}(mathImpl, arg);
     }
 } // namespace alpaka::math

@@ -14,11 +14,19 @@
 
 namespace alpaka
 {
+    /** provides the API used during the execution of the current code path
+     *
+     * @attention if api::cpu os returned it can also mena that this method was called within the host controlling
+     * workflow and not within a kernel running on a CPU device.
+     */
+    constexpr auto thisApi()
+    {
 #if ALPAKA_LANG_CUDA && (ALPAKA_COMP_CLANG_CUDA || ALPAKA_COMP_NVCC) && __CUDA_ARCH__
-    constexpr auto apiCtx = api::cuda;
+        return api::cuda;
 #else
-    constexpr auto apiCtx = api::cpu;
+        return api::cpu;
 #endif
+    }
 
     namespace onHost
     {

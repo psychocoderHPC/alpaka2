@@ -6,6 +6,7 @@
 #pragma once
 
 #include "alpaka/api/api.hpp"
+#include "alpaka/api/trait.hpp"
 #include "alpaka/core/Unreachable.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/decay.hpp"
@@ -14,14 +15,19 @@
 
 namespace alpaka::math::internal
 {
+    struct CudaHipMath
+    {
+    };
+
+    constexpr auto cudaHipMath = CudaHipMath{};
 
 #if ALPAKA_LANG_CUDA
     //! The CUDA sin trait specialization for real types.
     template<typename T_Arg>
     requires(std::is_floating_point_v<T_Arg>)
-    struct Sin::Op<api::Cuda, T_Arg>
+    struct Sin::Op<CudaHipMath, T_Arg>
     {
-        constexpr auto operator()(api::Cuda, T_Arg const& arg)
+        constexpr auto operator()(CudaHipMath, T_Arg const& arg)
         {
             if constexpr(is_decayed_v<T_Arg, float>)
                 return ::sinf(arg);
@@ -36,9 +42,9 @@ namespace alpaka::math::internal
 
     template<typename T_Arg>
     requires(std::is_floating_point_v<T_Arg>)
-    struct Exp::Op<api::Cuda, T_Arg>
+    struct Exp::Op<CudaHipMath, T_Arg>
     {
-        constexpr auto operator()(api::Cuda, T_Arg const& arg)
+        constexpr auto operator()(CudaHipMath, T_Arg const& arg)
         {
             if constexpr(is_decayed_v<T_Arg, float>)
                 return ::expf(arg);
@@ -53,3 +59,15 @@ namespace alpaka::math::internal
 #endif
 
 } // namespace alpaka::math::internal
+
+namespace alpaka::trait
+{
+    template<>
+    struct GetMathImpl::Op<alpaka::api::Cuda>
+    {
+        constexpr decltype(auto) operator()(alpaka::api::Cuda const) const
+        {
+            return alpaka::math::internal::cudaHipMath;
+        }
+    };
+} // namespace alpaka::trait

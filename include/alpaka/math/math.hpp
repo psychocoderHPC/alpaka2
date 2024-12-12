@@ -9,12 +9,18 @@
 
 namespace alpaka::math::internal
 {
+    struct StlMath
+    {
+    };
+
+    constexpr auto stlMath = StlMath{};
+
     struct Sin
     {
-        template<typename T_Api, typename T_Arg>
+        template<typename T_MathImpl, typename T_Arg>
         struct Op
         {
-            constexpr auto operator()(T_Api, T_Arg const& arg) const
+            constexpr auto operator()(T_MathImpl, T_Arg const& arg) const
             {
                 using std::sin;
                 return sin(arg);
@@ -24,10 +30,10 @@ namespace alpaka::math::internal
 
     struct Exp
     {
-        template<typename T_Api, typename T_Arg>
+        template<typename T_MathImpl, typename T_Arg>
         struct Op
         {
-            constexpr auto operator()(T_Api, T_Arg const& arg) const
+            constexpr auto operator()(T_MathImpl, T_Arg const& arg) const
             {
                 using std::exp;
                 return exp(arg);
