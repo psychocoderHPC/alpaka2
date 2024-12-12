@@ -8,15 +8,16 @@
 #include "alpaka/api/cuda/tag.hpp"
 #include "alpaka/core/Unreachable.hpp"
 #include "alpaka/core/config.hpp"
-#include "alpaka/onAcc/atomic.hpp"
+#include "alpaka/onAcc/atomicHierarchy.hpp"
 #include "alpaka/onAcc/atomicOp.hpp"
+#include "alpaka/onAcc/internal.hpp"
 
 #include <limits>
 #include <type_traits>
 
 #if ALPAKA_LANG_CUDA
 
-namespace alpaka::onAcc::trait
+namespace alpaka::onAcc::internalCompute
 {
     namespace detail
     {
@@ -81,8 +82,7 @@ namespace alpaka::onAcc::trait
                     assumed = old;
                     T v = *(reinterpret_cast<T*>(&assumed));
                     TOp{}(&v, value);
-                    using Cas
-                        = alpaka::onAcc::trait::AtomicOp<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>;
+                    using Cas = Atomic::Op<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>;
                     old = Cas::atomicOp(ctx, addressAsIntegralType, assumed, reinterpretValue(v));
                     // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
                 } while(assumed != old);
@@ -105,9 +105,11 @@ namespace alpaka::onAcc::trait
                 EmulatedType reinterpretedCompare = reinterpretValue(compare);
                 EmulatedType reinterpretedValue = reinterpretValue(value);
 
-                auto old
-                    = alpaka::onAcc::trait::AtomicOp<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>::
-                        atomicOp(ctx, addressAsIntegralType, reinterpretedCompare, reinterpretedValue);
+                auto old = Atomic::Op<AtomicCas, internal::CudaHipAtomic, EmulatedType, THierarchy>::atomicOp(
+                    ctx,
+                    addressAsIntegralType,
+                    reinterpretedCompare,
+                    reinterpretedValue);
 
                 return *(reinterpret_cast<T*>(&old));
             }
@@ -119,10 +121,7 @@ namespace alpaka::onAcc::trait
         {
             static __device__ auto atomic(internal::CudaHipAtomic const ctx, T* const addr, T const& value) -> T
             {
-                return alpaka::onAcc::trait::AtomicOp<AtomicAdd, internal::CudaHipAtomic, T, THierarchy>::atomicOp(
-                    ctx,
-                    addr,
-                    -value);
+                return Atomic::Op<AtomicAdd, internal::CudaHipAtomic, T, THierarchy>::atomicOp(ctx, addr, -value);
             }
         };
 
@@ -214,7 +213,7 @@ namespace alpaka::onAcc::trait
     //   unsigned long int is a 64 or 32bit data type.
     // - Atomics which are not available as builtin atomic will be emulated.
     template<typename TOp, typename T, typename THierarchy>
-    struct AtomicOp<TOp, internal::CudaHipAtomic, T, THierarchy>
+    struct Atomic::Op<TOp, internal::CudaHipAtomic, T, THierarchy>
     {
         static __device__ auto atomicOp(
             internal::CudaHipAtomic const ctx,
@@ -249,7 +248,7 @@ namespace alpaka::onAcc::trait
     };
 
     template<typename T, typename THierarchy>
-    struct AtomicOp<AtomicCas, internal::CudaHipAtomic, T, THierarchy>
+    struct Atomic::Op<AtomicCas, internal::CudaHipAtomic, T, THierarchy>
     {
         static __device__ auto atomicOp(
             [[maybe_unused]] internal::CudaHipAtomic const ctx,
@@ -291,5 +290,5 @@ namespace alpaka::onAcc::trait
                 value);
         }
     };
-} // namespace alpaka::onAcc::trait
+} // namespace alpaka::onAcc::internalCompute
 #endif

@@ -46,5 +46,11 @@ namespace alpaka::onAcc
             return DeclareSharedVar::Op<T, std::decay_t<decltype(acc)>>{}(acc);
         }
 
+        struct Atomic
+        {
+            /** Implements a atomic operation */
+            template<typename TOp, typename TAtomicImpl, typename T, typename THierarchy, typename TSfinae = void>
+            struct Op;
+        };
     } // namespace internalCompute
 } // namespace alpaka::onAcc
