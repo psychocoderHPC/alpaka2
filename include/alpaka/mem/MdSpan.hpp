@@ -256,8 +256,16 @@ namespace alpaka
     };
 
     template<typename T_ArrayType>
-    requires(std::is_array_v<T_ArrayType>)
     struct MdSpanArray
+    {
+        static_assert(
+            sizeof(T_ArrayType) && false,
+            "MdSpanArray can only be used if std::is_array_v<T> is true for teh given type.");
+    };
+
+    template<typename T_ArrayType>
+    requires(std::is_array_v<T_ArrayType>)
+    struct MdSpanArray<T_ArrayType>
     {
         using extentType = std::extent<T_ArrayType, std::rank_v<T_ArrayType>>;
         using element_type = std::remove_all_extents_t<T_ArrayType>;
