@@ -47,14 +47,15 @@ namespace alpaka::onHost
         return trait::IsPlatformAvailable::Op<std::decay_t<decltype(api)>>::value;
     }
 
+    consteval bool isExecutorSupportedBy(auto executor, concepts::DeviceHandle auto const& deviceHandle)
+    {
+        return trait::IsMappingSupportedBy::Op<ALPAKA_TYPEOF(executor), ALPAKA_TYPEOF(deviceHandle)>::value;
+    }
+
     constexpr auto supportedMappings(concepts::DeviceHandle auto deviceHandle)
     {
         return meta::filter(
-            [&](auto executor) constexpr
-            {
-                return trait::IsMappingSupportedBy::
-                    Op<std::decay_t<decltype(executor)>, std::decay_t<decltype(deviceHandle)>>::value;
-            },
+            [&](auto executor) constexpr { return isExecutorSupportedBy(executor, deviceHandle); },
             exec::availableMappings);
     }
 } // namespace alpaka::onHost
