@@ -35,6 +35,8 @@ namespace alpaka::onHost
         }
     };
 
-    template<alpaka::concepts::Vector T_NumBlocks, alpaka::concepts::Vector T_NumThreads>
-    ThreadSpec(T_NumBlocks const&, T_NumThreads const&) -> ThreadSpec<T_NumBlocks, T_NumThreads>;
+    template<concepts::VectorOrScalar T_NumBlocks, concepts::VectorOrScalar T_NumThreads>
+    ThreadSpec(T_NumBlocks const&, T_NumThreads const&)
+        -> ThreadSpec<trait::getVec_t<T_NumBlocks>, trait::getVec_t<T_NumThreads>>;
+
 } // namespace alpaka::onHost

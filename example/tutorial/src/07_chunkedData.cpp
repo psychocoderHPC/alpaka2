@@ -162,7 +162,7 @@ void testVectorAddKernel(
     constexpr uint32_t size = 1024 * 1024;
 
     // allocate input and output host buffers in pinned memory accessible by the Platform devices
-    auto in1_h = alpaka::onHost::alloc<float>(host, Vec1D{size});
+    auto in1_h = alpaka::onHost::alloc<float>(host, size);
     auto in2_h = alpaka::onHost::allocMirror(host, in1_h);
     auto out_h = alpaka::onHost::allocMirror(host, in1_h);
 
@@ -191,9 +191,9 @@ void testVectorAddKernel(
 
     // launch the 1-dimensional kernel
     constexpr auto frameExtent = 32u;
-    auto numFrames = Vec1D{size} / frameExtent;
+    auto numFrames = size / frameExtent;
     // The kernel assumes that the problem size is a multiple of the frame size.
-    assert((numFrames * frameExtent).x() == size);
+    assert((numFrames * frameExtent) == size);
 
     auto frameSpec = alpaka::onHost::FrameSpec{numFrames, alpaka::CVec<uint32_t, frameExtent>{}};
 

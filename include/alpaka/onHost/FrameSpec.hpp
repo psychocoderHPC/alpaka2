@@ -59,6 +59,18 @@ namespace alpaka::onHost
         }
     };
 
+    template<concepts::VectorOrScalar T_NumFrames, concepts::VectorOrScalar T_FrameExtent>
+    FrameSpec(T_NumFrames const&, T_FrameExtent const&)
+        -> FrameSpec<trait::getVec_t<T_NumFrames>, trait::getVec_t<T_FrameExtent>>;
+
+    template<concepts::VectorOrScalar T_NumFrames, concepts::VectorOrScalar T_FrameExtent>
+    FrameSpec(T_NumFrames const&, T_FrameExtent const&, T_FrameExtent const&)
+        -> FrameSpec<trait::getVec_t<T_NumFrames>, trait::getVec_t<T_FrameExtent>>;
+
+    template<concepts::VectorOrScalar T_NumFrames, concepts::VectorOrScalar T_FrameExtent>
+    FrameSpec(T_NumFrames const&, T_FrameExtent const&, T_NumFrames const&, T_FrameExtent const&)
+        -> FrameSpec<trait::getVec_t<T_NumFrames>, trait::getVec_t<T_FrameExtent>>;
+
     template<alpaka::concepts::Vector T_NumFrames, alpaka::concepts::Vector T_FrameExtent>
     std::ostream& operator<<(std::ostream& s, FrameSpec<T_NumFrames, T_FrameExtent> const& d)
     {

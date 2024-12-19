@@ -6,6 +6,7 @@
 
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/util.hpp"
+#include "alpaka/trait.hpp"
 
 #include <array>
 #include <concepts>
@@ -777,6 +778,9 @@ namespace alpaka
         concept Vector = isVector_v<T>;
 
         template<typename T>
+        concept VectorOrScalar = (isVector_v<T> || std::integral<T>);
+
+        template<typename T>
         concept CVector = isCVector_v<T>;
 
         template<typename T, typename T_RequiredComponent>
@@ -785,6 +789,39 @@ namespace alpaka
         template<typename T, typename T_RequiredComponent>
         concept VectorOrConvertableType = (isVector_v<T> || std::is_convertible_v<T, T_RequiredComponent>);
     } // namespace concepts
+
+    namespace trait
+    {
+        template<typename T_Type, uint32_t T_dim, typename T_Storage>
+        struct GetDim<alpaka::Vec<T_Type, T_dim, T_Storage>>
+        {
+            static constexpr uint32_t value = T_dim;
+        };
+
+        template<typename T>
+        struct GetVec;
+
+        template<std::integral T>
+        struct GetVec<T>
+        {
+            using type = Vec<T, 1u>;
+        };
+
+        template<typename T_Type, uint32_t T_dim, typename T_Storage>
+        struct GetVec<alpaka::Vec<T_Type, T_dim, T_Storage>>
+        {
+            using type = alpaka::Vec<T_Type, T_dim, T_Storage>;
+        };
+
+        template<typename T>
+        using getVec_t = typename GetVec<T>::type;
+    } // namespace trait
+
+    template<typename T>
+    consteval auto getVec(T const& any)
+    {
+        return trait::getVec_t<T>{any};
+    }
 }; // namespace alpaka
 
 namespace std

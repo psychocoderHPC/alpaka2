@@ -111,7 +111,7 @@ void testVectorAddKernel(
      * In contrast to frame specification where the number of threads and blocks will be adjusted by alpaka to be
      * optimal.
      */
-    auto threadSpec = alpaka::onHost::ThreadSpec{Vec1D{32u}, Vec1D{32u}};
+    auto threadSpec = alpaka::onHost::ThreadSpec{32u, 32u};
 
     // launch the 1-dimensional kernel with scalar size
     if constexpr(alpaka::isSeqExecutor(computeExec))
@@ -119,7 +119,7 @@ void testVectorAddKernel(
         /* Some executors allow only a single thread for the block.
          * You must write your kernel independent of the number of threads per block.
          */
-        threadSpec.m_numThreads = Vec1D{1u};
+        threadSpec.m_numThreads = 1u;
     }
 
     // fill the output buffer with zeros; the size is known from the buffer objects
