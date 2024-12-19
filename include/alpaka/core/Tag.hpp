@@ -33,7 +33,7 @@ namespace alpaka
         };
 
         template<typename T_Id>
-        bool isTag_v = IsTag<T_Id>::value;
+        constexpr bool isTag_v = IsTag<T_Id>::value;
 
     } // namespace trait
 

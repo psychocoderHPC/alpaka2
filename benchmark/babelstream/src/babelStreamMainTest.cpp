@@ -190,8 +190,8 @@ struct DotKernel
     {
         auto tbSum = onAcc::declareSharedMdArray<T>(acc, CVec<uint32_t, blockThreadExtentMain>{});
 #if 1
-        auto numFrames = Vec{acc[frame::count]};
-        auto frameExtent = Vec{acc[frame::extent]};
+        auto numFrames = acc[frame::count];
+        auto frameExtent = acc[frame::extent];
 
         auto traverseInFrame = onAcc::makeIdxMap(acc, onAcc::worker::threadsInBlock, IdxRange{frameExtent});
         /* init shared memory
@@ -300,7 +300,7 @@ void testKernels(auto cfg)
 
     // Create vectors
     using Idx = std::uint32_t;
-    auto arraySize = Vec{static_cast<Idx>(arraySizeMain)};
+    auto arraySize = static_cast<Idx>(arraySizeMain);
 
     // Acc buffers
     auto bufAccInputA = onHost::alloc<DataType>(devAcc, arraySize);
@@ -313,7 +313,7 @@ void testKernels(auto cfg)
     auto bufHostOutputC = onHost::allocMirror(devHost, bufAccOutputC);
 
     auto numBlocks = arraySize / static_cast<Idx>(blockThreadExtentMain);
-    auto dataBlocking = onHost::FrameSpec{numBlocks, Vec{static_cast<Idx>(blockThreadExtentMain)}};
+    auto dataBlocking = onHost::FrameSpec{numBlocks, static_cast<Idx>(blockThreadExtentMain)};
 
     // To record runtime data generated while running the kernels
     RuntimeResults runtimeResults;
@@ -446,9 +446,8 @@ void testKernels(auto cfg)
         }
         if(kernelsToBeExecuted == KernelsToRun::All)
         {
-            auto dataBlockingDot = onHost::FrameSpec{
-                Vec{static_cast<Idx>(dotGridBlockExtent)},
-                Vec{static_cast<Idx>(blockThreadExtentMain)}};
+            auto dataBlockingDot
+                = onHost::FrameSpec{static_cast<Idx>(dotGridBlockExtent), static_cast<Idx>(blockThreadExtentMain)};
 
             // Vector of sums of each block
             auto bufAccSumPerBlock = onHost::alloc<DataType>(devAcc, dataBlockingDot.m_numFrames);
@@ -545,13 +544,13 @@ void testKernels(auto cfg)
 
         // Normalize and compare sum of the errors
         // Use a different equality check if floating point errors exceed precision of FuzzyEqual function
-        REQUIRE(FuzzyEqual(sumErrC / static_cast<DataType>(arraySize.x()), static_cast<DataType>(0.0)));
-        REQUIRE(FuzzyEqual(sumErrB / static_cast<DataType>(arraySize.x()), static_cast<DataType>(0.0)));
-        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize.x()), static_cast<DataType>(0.0)));
+        REQUIRE(FuzzyEqual(sumErrC / static_cast<DataType>(arraySize), static_cast<DataType>(0.0)));
+        REQUIRE(FuzzyEqual(sumErrB / static_cast<DataType>(arraySize), static_cast<DataType>(0.0)));
+        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize), static_cast<DataType>(0.0)));
         onHost::wait(queue);
 
         // Verify Dot kernel
-        DataType const expectedSum = static_cast<DataType>(arraySize.x()) * expectedA * expectedB;
+        DataType const expectedSum = static_cast<DataType>(arraySize) * expectedA * expectedB;
         //  Dot product should be identical to arraySize*valA*valB
         //  Use a different equality check if floating point errors exceed precision of FuzzyEqual function
         REQUIRE(FuzzyEqual(static_cast<float>(std::fabs(resultDot - expectedSum) / expectedSum), 0.0f));
@@ -569,12 +568,12 @@ void testKernels(auto cfg)
         // Verify triad by summing the error
         auto sumErrA = static_cast<DataType>(0.0);
         // sum of the errors for each array
-        for(Idx i = 0; i < arraySize.x(); ++i)
+        for(Idx i = 0; i < arraySize; ++i)
         {
             sumErrA += std::fabs(std::data(bufHostOutputA)[static_cast<Idx>(i)] - expectedA);
         }
 
-        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize.x()) / expectedA, static_cast<DataType>(0.0)));
+        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize) / expectedA, static_cast<DataType>(0.0)));
         metaData.setItem(BMInfoDataType::WorkDivTriad, dataBlocking);
     }
     // Verify the NStream Kernel result if "--run-kernels=nstream".
@@ -582,18 +581,18 @@ void testKernels(auto cfg)
     {
         auto sumErrA = static_cast<DataType>(0.0);
         // sum of the errors for each array
-        for(Idx i = 0; i < arraySize.x(); ++i)
+        for(Idx i = 0; i < arraySize; ++i)
         {
             sumErrA += std::fabs(std::data(bufHostOutputA)[static_cast<Idx>(i)] - expectedA);
         }
-        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize.x()) / expectedA, static_cast<DataType>(0.0)));
+        REQUIRE(FuzzyEqual(sumErrA / static_cast<DataType>(arraySize) / expectedA, static_cast<DataType>(0.0)));
 
         metaData.setItem(BMInfoDataType::WorkDivNStream, dataBlocking);
     }
 
     // Runtime results of the benchmark: Calculate throughput and bandwidth
     // Set throuput values depending on the kernels
-    runtimeResults.initializeByteReadWrite<DataType>(arraySize.x());
+    runtimeResults.initializeByteReadWrite<DataType>(arraySize);
     runtimeResults.calculateBandwidthsForKernels<DataType>();
 
     // Set metadata to display all benchmark related information.

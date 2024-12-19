@@ -33,7 +33,7 @@ int example(auto const deviceApi)
 
     // allocate a buffer of floats in host memory
     uint32_t size = 42;
-    auto host_buffer = alpaka::onHost::alloc<float>(host, alpaka::Vec{size});
+    auto host_buffer = alpaka::onHost::alloc<float>(host, size);
     std::cout << "host memory buffer at " << std::data(host_buffer) << "\n\n";
 
     // fill the host buffers with values
@@ -51,7 +51,7 @@ int example(auto const deviceApi)
 
     {
         // allocate a buffer of floats in global device memory
-        auto device_buffer = alpaka::onHost::alloc<float>(device, Vec1D{size});
+        auto device_buffer = alpaka::onHost::alloc<float>(device, size);
         std::cout << "memory buffer on " << alpaka::onHost::getStaticName(alpaka::onHost::getApi(device_buffer))
                   << " at " << std::data(device_buffer) << "\n\n";
 

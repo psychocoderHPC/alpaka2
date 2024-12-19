@@ -16,7 +16,7 @@ struct VectorAddKernel
     ALPAKA_FN_ACC void operator()(TAcc const& acc, auto const in1, auto const in2, auto out, uint32_t size) const
     {
         for(auto [index] :
-            alpaka::onAcc::makeIdxMap(acc, alpaka::onAcc::worker::threadsInGrid, alpaka::IdxRange{Vec1D{size}}))
+            alpaka::onAcc::makeIdxMap(acc, alpaka::onAcc::worker::threadsInGrid, alpaka::IdxRange{size}))
         {
             out[index] = in1[index] + in2[index];
         }
@@ -66,7 +66,7 @@ void testVectorAddKernel(
     constexpr uint32_t size = 1024 * 1024;
 
     // allocate input and output host buffers in pinned memory accessible by the Platform devices
-    auto in1_h = alpaka::onHost::alloc<float>(host, Vec1D{size});
+    auto in1_h = alpaka::onHost::alloc<float>(host, size);
     auto in2_h = alpaka::onHost::allocMirror(host, in1_h);
     auto out_h = alpaka::onHost::allocMirror(host, in1_h);
 
@@ -94,7 +94,7 @@ void testVectorAddKernel(
     alpaka::onHost::memset(queue, out_d, 0x00);
 
     // launch the 1-dimensional kernel with scalar size
-    auto frameSpec = alpaka::onHost::FrameSpec{Vec1D{32u}, Vec1D{32u}};
+    auto frameSpec = alpaka::onHost::FrameSpec{32u, 32u};
 
     std::cout << "Testing VectorAddKernel with scalar indices with a grid of " << frameSpec << "\n";
     queue.enqueue(

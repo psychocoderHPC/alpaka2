@@ -98,4 +98,18 @@ namespace alpaka
         T_End m_end;
         T_Stride m_stride;
     };
+
+    template<concepts::VectorOrScalar T_Extent>
+    IdxRange(T_Extent const&) -> IdxRange<typename trait::getVec_t<T_Extent>::UniVec>;
+
+    template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End>
+    IdxRange(T_Begin const&, T_End const&)
+        -> IdxRange<typename trait::getVec_t<T_Begin>::UniVec, typename trait::getVec_t<T_End>::UniVec>;
+
+    template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End, concepts::VectorOrScalar T_Stride>
+    IdxRange(T_Begin const&, T_End const&, T_Stride const&) -> IdxRange<
+        typename trait::getVec_t<T_Begin>::UniVec,
+        typename trait::getVec_t<T_End>::UniVec,
+        typename trait::getVec_t<T_Stride>::UniVec>;
+
 } // namespace alpaka

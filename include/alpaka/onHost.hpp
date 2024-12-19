@@ -155,11 +155,12 @@ namespace alpaka::onHost
      * @return memory owning view to the allocated memory
      */
     template<typename T_Type>
-    inline auto alloc(auto const& device, alpaka::concepts::Vector auto const& extents)
+    inline auto alloc(auto const& device, alpaka::concepts::VectorOrScalar auto const& extents)
     {
-        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*device.get())>, ALPAKA_TYPEOF(extents)>{}(
+        Vec const extentsVec = extents;
+        return internal::Alloc::Op<T_Type, std::decay_t<decltype(*device.get())>, ALPAKA_TYPEOF(extentsVec)>{}(
             *device.get(),
-            extents);
+            extentsVec);
     }
 
     /** allocate memory on the given device based on a view
@@ -191,13 +192,18 @@ namespace alpaka::onHost
     }
 
     /** @param extents M-dimensional data extents in elements, can be smaller than the container capacity */
-    inline void memcpy(concepts::QueueHandle auto& queue, auto& dest, auto const& source, auto const& extents)
+    inline void memcpy(
+        concepts::QueueHandle auto& queue,
+        auto& dest,
+        auto const& source,
+        alpaka::concepts::VectorOrScalar auto const& extents)
     {
+        Vec const extentsVec = extents;
         return internal::Memcpy::Op<
             std::decay_t<decltype(*queue.get())>,
             std::decay_t<decltype(dest)>,
             std::decay_t<decltype(source)>,
-            std::decay_t<decltype(extents)>>{}(*queue.get(), dest, source, extents);
+            std::decay_t<decltype(extentsVec)>>{}(*queue.get(), dest, source, extentsVec);
     }
 
     /** @} */
@@ -216,22 +222,25 @@ namespace alpaka::onHost
     }
 
     /** @param extents M-dimensional data extents in elements, can be smaller than the container capacity */
-    inline auto memset(concepts::QueueHandle auto& queue, auto& dest, uint8_t byteValue, auto const& extents)
+    inline auto memset(
+        concepts::QueueHandle auto& queue,
+        auto& dest,
+        uint8_t byteValue,
+        alpaka::concepts::VectorOrScalar auto const& extents)
     {
-        return internal::Memset::
-            Op<std::decay_t<decltype(*queue.get())>, std::decay_t<decltype(dest)>, std::decay_t<decltype(extents)>>{}(
-                *queue.get(),
-                dest,
-                byteValue,
-                extents);
+        Vec const extentsVec = extents;
+        return internal::Memset::Op<
+            std::decay_t<decltype(*queue.get())>,
+            std::decay_t<decltype(dest)>,
+            std::decay_t<decltype(extentsVec)>>{}(*queue.get(), dest, byteValue, extentsVec);
     }
 
     /** @} */
 
     /** Properties of a given device
      *
-     * @attention Currently only a handful of entries is available. The object will be refactored soon and will become
-     * most likely a compile time dictionary tu support optional entries.
+     * @attention Currently only a handful of entries is available. The object will be refactored soon and will
+     * become most likely a compile time dictionary tu support optional entries.
      *
      * @{
      */
