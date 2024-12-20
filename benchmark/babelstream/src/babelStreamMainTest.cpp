@@ -188,7 +188,7 @@ struct DotKernel
     template<typename TAcc, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T const* a, T const* b, T* sum, auto arraySize) const
     {
-        auto tbSum = onAcc::declareSharedMdArray<T>(acc, CVec<uint32_t, blockThreadExtentMain>{});
+        auto tbSum = onAcc::declareSharedMdArray<T, uniqueId()>(acc, CVec<uint32_t, blockThreadExtentMain>{});
 #if 1
         auto numFrames = acc[frame::count];
         auto frameExtent = acc[frame::extent];

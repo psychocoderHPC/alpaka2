@@ -116,7 +116,6 @@ namespace alpaka::onHost
                 Dict{
                     DictEntry(layer::block, onAcc::cuda::CudaBlock<T_IdxType, T_dim>{}),
                     DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
-                    DictEntry(layer::shared, onAcc::cuda::StaticShared{}),
                     DictEntry(frame::count, numFrames),
                     DictEntry(frame::extent, frameExtent),
                     DictEntry(action::sync, onAcc::cuda::Sync{}),
@@ -132,7 +131,6 @@ namespace alpaka::onHost
             auto acc = onAcc::Acc{
                 Dict{
                     DictEntry(layer::block, onAcc::cuda::CudaBlock<T_IdxType, T_dim>{}),
-                    DictEntry(layer::shared, onAcc::cuda::StaticShared{}),
                     DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
                     DictEntry(action::sync, onAcc::cuda::Sync{}),
                     DictEntry(object::api, api::cuda),
@@ -174,10 +172,13 @@ namespace alpaka::onHost
 
                 auto kernelName = gpuKernel<typename T_NumBlocks::type, T_NumBlocks::dim(), T_KernelBundle, T_Args...>;
 
+                uint32_t blockDynSharedMemBytes
+                    = onHost::getDynSharedMemBytes(exec::gpuCuda, threadBlocking, kernelBundle);
+
                 kernelName<<<
                     convertVecToUniformCudaHipDim(threadBlocking.m_numBlocks),
                     convertVecToUniformCudaHipDim(threadBlocking.m_numThreads),
-                    static_cast<std::size_t>(0),
+                    static_cast<std::size_t>(blockDynSharedMemBytes),
                     queue.getNativeHandle()>>>(kernelBundle, args...);
             }
         };

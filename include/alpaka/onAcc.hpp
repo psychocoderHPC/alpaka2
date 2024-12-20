@@ -30,38 +30,61 @@ namespace alpaka::onAcc
      *
      * @code{.cpp}
      * // creates a reference to a float value
-     * auto& foo = declareSharedVar<float>(acc);
+     * auto& foo = declareSharedVar<float, uniqueId()>(acc);
      * @endcode
      *
      * @attention The data is not initialized it can contains garbage.
      *
      * @tparam T type which should be created, the constructor is not called
+     * @tparam T_uniqueId id those is unique inside a kernel.
+     *                  Reusing the id will return the same memory declared before with the same id.
      * @return result should be taken as reference
      */
-    template<typename T>
+    template<typename T, size_t T_uniqueId>
     constexpr decltype(auto) declareSharedVar(auto const& acc)
     {
-        return internalCompute::declareSharedVar<T>(acc);
+        return internalCompute::declareSharedVar<T, T_uniqueId>(acc);
     }
 
     /** creates an M-dimensional array
      *
      * @code{.cpp}
-     * // creates a MdSpan view to a float value
-     * auto fooArrayMd = declareSharedVar<float>(acc, CVec<uint32_t, 5, 8>{});
+     * // creates a MdSpan view to a float value, do NOT use a reference here
+     * auto fooArrayMd = declareSharedVar<float, uniqueId()>(acc, CVec<uint32_t, 5, 8>{});
      * @endcode
      *
      * @attention The data is not initialized it can contains garbage.
      *
      * @tparam T type which should be created, the constructor is not called
+     * @tparam T_uniqueId id those is unique inside a kernel.
+     *                  Reusing the id will return the same memory declared before with the same id.
      * @param extent M-dimensional extent in elements for each dimension, 1 - M dimensions are supported
      * @return MdSpan non owning view to the corresponding data, you should NOT store a reference to the handle
      */
-    template<typename T, alpaka::concepts::CVector T_Extent>
-    constexpr decltype(auto) declareSharedMdArray(auto const& acc, T_Extent const& extent)
+    template<typename T, size_t T_uniqueId>
+    constexpr decltype(auto) declareSharedMdArray(auto const& acc, alpaka::concepts::CVector auto const& extent)
     {
-        using CArrayType = typename CArrayType<T, T_Extent>::type;
-        return MdSpanArray<CArrayType>{internalCompute::declareSharedVar<CArrayType>(acc)};
+        using CArrayType = typename CArrayType<T, ALPAKA_TYPEOF(extent)>::type;
+        /* XOR with hash to avoid issues in case the user is using the same id to create an array and normal shared
+         * variables.
+         */
+        constexpr size_t id = T_uniqueId ^ 0x9e37'79b9'7f4a'7c15;
+        return MdSpanArray<CArrayType>{declareSharedVar<CArrayType, id>(acc)};
+    }
+
+    /** Get block shared dynamic memory.
+     *
+     * The available size of the memory can be defined by specializing 'onHost::trait:GetDynSharedMemBytes' or adding a
+     * public member variable 'uint32_t dynSharedMemBytes' for a kernel. The Memory can be accessed by all threads
+     * within a block. Access to the memory is not thread safe.
+     *
+     * \tparam T The element type.
+     * \return Pointer to pre-allocated contiguous memory.
+     */
+    template<typename T>
+    constexpr auto getDynSharedMem(auto const& acc) -> T*
+    {
+        return internalCompute::declareDynamicSharedMem<T>(acc);
     }
 
     /** Creates an index container that can be traversed with a range based for loop.

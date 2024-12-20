@@ -22,6 +22,8 @@ namespace alpaka
         constexpr Api api;
 
         ALPAKA_TAG(exec);
+
+        ALPAKA_TAG(dynSharedMemBytes);
     } // namespace object
 
     namespace layer
@@ -29,6 +31,7 @@ namespace alpaka
         ALPAKA_TAG(thread);
         ALPAKA_TAG(block);
         ALPAKA_TAG(shared);
+        ALPAKA_TAG(dynShared);
     } // namespace layer
 
     namespace frame
