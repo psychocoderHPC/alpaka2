@@ -4,32 +4,51 @@
 
 #pragma once
 
+#include "alpaka/api/cpu/block/mem/SharedStorage.hpp"
+#include "alpaka/core/Vectorize.hpp"
 #include "alpaka/core/common.hpp"
 
-#include <array>
-#include <memory>
+#include <cstdint>
 
 namespace alpaka::onAcc
 {
     namespace cpu
     {
-        struct SingleThreadStaticShared
+        template<std::size_t TDataAlignBytes = core::vectorization::defaultAlignment>
+        struct SingleThreadStaticShared : private detail::SharedStorage<TDataAlignBytes>
         {
-            static constexpr uint32_t maxMemBytes = 64u * 1024u;
-            std::array<uint8_t, maxMemBytes> m_data;
-            uint32_t m_counter = 0u;
+            using Base = detail::SharedStorage<TDataAlignBytes>;
 
-            template<typename T>
+            template<typename T, size_t T_unique>
             T& allocVar()
             {
-                T* ptr = reinterpret_cast<T*>(m_data.data() + m_counter);
-                m_counter += sizeof(T);
-                return *ptr;
+                auto* data = Base::template getVarPtr<T>(T_unique);
+
+                if(!data)
+                {
+                    Base::template alloc<T>(T_unique);
+                    data = Base::template getLatestVarPtr<T>();
+                }
+                ALPAKA_ASSERT(data != nullptr);
+                return *data;
+            }
+
+            template<typename T, size_t T_unique>
+            T* allocDynamic(uint32_t numBytes)
+            {
+                auto* data = Base::template getVarPtr<T>(T_unique);
+
+                if(!data)
+                {
+                    Base::template allocDynamic<T>(T_unique, numBytes);
+                    data = Base::template getLatestVarPtr<T>();
+                }
+                ALPAKA_ASSERT(data != nullptr);
+                return data;
             }
 
             void reset()
             {
-                m_counter = 0u;
             }
         };
     } // namespace cpu

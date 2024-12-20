@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/UniqueId.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/tag.hpp"
 
@@ -28,22 +29,42 @@ namespace alpaka::onAcc
             SyncBlockThreads::Op<std::decay_t<decltype(acc)>>{}(acc);
         }
 
-        struct DeclareSharedVar
+        struct SharedMemory
         {
-            template<typename T, typename T_Acc>
-            struct Op
+            template<typename T, size_t T_uniqueId, typename T_Acc>
+            struct Static
             {
-                constexpr decltype(auto) operator()(T_Acc const& acc) const
+                constexpr decltype(auto) operator()(auto const& acc) const
                 {
-                    return acc[layer::shared].template allocVar<T>();
+                    return acc[layer::shared].template allocVar<T, T_uniqueId>();
+                }
+            };
+
+            template<typename T, typename T_Acc>
+            struct Dynamic
+            {
+                constexpr auto operator()(auto const& acc) const -> T*
+                {
+                    static_assert(
+                        T_Acc::hasKey(object::dynSharedMemBytes),
+                        "Dynamic shared memory not configured. Add member 'dynSharedMemBytes' to the kernel or "
+                        "specialize 'onHost::trait:BlockDynSharedMemBytes'!");
+                    uint32_t numBytes = acc[object::dynSharedMemBytes];
+                    return acc[layer::dynShared].template allocDynamic<T, uniqueId()>(numBytes);
                 }
             };
         };
 
-        template<typename T>
+        template<typename T, size_t T_uniqueId>
         constexpr decltype(auto) declareSharedVar(auto const& acc)
         {
-            return DeclareSharedVar::Op<T, std::decay_t<decltype(acc)>>{}(acc);
+            return SharedMemory::Static<T, T_uniqueId, std::decay_t<decltype(acc)>>{}(acc);
+        }
+
+        template<typename T>
+        constexpr auto declareDynamicSharedMem(auto const& acc) -> T*
+        {
+            return SharedMemory::Dynamic<T, std::decay_t<decltype(acc)>>{}(acc);
         }
 
         struct Atomic

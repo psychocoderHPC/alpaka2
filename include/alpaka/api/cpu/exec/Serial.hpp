@@ -24,10 +24,10 @@ namespace alpaka::onHost
         template<typename T_NumBlocks, typename T_NumThreads>
         struct Serial
         {
-            using NumThreadsVecType = typename ThreadSpec<T_NumBlocks, T_NumThreads>::NumThreadsVecType;
+            using ThreadSpecType = ThreadSpec<T_NumBlocks, T_NumThreads>;
+            using NumThreadsVecType = typename ThreadSpecType::NumThreadsVecType;
 
-            constexpr Serial(ThreadSpec<T_NumBlocks, T_NumThreads> threadBlocking)
-                : m_threadBlocking{std::move(threadBlocking)}
+            constexpr Serial(ThreadSpecType threadBlocking) : m_threadBlocking{std::move(threadBlocking)}
             {
             }
 
@@ -49,8 +49,25 @@ namespace alpaka::onHost
                 auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                 auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::NoOp{}};
 
-                auto acc = onAcc::Acc(
-                    joinDict(Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry}, dict));
+                // dynamic shared mem
+                uint32_t blockDynSharedMemBytes
+                    = onHost::getDynSharedMemBytes(exec::cpuSerial, m_threadBlocking, kernelBundle);
+                auto const blockDynSharedMemEntry = DictEntry{layer::dynShared, std::ref(blockSharedMem)};
+                auto const blockDynSharedMemBytesEntry
+                    = DictEntry{object::dynSharedMemBytes, std::ref(blockDynSharedMemBytes)};
+
+                /* Only add dynamic shared memory objects if defined by the user, if not we will get a clean static
+                 * assert if the kernel tries to access dynamic shared memory */
+                auto additionalDict = conditionalAppendDict<trait::HasUserDefinedDynSharedMemBytes<
+                    exec::CpuSerial,
+                    ThreadSpecType,
+                    ALPAKA_TYPEOF(kernelBundle)>::value>(
+                    dict,
+                    Dict{blockDynSharedMemEntry, blockDynSharedMemBytesEntry});
+
+                auto acc = onAcc::Acc(joinDict(
+                    Dict{blockLayerEntry, threadLayerEntry, blockSharedMemEntry, blockSyncEntry},
+                    additionalDict));
                 meta::ndLoopIncIdx(
                     blockIdx,
                     m_threadBlocking.m_numBlocks,
@@ -61,7 +78,7 @@ namespace alpaka::onHost
                     });
             }
 
-            ThreadSpec<T_NumBlocks, T_NumThreads> m_threadBlocking;
+            ThreadSpecType m_threadBlocking;
         };
     } // namespace cpu
 

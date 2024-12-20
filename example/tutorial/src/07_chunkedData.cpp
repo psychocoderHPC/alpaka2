@@ -31,15 +31,6 @@ struct VectorAddKernel1D
         auto frameExtent = acc[alpaka::frame::extent];
         Vec1D linearFrameExtent = frameExtent.product();
 
-        /* We will use a 1-dimensional shared memory array to load the data from in1 for the corresponding frame into
-         * it and use the cached data to compute the final result. Take care, shared memory is never initialized and
-         * will contain garbage after the creation.
-         *
-         * The extents of a shared memory array must be known at compile time, therefore it is required that the frame
-         * extent on the host side is of the type CVec.
-         */
-        auto sharedIn1Data = alpaka::onAcc::declareSharedMdArray<float>(acc, frameExtent);
-
         /* This kernel is called with 1- dimensional frame extents, nevertheless we will linearize the indices
          * explicitly which allow calling this kernel with M-dimensional frames extents too.
          *
@@ -50,6 +41,15 @@ struct VectorAddKernel1D
                 alpaka::onAcc::worker::linearBlocksInGrid,
                 alpaka::IdxRange{linearNumFrames}))
         {
+            /* We will use a 1-dimensional shared memory array to load the data from in1 for the corresponding frame
+             * into it and use the cached data to compute the final result. Take care, shared memory is never
+             * initialized and will contain garbage after the creation.
+             *
+             * The extents of a shared memory array must be known at compile time, therefore it is required that the
+             * frame extent on the host side is of the type CVec.
+             */
+            auto sharedIn1Data = alpaka::onAcc::declareSharedMdArray<float, alpaka::uniqueId()>(acc, frameExtent);
+
             // iterate over elements within the frame and use all threads from the thread block
             for(auto linearFrameElem : alpaka::onAcc::makeIdxMap(
                     acc,
@@ -101,7 +101,7 @@ struct VectorAddKernel3D
          * The extents of a shared memory array must be known at compile time, therefore it is required that the frame
          * extent on the host side is of the type CVec.
          */
-        auto sharedIn1Data = alpaka::onAcc::declareSharedMdArray<float>(acc, frameExtentMD);
+        auto sharedIn1Data = alpaka::onAcc::declareSharedMdArray<float, alpaka::uniqueId()>(acc, frameExtentMD);
 
         /* This kernel is called with 1- dimensional frame extents, nevertheless we will linearize the indices
          * explicitly which allow calling this kernel with M-dimensional frames extents too.

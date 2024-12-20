@@ -9,6 +9,7 @@
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/meta/NdLoop.hpp"
+#include "alpaka/onAcc.hpp"
 #include "alpaka/tag.hpp"
 
 #include <cassert>
@@ -27,10 +28,22 @@ namespace alpaka::onAcc
         constexpr Acc(Acc const&&) = delete;
         constexpr Acc& operator=(Acc const&) = delete;
 
-        template<typename T>
+        template<typename T, size_t T_uniqueId>
         constexpr decltype(auto) declareSharedVar() const
         {
-            return (*this)[layer::shared].template allocVar<T>();
+            return alpaka::onAcc::declareSharedVar<T, T_uniqueId>(*this);
+        }
+
+        template<typename T, size_t T_uniqueId>
+        constexpr decltype(auto) declareSharedMdArray(alpaka::concepts::CVector auto const& extent) const
+        {
+            return alpaka::onAcc::declareSharedMdArray<T, T_uniqueId>(*this, extent);
+        }
+
+        template<typename T>
+        constexpr auto getDynSharedMem(auto const& acc) -> T*
+        {
+            return alpaka::onAcc::getDynSharedMem<T>(acc);
         }
 
         constexpr void syncBlockThreads() const
@@ -38,9 +51,10 @@ namespace alpaka::onAcc
             (*this)[action::sync]();
         }
 
-        consteval bool hasKey(auto key) const
+        static constexpr bool hasKey(auto key)
         {
-            return hasTag(static_cast<T_Storage>(*this));
+            constexpr auto idx = Idx<ALPAKA_TYPEOF(key), std::decay_t<T_Storage>>::value;
+            return idx != -1;
         }
     };
 

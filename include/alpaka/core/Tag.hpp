@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "alpaka/core/UniqueId.hpp"
-
 #include <type_traits>
 
 namespace alpaka

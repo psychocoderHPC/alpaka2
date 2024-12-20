@@ -182,4 +182,22 @@ namespace alpaka
             dict0,
             dict1);
     }
+
+    template<bool condition, typename... T_Entries0, typename... T_Entries1>
+    requires(condition == true)
+    constexpr auto conditionalAppendDict(Dict<T_Entries0...> const& dict0, Dict<T_Entries1...> const& dict1)
+    {
+        return joinDictHelper(
+            std::index_sequence_for<T_Entries0...>{},
+            std::index_sequence_for<T_Entries1...>{},
+            dict0,
+            dict1);
+    }
+
+    template<bool condition, typename... T_Entries0, typename... T_Entries1>
+    requires(condition == false)
+    constexpr auto conditionalAppendDict(Dict<T_Entries0...> const& dict0, Dict<T_Entries1...> const& dict1)
+    {
+        return dict0;
+    }
 } // namespace alpaka

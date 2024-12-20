@@ -38,10 +38,12 @@ struct StencilKernel
         double const dt) const -> void
     {
         using namespace alpaka;
-        auto sdata = onAcc::declareSharedMdArray<double>(acc, sharedMemExtents);
+
         for(auto blockStartIdx :
             onAcc::makeIdxMap(acc, onAcc::worker::blocksInGrid, IdxRange{Vec{0u, 0u}, numNodes, chunkSize}))
         {
+            auto sdata = onAcc::declareSharedMdArray<double, uniqueId()>(acc, sharedMemExtents);
+
             // avoid data race with the stencil calculation at the end
             onAcc::syncBlockThreads(acc);
 

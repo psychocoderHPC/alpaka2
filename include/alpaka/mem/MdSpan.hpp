@@ -211,6 +211,11 @@ namespace alpaka
             return *(m_ptr + idx);
         }
 
+        constexpr bool operator==(MdSpan const other) const
+        {
+            return m_ptr == other.m_ptr && m_extent == other.m_extent;
+        }
+
         /** @} */
 
         constexpr auto getExtents() const
@@ -334,6 +339,11 @@ namespace alpaka
         constexpr reference operator[](index_type const& idx)
         {
             return m_ptr[idx];
+        }
+
+        constexpr bool operator==(MdSpanArray const other) const
+        {
+            return m_ptr == other.m_ptr;
         }
 
         /** @} */
