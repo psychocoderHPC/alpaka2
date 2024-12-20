@@ -60,7 +60,8 @@ namespace alpaka::onHost
             Handle<T_Platform> m_platform;
             uint32_t m_idx = 0u;
             DeviceProperties m_properties;
-            std::weak_ptr<cpu::Queue<Device>> queue;
+            std::vector<std::weak_ptr<cpu::Queue<Device>>> queues;
+            std::mutex queuesGuard;
 
             std::shared_ptr<Device> getSharedPtr()
             {
@@ -85,13 +86,11 @@ namespace alpaka::onHost
 
             Handle<cpu::Queue<Device>> makeQueue()
             {
-                if(auto sharedPtr = queue.lock())
-                {
-                    return sharedPtr;
-                }
                 auto thisHandle = this->getSharedPtr();
-                auto newQueue = std::make_shared<cpu::Queue<Device>>(std::move(thisHandle), 0u);
-                queue = newQueue;
+                std::lock_guard<std::mutex> lk{queuesGuard};
+                auto newQueue = std::make_shared<cpu::Queue<Device>>(std::move(thisHandle), queues.size());
+
+                queues.emplace_back(newQueue);
                 return newQueue;
             }
 
