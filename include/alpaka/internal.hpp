@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/KernelBundle.hpp"
+#include "alpaka/core/DemangleTypeNames.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/ThreadSpec.hpp"
@@ -18,9 +19,12 @@ namespace alpaka
             template<typename T_Any>
             struct Op
             {
-                auto operator()(T_Any const&) const
+                auto operator()([[maybe_unused]] T_Any const& any) const
                 {
-                    return T_Any::getName();
+                    if constexpr(requires { T_Any::getName(); })
+                        return T_Any::getName();
+                    else
+                        return core::demangledName(any);
                 }
             };
         };
