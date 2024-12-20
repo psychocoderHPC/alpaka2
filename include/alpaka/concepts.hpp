@@ -37,5 +37,7 @@ namespace alpaka
         template<typename T>
         concept Api = requires(T t) { requires HasStaticName<T>; };
 
+        template<typename T, unsigned int T_dim>
+        concept Dim = requires { T::dim() == T_dim; };
     } // namespace concepts
 } // namespace alpaka
