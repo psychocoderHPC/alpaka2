@@ -23,12 +23,4 @@ namespace alpaka
         // Pass the tag as first argument to the callable.
         return std::apply([=](auto const&... api) { return (callable(api) || ...); }, tuple);
     }
-#if 0
-    inline auto executeForEachNoReturn(auto&& callable, auto const& tuple)
-    {
-        // Execute the callable once for each enabled accelerator.
-        // Pass the tag as first argument to the callable.
-        return std::apply([=](auto const&... api) { (callable(api), ...); }, tuple);
-    }
-#endif
 } // namespace alpaka

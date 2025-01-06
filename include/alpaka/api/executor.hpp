@@ -26,5 +26,9 @@ namespace alpaka::exec
         ,
         gpuCuda
 #endif
+#ifndef ALPAKA_DISABLE_EXEC_GpuHip
+        ,
+        gpuHip
+#endif
         ));
 } // namespace alpaka::exec

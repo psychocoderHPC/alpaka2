@@ -8,11 +8,15 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
+#    include "alpaka/core/ApiCudaRt.hpp"
+#elif ALPAKA_LANG_HIP
+#    include "alpaka/core/ApiHipRt.hpp"
+#endif
 
+#if ALPAKA_LANG_CUDA  || ALPAKA_LANG_HIP
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/Device.hpp"
 #    include "alpaka/api/cuda/Platform.hpp"
-#    include "alpaka/core/ApiCudaRt.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
 #    include "alpaka/internal.hpp"
 #    include "alpaka/onHost.hpp"
@@ -29,7 +33,11 @@ namespace alpaka::onHost
     {
         struct Platform : std::enable_shared_from_this<Platform>
         {
+#if ALPAKA_LANG_CUDA
             using TApi = ApiCudaRt;
+#elif ALPAKA_LANG_HIP
+            using TApi = ApiHipRt;
+#endif
 
         public:
             Platform() = default;
@@ -115,6 +123,15 @@ namespace alpaka::onHost
         };
 
         template<>
+        struct MakePlatform::Op<api::Hip>
+        {
+            auto operator()(api::Hip const&) const
+            {
+                return onHost::make_sharedSingleton<cuda::Platform>();
+            }
+        };
+
+        template<>
         struct GetDeviceProperties::Op<cuda::Platform>
         {
             DeviceProperties operator()(cuda::Platform const& platform, uint32_t deviceIdx) const
@@ -142,7 +159,11 @@ namespace alpaka::internal
     {
         decltype(auto) operator()(auto&& platform) const
         {
+#if ALPAKA_LANG_CUDA
             return api::Cuda{};
+#elif ALPAKA_LANG_HIP
+            return api::Hip{};
+#endif
         }
     };
 } // namespace alpaka::internal

@@ -17,6 +17,12 @@ namespace alpaka::exec
     };
 
     constexpr GpuCuda gpuCuda;
+
+    struct GpuHip
+    {
+    };
+
+    constexpr GpuHip gpuHip;
 } // namespace alpaka::exec
 
 namespace alpaka::onAcc::trait
@@ -25,6 +31,15 @@ namespace alpaka::onAcc::trait
     struct GetAtomicImpl::Op<alpaka::exec::GpuCuda>
     {
         constexpr decltype(auto) operator()(alpaka::exec::GpuCuda const) const
+        {
+            return internal::cudaHipAtomic;
+        }
+    };
+
+    template<>
+    struct GetAtomicImpl::Op<alpaka::exec::GpuHip>
+    {
+        constexpr decltype(auto) operator()(alpaka::exec::GpuHip const) const
         {
             return internal::cudaHipAtomic;
         }

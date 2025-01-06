@@ -15,7 +15,7 @@
 #include <limits>
 #include <type_traits>
 
-#if ALPAKA_LANG_CUDA
+#if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
 
 namespace alpaka::onAcc::internalCompute
 {

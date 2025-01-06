@@ -8,9 +8,14 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
+#    include "alpaka/core/ApiCudaRt.hpp"
+#elif ALPAKA_LANG_HIP
+#    include "alpaka/core/ApiHipRt.hpp"
+#endif
+
+#if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/Queue.hpp"
-#    include "alpaka/core/ApiCudaRt.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
 #    include "alpaka/internal.hpp"
 #    include "alpaka/onHost.hpp"
@@ -33,7 +38,11 @@ namespace alpaka::onHost
         template<typename T_Platform>
         struct Device : std::enable_shared_from_this<Device<T_Platform>>
         {
+#if ALPAKA_LANG_CUDA
             using TApi = ApiCudaRt;
+#elif ALPAKA_LANG_HIP
+            using TApi = ApiHipRt;
+#endif
 
         public:
             Device(concepts::PlatformHandle auto platform, uint32_t const idx)
@@ -136,7 +145,7 @@ namespace alpaka::onHost
 
                 using Idx = typename T_Extents::type;
 
-                constexpr auto dim = extents.dim();
+                constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
@@ -234,6 +243,11 @@ namespace alpaka::onHost
     {
         template<typename T_Platform>
         struct IsMappingSupportedBy::Op<exec::GpuCuda, cuda::Device<T_Platform>> : std::true_type
+        {
+        };
+
+        template<typename T_Platform>
+        struct IsMappingSupportedBy::Op<exec::GpuHip, cuda::Device<T_Platform>> : std::true_type
         {
         };
     } // namespace trait

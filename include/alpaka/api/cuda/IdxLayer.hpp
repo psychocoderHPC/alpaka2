@@ -4,15 +4,11 @@
 
 #pragma once
 
+#include "alpaka/Vec.hpp"
+#include "alpaka/api/cuda/IdxLayer.hpp"
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
-
-#    include "alpaka/Vec.hpp"
-#    include "alpaka/tag.hpp"
-
-#    include <stdexcept>
-#    include <tuple>
 
 namespace alpaka::onAcc
 {
@@ -30,12 +26,6 @@ namespace alpaka::onAcc
             {
                 return Vec<T_IdxType, 3u>{::gridDim.z, ::gridDim.y, ::gridDim.x}.template rshrink<T_dim>();
             }
-
-            template<uint32_t T_idx>
-            ALPAKA_FN_ACC void call(auto& acc, auto const& kernelBundle)
-            {
-                acc.template getLayer<T_idx>().template call<T_idx + 1>(acc, kernelBundle);
-            }
         };
 
         template<typename T_IdxType, uint32_t T_dim>
@@ -50,11 +40,43 @@ namespace alpaka::onAcc
             {
                 return Vec<T_IdxType, 3u>{::blockDim.z, ::blockDim.y, ::blockDim.x}.template rshrink<T_dim>();
             }
+        };
+    } // namespace cuda
+} // namespace alpaka::onAcc
 
-            template<uint32_t T_idx>
-            ALPAKA_FN_ACC void call(auto& acc, auto const& kernelBundle)
+#endif
+
+#if ALPAKA_LANG_HIP
+
+namespace alpaka::onAcc
+{
+    namespace cuda
+    {
+        template<typename T_IdxType, uint32_t T_dim>
+        struct CudaBlock
+        {
+            constexpr auto idx() const
             {
-                acc.template getLayer<T_idx>().template call<T_idx + 1>(acc, kernelBundle);
+                return Vec<T_IdxType, 3u>{hipBlockIdx_z, hipBlockIdx_y, hipBlockIdx_x}.template rshrink<T_dim>();
+            }
+
+            constexpr auto count() const
+            {
+                return Vec<T_IdxType, 3u>{hipGridDim_z, hipGridDim_y, hipGridDim_x}.template rshrink<T_dim>();
+            }
+        };
+
+        template<typename T_IdxType, uint32_t T_dim>
+        struct CudaThread
+        {
+            constexpr auto idx() const
+            {
+                return Vec<T_IdxType, 3u>{hipThreadIdx_z, hipThreadIdx_y, hipThreadIdx_x}.template rshrink<T_dim>();
+            }
+
+            constexpr auto count() const
+            {
+                return Vec<T_IdxType, 3u>{hipBlockDim_z, hipBlockDim_y, hipBlockDim_x}.template rshrink<T_dim>();
             }
         };
     } // namespace cuda

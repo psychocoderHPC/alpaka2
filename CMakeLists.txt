@@ -53,7 +53,23 @@ macro(alpaka_compiler_option name description default)
     endif()
 endmacro()
 
-set(CMAKE_CXX_STANDARD 20)
+# Check if compiler supports required C++ standard.
+#
+# language - can be CXX, HIP or CUDA
+# min_cxx_standard - C++ standard which is the minimum requirement
+function(checkCompilerCXXSupport language min_cxx_standard)
+    string(TOUPPER "${language}" language_upper_case)
+    string(TOLOWER "${language}" language_lower_case)
+
+    if(NOT "${language_lower_case}_std_${min_cxx_standard}" IN_LIST CMAKE_${language_upper_case}_COMPILE_FEATURES)
+        message(FATAL_ERROR "The ${language_upper_case} compiler does not support C++ ${min_cxx_standard}. \
+        Please upgrade your compiler or use alpaka 2.0 which supports C++20.")
+    endif()
+endfunction()
+
+set(alpaka_CXX_STANDARD 20)
+checkCompilerCXXSupport(CXX ${alpaka_CXX_STANDARD})
+set(CMAKE_CXX_STANDARD ${alpaka_CXX_STANDARD})
 
 # This file's directory.
 set(_alpaka_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -62,13 +78,15 @@ include("${_alpaka_ROOT_DIR}/cmake/addExecutable.cmake")
 # Add alpaka_ADD_LIBRARY function.
 include("${_alpaka_ROOT_DIR}/cmake/addLibrary.cmake")
 
-include(CheckLanguage) # check for CUDA/HIP language support
+# check for CUDA/HIP language support
+include(CheckLanguage)
 
 add_library(alpaka INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
 option(alpaka_API_CUDA "Enable the CUDA GPU back-end" OFF)
+option(alpaka_API_HIP "Enable the HIP GPU back-end" OFF)
 option(alpaka_API_OMP "Enable the OMP back-end" ON)
 
 ## OpenMP
@@ -110,6 +128,9 @@ if(alpaka_API_CUDA)
         set(alpaka_CUDA_KEEP_FILES ON CACHE BOOL "activate keep files" FORCE)
     endif()
 
+    enable_language(CUDA)
+    checkCompilerCXXSupport(CUDA ${alpaka_CXX_STANDARD})
+
     if(alpaka_API_OMP)
         if(NOT MSVC)
             alpaka_set_compiler_options(DEVICE target alpaka "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcompiler -fopenmp>")
@@ -123,6 +144,77 @@ if(alpaka_API_CUDA)
         else()
             alpaka_set_compiler_options(DEVICE target alpaka "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcompiler /openmp>")
         endif()
+    endif()
+endif()
+
+if(alpaka_API_HIP)
+    check_language(HIP)
+
+    if(CMAKE_HIP_COMPILER)
+        enable_language(HIP)
+        find_package(hip REQUIRED)
+
+        set(_alpaka_HIP_MIN_VER 6.0)
+        set(_alpaka_HIP_MAX_VER 6.2)
+
+        checkCompilerCXXSupport(HIP ${alpaka_CXX_STANDARD})
+
+        # construct hip version only with major and minor level
+        # cannot use hip_VERSION because of the patch level
+        # 6.0 is smaller than 6.0.1234, so _alpaka_HIP_MAX_VER would have to be defined with a large patch level or
+        # the next minor level, e.g. 6.1, would have to be used.
+        set(_hip_MAJOR_MINOR_VERSION "${hip_VERSION_MAJOR}.${hip_VERSION_MINOR}")
+
+        if(${_hip_MAJOR_MINOR_VERSION} VERSION_LESS ${_alpaka_HIP_MIN_VER} OR ${_hip_MAJOR_MINOR_VERSION} VERSION_GREATER ${_alpaka_HIP_MAX_VER})
+            message(WARNING "HIP ${_hip_MAJOR_MINOR_VERSION} is not official supported by alpaka. Supported versions: ${_alpaka_HIP_MIN_VER} - ${_alpaka_HIP_MAX_VER}")
+        endif()
+
+        # let the compiler find the HIP headers also when building host-only code
+        target_include_directories(alpaka SYSTEM INTERFACE ${hip_INCLUDE_DIR})
+
+        target_link_libraries(alpaka INTERFACE "$<$<LINK_LANGUAGE:CXX>:hip::host>")
+        alpaka_set_compiler_options(HOST_DEVICE target alpaka "$<$<COMPILE_LANGUAGE:CXX>:-D__HIP_PLATFORM_AMD__>")
+
+        alpaka_compiler_option(HIP_KEEP_FILES "Keep all intermediate files that are generated during internal compilation steps 'CMakeFiles/<targetname>.dir'" OFF)
+        if(alpaka_HIP_KEEP_FILES)
+            alpaka_set_compiler_options(HOST_DEVICE target alpaka "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-save-temps>")
+        endif()
+
+        if(alpaka_FAST_MATH STREQUAL ON)
+            alpaka_set_compiler_options(DEVICE target alpaka "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-ffast-math>")
+        endif()
+
+        if(NOT alpaka_DISABLE_VENDOR_RNG)
+            # hiprand requires ROCm implementation of random numbers by rocrand
+            # hip::hiprand is currently not expressing this dependency
+            find_package(rocrand REQUIRED CONFIG
+                    HINTS "${ROCM_ROOT_DIR}/rocrand"
+                    HINTS "/opt/rocm/rocrand")
+            if(rocrand_FOUND)
+                target_link_libraries(alpaka INTERFACE roc::rocrand)
+            else()
+                MESSAGE(FATAL_ERROR "Could not find rocRAND (also searched in: ROCM_ROOT_DIR=${ROCM_ROOT_DIR}/rocrand).")
+            endif()
+
+            # HIP random numbers
+            find_package(hiprand REQUIRED CONFIG
+                    HINTS "${HIP_ROOT_DIR}/hiprand"
+                    HINTS "/opt/rocm/hiprand")
+            if(hiprand_FOUND)
+                target_link_libraries(alpaka INTERFACE hip::hiprand)
+            else()
+                MESSAGE(FATAL_ERROR "Could not find hipRAND (also searched in: HIP_ROOT_DIR=${HIP_ROOT_DIR}/hiprand).")
+            endif()
+        endif()
+
+        if(alpaka_RELOCATABLE_DEVICE_CODE STREQUAL ON)
+            alpaka_set_compiler_options(DEVICE target alpaka "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-fgpu-rdc>")
+            target_link_options(alpaka INTERFACE "$<$<LINK_LANGUAGE:HIP>:SHELL:-fgpu-rdc --hip-link>")
+        elseif(alpaka_RELOCATABLE_DEVICE_CODE STREQUAL OFF)
+            alpaka_set_compiler_options(DEVICE target alpaka "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-fno-gpu-rdc>")
+        endif()
+    else()
+        message(FATAL_ERROR "Optional alpaka dependency HIP could not be found!")
     endif()
 endif()
 
@@ -225,4 +317,8 @@ endif()
 option(alpaka_EXEC_GpuCuda "Enable/Disable openMP blocks exeexecutor" ON)
 if(NOT alpaka_EXEC_GpuCuda)
     target_compile_definitions(alpaka INTERFACE ALPAKA_DISABLE_EXEC_GpuCuda)
+endif()
+option(alpaka_EXEC_GpuHip "Enable/Disable openMP blocks exeexecutor" ON)
+if(NOT alpaka_EXEC_GpuHip)
+    target_compile_definitions(alpaka INTERFACE ALPAKA_DISABLE_EXEC_GpuHip)
 endif()
