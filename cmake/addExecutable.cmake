@@ -36,7 +36,7 @@ macro(alpaka_add_executable In_Name)
         endif()
     endif()
 
-    if(alpaka_ACC_GPU_HIP_ENABLE)
+    if(alpaka_API_HIP)
         enable_language(HIP)
         foreach(_file ${ARGN})
             if((${_file} MATCHES "\\.cpp$") OR

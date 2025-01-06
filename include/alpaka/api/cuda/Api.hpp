@@ -37,6 +37,28 @@ namespace alpaka
         };
 
         constexpr auto cuda = Cuda{};
+
+        struct Hip
+        {
+            using element_type = Hip;
+
+            auto get() const
+            {
+                return this;
+            }
+
+            void _()
+            {
+                static_assert(concepts::Api<Hip>);
+            }
+
+            static std::string getName()
+            {
+                return "Hip";
+            }
+        };
+
+        constexpr auto hip = Hip{};
     } // namespace api
 
     namespace onHost::trait
@@ -44,6 +66,12 @@ namespace alpaka
 #if ALPAKA_LANG_CUDA
         template<>
         struct IsPlatformAvailable::Op<api::Cuda> : std::true_type
+        {
+        };
+#endif
+#if ALPAKA_LANG_HIP
+        template<>
+        struct IsPlatformAvailable::Op<api::Hip> : std::true_type
         {
         };
 #endif

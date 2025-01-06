@@ -509,7 +509,8 @@ namespace alpaka
         constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v)
         {
             using InType = ALPAKA_TYPEOF(v);
-            auto array = std::array{std::ref((*this)[T_values])...};
+            using ArrayType = std::array<ALPAKA_TYPEOF(std::ref((*this)[T{0}])), sizeof...(T_values)>;
+            auto array = ArrayType{std::ref((*this)[T_values])...};
             return Vec<T_Type, InType::dim(), ALPAKA_TYPEOF(array)>{array};
         };
 
@@ -517,7 +518,8 @@ namespace alpaka
         constexpr auto ref(Vec<T, sizeof...(T_values), detail::CVec<T, T_values...>> const v) const
         {
             using InType = ALPAKA_TYPEOF(v);
-            auto array = std::array{std::ref((*this)[T_values])...};
+            using ArrayType = std::array<ALPAKA_TYPEOF(std::ref((*this)[T{0}])), sizeof...(T_values)>;
+            auto array = ArrayType{std::ref((*this)[T_values])...};
             return Vec<T_Type, InType::dim(), ALPAKA_TYPEOF(array)>{array};
         };
     };

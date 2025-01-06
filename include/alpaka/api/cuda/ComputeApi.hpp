@@ -9,7 +9,7 @@
 #include "alpaka/onAcc/internal.hpp"
 #include "alpaka/tag.hpp"
 
-#if ALPAKA_LANG_CUDA
+#if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
 
 #    include "alpaka/core/common.hpp"
 
@@ -31,7 +31,7 @@ namespace alpaka::onAcc
 namespace alpaka::onAcc::internalCompute
 {
     template<typename T, typename T_Acc>
-    requires std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuCuda>
+    requires std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuCuda> || std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuHip>
     struct SharedMemory::Dynamic<T, T_Acc>
     {
         __device__ decltype(auto) operator()(auto const& acc) const
@@ -48,7 +48,7 @@ namespace alpaka::onAcc::internalCompute
     };
 
     template<typename T, size_t T_uniqueId, typename T_Acc>
-    requires std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuCuda>
+    requires std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuCuda> || std::same_as<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec]), exec::GpuHip>
     struct SharedMemory::Static<T, T_uniqueId, T_Acc>
     {
         __device__ decltype(auto) operator()(auto const& acc) const

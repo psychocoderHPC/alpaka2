@@ -10,6 +10,12 @@
 #include "alpaka/core/config.hpp"
 
 #if ALPAKA_LANG_CUDA
+#    include "alpaka/core/ApiCudaRt.hpp"
+#elif ALPAKA_LANG_HIP
+#    include "alpaka/core/ApiHipRt.hpp"
+#endif
+
+#if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
 #    include "alpaka/api/cuda/Api.hpp"
 #    include "alpaka/api/cuda/ComputeApi.hpp"
 #    include "alpaka/api/cuda/IdxLayer.hpp"
@@ -34,7 +40,11 @@ namespace alpaka::onHost
         template<typename T_Device>
         struct Queue
         {
+#    if ALPAKA_LANG_CUDA
             using TApi = ApiCudaRt;
+#    elif ALPAKA_LANG_HIP
+            using TApi = ApiHipRt;
+#    endif
 
         public:
             Queue(concepts::DeviceHandle auto device, uint32_t const idx) : m_device(std::move(device)), m_idx(idx)
@@ -119,8 +129,14 @@ namespace alpaka::onHost
                     DictEntry(frame::count, numFrames),
                     DictEntry(frame::extent, frameExtent),
                     DictEntry(action::sync, onAcc::cuda::Sync{}),
+#    if ALPAKA_LANG_CUDA
                     DictEntry(object::api, api::cuda),
-                    DictEntry(object::exec, exec::gpuCuda)},
+                    DictEntry(object::exec, exec::gpuCuda)
+#    elif ALPAKA_LANG_HIP
+                    DictEntry(object::api, api::hip),
+                    DictEntry(object::exec, exec::gpuHip)
+#    endif
+                },
             };
             kernelBundle(acc);
         }
@@ -133,8 +149,14 @@ namespace alpaka::onHost
                     DictEntry(layer::block, onAcc::cuda::CudaBlock<T_IdxType, T_dim>{}),
                     DictEntry(layer::thread, onAcc::cuda::CudaThread<T_IdxType, T_dim>{}),
                     DictEntry(action::sync, onAcc::cuda::Sync{}),
+#    if ALPAKA_LANG_CUDA
                     DictEntry(object::api, api::cuda),
-                    DictEntry(object::exec, exec::gpuCuda)},
+                    DictEntry(object::exec, exec::gpuCuda)
+#    elif ALPAKA_LANG_HIP
+                    DictEntry(object::api, api::hip),
+                    DictEntry(object::exec, exec::gpuHip)
+#    endif
+                },
             };
             kernelBundle(acc);
         }
@@ -203,12 +225,25 @@ namespace alpaka::onHost
     {
 
         template<typename T_Device, typename T_NumBlocks, typename T_NumThreads, typename T_KernelBundle>
-        struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, ThreadSpec<T_NumBlocks, T_NumThreads>, T_KernelBundle>
+        struct Enqueue::Kernel<
+            cuda::Queue<T_Device>,
+#    if ALPAKA_LANG_CUDA
+            exec::GpuCuda
+#    elif ALPAKA_LANG_HIP
+            exec::GpuHip
+#    endif
+            ,
+            ThreadSpec<T_NumBlocks, T_NumThreads>,
+            T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                exec::GpuCuda const,
+#    if ALPAKA_LANG_CUDA
+                exec::GpuCuda const
+#    elif ALPAKA_LANG_HIP
+                exec::GpuHip const
+#    endif
+                ,
                 ThreadSpec<T_NumBlocks, T_NumThreads> const& threadBlocking,
                 T_KernelBundle kernelBundle) const
             {
@@ -217,12 +252,25 @@ namespace alpaka::onHost
         };
 
         template<typename T_Device, typename T_NumFrames, typename T_FrameExtent, typename T_KernelBundle>
-        struct Enqueue::
-            Kernel<cuda::Queue<T_Device>, exec::GpuCuda, FrameSpec<T_NumFrames, T_FrameExtent>, T_KernelBundle>
+        struct Enqueue::Kernel<
+            cuda::Queue<T_Device>,
+#    if ALPAKA_LANG_CUDA
+            exec::GpuCuda
+#    elif ALPAKA_LANG_HIP
+            exec::GpuHip
+#    endif
+            ,
+            FrameSpec<T_NumFrames, T_FrameExtent>,
+            T_KernelBundle>
         {
             void operator()(
                 cuda::Queue<T_Device>& queue,
-                exec::GpuCuda const executor,
+#    if ALPAKA_LANG_CUDA
+                exec::GpuCuda const executor
+#    elif ALPAKA_LANG_HIP
+                exec::GpuHip const executor
+#    endif
+                ,
                 FrameSpec<T_NumFrames, T_FrameExtent> const& frameSpec,
                 T_KernelBundle kernelBundle) const
             {
@@ -254,7 +302,7 @@ namespace alpaka::onHost
                     ALPAKA_TYPEOF(alpaka::internal::getApi(dest)),
                     ALPAKA_TYPEOF(alpaka::internal::getApi(source))>::kind;
 
-                constexpr auto dim = extents.dim();
+                constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
                     // Initiate the memory copy.
@@ -314,7 +362,7 @@ namespace alpaka::onHost
 
                 auto* destPtr = (void*) onHost::data(dest);
 
-                constexpr auto dim = extents.dim();
+                constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(TApi::memsetAsync(

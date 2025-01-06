@@ -23,6 +23,8 @@ namespace alpaka
     {
 #if ALPAKA_LANG_CUDA && (ALPAKA_COMP_CLANG_CUDA || ALPAKA_COMP_NVCC) && __CUDA_ARCH__
         return api::cuda;
+#elif ALPAKA_LANG_HIP && defined(__HIP_DEVICE_COMPILE__) && __HIP_DEVICE_COMPILE__ == 1
+        return api::hip;
 #else
         return api::cpu;
 #endif
@@ -30,7 +32,7 @@ namespace alpaka
 
     namespace onHost
     {
-        constexpr auto apis = std::make_tuple(api::cpu, api::cuda);
+        constexpr auto apis = std::make_tuple(api::cpu, api::cuda, api::hip);
 
         constexpr auto enabledApis = meta::filter([](auto api) { return isPlatformAvaiable(api); }, apis);
     } // namespace onHost

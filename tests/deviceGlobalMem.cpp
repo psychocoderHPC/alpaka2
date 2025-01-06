@@ -17,10 +17,10 @@ using namespace alpaka::onHost;
 using TestApis = std::decay_t<decltype(allExecutorsAndApis(enabledApis))>;
 
 
-ALPAKA_DEVICE_GLOBAL(const, (alpaka::Vec<uint32_t, 2u>), initialised_vector, 42, 43);
-ALPAKA_DEVICE_GLOBAL(constexpr, uint32_t, initialised_scalar, 43);
-ALPAKA_DEVICE_GLOBAL(, uint32_t[2], fixed_sized_array, 44, 45);
-ALPAKA_DEVICE_GLOBAL(, uint32_t[2][3], fixed_sized_array2D, {9, 5}, {6, 11, 45});
+ALPAKA_DEVICE_GLOBAL(const, (alpaka::Vec<uint32_t, 2u>), initialised_vector, 42u, 43u);
+ALPAKA_DEVICE_GLOBAL(constexpr, uint32_t, initialised_scalar, 43u);
+ALPAKA_DEVICE_GLOBAL(, uint32_t[2], fixed_sized_array, 44u, 45u);
+ALPAKA_DEVICE_GLOBAL(, uint32_t[2][3], fixed_sized_array2D, {9u, 5u}, {6u, 11u, 45u});
 
 struct DeviceGlobalMemKernelVec
 {

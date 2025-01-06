@@ -21,7 +21,7 @@ namespace alpaka::math::internal
 
     constexpr auto cudaHipMath = CudaHipMath{};
 
-#if ALPAKA_LANG_CUDA
+#if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
     //! The CUDA sin trait specialization for real types.
     template<typename T_Arg>
     requires(std::is_floating_point_v<T_Arg>)
@@ -66,6 +66,15 @@ namespace alpaka::trait
     struct GetMathImpl::Op<alpaka::api::Cuda>
     {
         constexpr decltype(auto) operator()(alpaka::api::Cuda const) const
+        {
+            return alpaka::math::internal::cudaHipMath;
+        }
+    };
+
+    template<>
+    struct GetMathImpl::Op<alpaka::api::Hip>
+    {
+        constexpr decltype(auto) operator()(alpaka::api::Hip const) const
         {
             return alpaka::math::internal::cudaHipMath;
         }
