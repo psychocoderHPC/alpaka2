@@ -15,29 +15,29 @@
 
 
 #if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
-#    define ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA alpaka_onAccCuda
-#    define ALPAKA_DEVICE_GLOBAL_DATA(attributes, id, dataType, name, ...)                                            \
+#    define ALPAKA_NAMESPACE_DEVICE_GLOBAL_UNIFIED_CUDA_HIP alpaka_onAccCuda
+#    define ALPAKA_DEVICE_GLOBAL_DATA(attributes, dataType, name, ...)                                                \
         namespace alpaka_onAccCuda                                                                                    \
         {                                                                                                             \
-            __device__ attributes std::type_identity_t<ALPAKA_PP_REMOVE_BRACKETS(dataType)> ALPAKA_PP_CAT(name, id)   \
+            __device__ attributes std::type_identity_t<ALPAKA_PP_REMOVE_BRACKETS(dataType)> name                      \
                 __VA_OPT__({__VA_ARGS__});                                                                            \
         }
 #else
-#    define ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA alpaka_onHost
-#    define ALPAKA_DEVICE_GLOBAL_DATA(id, dataType, name, ...)
+#    define ALPAKA_NAMESPACE_DEVICE_GLOBAL_UNIFIED_CUDA_HIP alpaka_onHost
+#    define ALPAKA_DEVICE_GLOBAL_DATA(dataType, name, ...)
 #endif
 
 #if ALPAKA_DEVICE_COMPILE
-#    define ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name, id)                                                           \
+#    define ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name)                                                               \
         [[maybe_unused]] __device__ constexpr auto name = alpaka::onAcc::GlobalDeviceMemoryWrapper<                   \
-            globalVariables::ALPAKA_PP_CAT(GlobalStorage, id),                                                        \
+            globalVariables::ALPAKA_PP_CAT(GlobalStorage, name),                                                      \
             ALPAKA_PP_REMOVE_BRACKETS(dataType)>                                                                      \
         {                                                                                                             \
         }
 #else
-#    define ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name, id)                                                           \
+#    define ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name)                                                               \
         [[maybe_unused]] constexpr auto name = alpaka::onAcc::GlobalDeviceMemoryWrapper<                              \
-            globalVariables::ALPAKA_PP_CAT(GlobalStorage, id),                                                        \
+            globalVariables::ALPAKA_PP_CAT(GlobalStorage, name),                                                      \
             ALPAKA_PP_REMOVE_BRACKETS(dataType)>                                                                      \
         {                                                                                                             \
         }
@@ -71,16 +71,16 @@ namespace alpaka::onAcc
         }
     };
 
-#define ALPAKA_DEVICE_GLOBAL_CREATE(attributes, dataType, id, name, ...)                                              \
-    ALPAKA_DEVICE_GLOBAL_DATA(attributes, id, dataType, name, __VA_ARGS__)                                            \
+#define ALPAKA_DEVICE_GLOBAL_CREATE(attributes, dataType, name, ...)                                                  \
+    ALPAKA_DEVICE_GLOBAL_DATA(attributes, dataType, name, __VA_ARGS__)                                                \
     namespace alpaka_onHost                                                                                           \
     {                                                                                                                 \
-        [[maybe_unused]] attributes std::type_identity_t<ALPAKA_PP_REMOVE_BRACKETS(dataType)> ALPAKA_PP_CAT(name, id) \
+        [[maybe_unused]] attributes std::type_identity_t<ALPAKA_PP_REMOVE_BRACKETS(dataType)> name                    \
             __VA_OPT__({__VA_ARGS__});                                                                                \
     }                                                                                                                 \
     namespace globalVariables                                                                                         \
     {                                                                                                                 \
-        struct ALPAKA_PP_CAT(GlobalStorage, id)                                                                       \
+        struct ALPAKA_PP_CAT(GlobalStorage, name)                                                                     \
         {                                                                                                             \
             template<typename T_Api>                                                                                  \
             requires(std::is_same_v<alpaka::api::Cpu, T_Api>)                                                         \
@@ -89,7 +89,7 @@ namespace alpaka::onAcc
                 static_assert(                                                                                        \
                     std::is_same_v<alpaka::api::Cpu, ALPAKA_TYPEOF(thisApi())>,                                       \
                     "This call is only allowed from the host or a kernel running on CPU.");                           \
-                return alpaka_onHost::ALPAKA_PP_CAT(name, id);                                                        \
+                return alpaka_onHost::name;                                                                           \
             }                                                                                                         \
                                                                                                                       \
             template<typename T_Api>                                                                                  \
@@ -99,7 +99,7 @@ namespace alpaka::onAcc
                 static_assert(                                                                                        \
                     sizeof(T_Api) && ALPAKA_LANG_CUDA != ALPAKA_VERSION_NUMBER_NOT_AVAILABLE,                         \
                     "This call requires a CUDA compiler.");                                                           \
-                return ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA::ALPAKA_PP_CAT(name, id);                                  \
+                return ALPAKA_NAMESPACE_DEVICE_GLOBAL_UNIFIED_CUDA_HIP::name;                                         \
             }                                                                                                         \
             template<typename T_Api>                                                                                  \
             requires(std::is_same_v<alpaka::api::Hip, T_Api>)                                                         \
@@ -107,14 +107,14 @@ namespace alpaka::onAcc
             {                                                                                                         \
                 static_assert(                                                                                        \
                     sizeof(T_Api) && ALPAKA_LANG_HIP != ALPAKA_VERSION_NUMBER_NOT_AVAILABLE,                          \
-                    "This call requires a HIP compiler.");                                                           \
-                return ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA::ALPAKA_PP_CAT(name, id);                                  \
+                    "This call requires a HIP compiler.");                                                            \
+                return ALPAKA_NAMESPACE_DEVICE_GLOBAL_UNIFIED_CUDA_HIP::name;                                         \
             }                                                                                                         \
         };                                                                                                            \
     }                                                                                                                 \
-    ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name, id)
+    ALPAKA_DEVICE_GLOBAL_ACCESS(dataType, name)
 
 #define ALPAKA_DEVICE_GLOBAL(attributes, type, name, ...)                                                             \
-    ALPAKA_DEVICE_GLOBAL_CREATE(attributes, type, __COUNTER__, name, __VA_ARGS__)
+    ALPAKA_DEVICE_GLOBAL_CREATE(attributes, type, name, __VA_ARGS__)
 
 } // namespace alpaka::onAcc

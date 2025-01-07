@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "alpaka/Vec.hpp"
 #include "alpaka/CVec.hpp"
+#include "alpaka/Vec.hpp"
 #include "alpaka/core/config.hpp"
 
 #include <type_traits>
@@ -266,7 +266,7 @@ namespace alpaka
     {
         static_assert(
             sizeof(T_ArrayType) && false,
-            "MdSpanArray can only be used if std::is_array_v<T> is true for teh given type.");
+            "MdSpanArray can only be used if std::is_array_v<T> is true for the given type.");
     };
 
     template<typename T_ArrayType>
