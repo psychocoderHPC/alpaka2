@@ -96,7 +96,7 @@ namespace alpaka::onHost
 
             void wait() const
             {
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface,ApiInterface::streamSynchronize(getNativeHandle()));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::streamSynchronize(getNativeHandle()));
             }
 
             friend struct alpaka::internal::GetApi;

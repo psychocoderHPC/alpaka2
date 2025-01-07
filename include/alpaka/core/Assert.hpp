@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "alpaka/core/config.hpp"
 #include "alpaka/core/common.hpp"
+#include "alpaka/core/config.hpp"
 
 #include <cassert>
 #include <type_traits>
