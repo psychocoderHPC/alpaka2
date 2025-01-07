@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "alpaka/api/unifiedCudaHip/executor.hpp"
+#include "alpaka/api/unifiedCudaHip/trait.hpp"
 
 #include <concepts>
 
@@ -13,7 +13,9 @@ namespace alpaka
     namespace concepts
     {
         template<typename T>
-        concept UnifiedCudaHipExecutor
-            = std::same_as<T, alpaka::exec::GpuCuda> || std::same_as<T, alpaka::exec::GpuHip>;
+        concept UnifiedCudaHipExecutor = alpaka::unifiedCudaHip::trait::IsUnifiedExecutor<T>::value;
+
+        template<typename T>
+        concept UnifiedCudaHipApi = alpaka::unifiedCudaHip::trait::IsUnifiedApi<T>::value;
     } // namespace concepts
 } // namespace alpaka

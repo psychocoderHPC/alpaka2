@@ -6,7 +6,7 @@
 #pragma once
 
 #include "alpaka/api/api.hpp"
-#include "alpaka/api/trait.hpp"
+#include "alpaka/api/unifiedCudaHip/tag.hpp"
 #include "alpaka/core/Unreachable.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/decay.hpp"
@@ -15,12 +15,6 @@
 
 namespace alpaka::math::internal
 {
-    struct CudaHipMath
-    {
-    };
-
-    constexpr auto cudaHipMath = CudaHipMath{};
-
 #if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
     //! The CUDA sin trait specialization for real types.
     template<typename T_Arg>
@@ -59,24 +53,3 @@ namespace alpaka::math::internal
 #endif
 
 } // namespace alpaka::math::internal
-
-namespace alpaka::trait
-{
-    template<>
-    struct GetMathImpl::Op<alpaka::api::Cuda>
-    {
-        constexpr decltype(auto) operator()(alpaka::api::Cuda const) const
-        {
-            return alpaka::math::internal::cudaHipMath;
-        }
-    };
-
-    template<>
-    struct GetMathImpl::Op<alpaka::api::Hip>
-    {
-        constexpr decltype(auto) operator()(alpaka::api::Hip const) const
-        {
-            return alpaka::math::internal::cudaHipMath;
-        }
-    };
-} // namespace alpaka::trait

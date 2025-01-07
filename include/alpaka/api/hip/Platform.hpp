@@ -10,6 +10,7 @@
 #if ALPAKA_LANG_HIP
 #    include "alpaka/api/hip/Api.hpp"
 #    include "alpaka/api/unifiedCudaHip/Platform.hpp"
+#    include "alpaka/core/ApiHipRt.hpp"
 #    include "alpaka/core/UniformCudaHip.hpp"
 #    include "alpaka/internal.hpp"
 #    include "alpaka/onHost.hpp"
