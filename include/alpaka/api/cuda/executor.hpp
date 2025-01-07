@@ -6,9 +6,7 @@
 
 #include "alpaka/api/trait.hpp"
 #include "alpaka/api/unifiedCudaHip/tag.hpp"
-
-#include <cassert>
-#include <tuple>
+#include "alpaka/api/unifiedCudaHip/trait.hpp"
 
 namespace alpaka::exec
 {
@@ -18,11 +16,6 @@ namespace alpaka::exec
 
     constexpr GpuCuda gpuCuda;
 
-    struct GpuHip
-    {
-    };
-
-    constexpr GpuHip gpuHip;
 } // namespace alpaka::exec
 
 namespace alpaka::onAcc::trait
@@ -35,13 +28,12 @@ namespace alpaka::onAcc::trait
             return internal::cudaHipAtomic;
         }
     };
-
-    template<>
-    struct GetAtomicImpl::Op<alpaka::exec::GpuHip>
-    {
-        constexpr decltype(auto) operator()(alpaka::exec::GpuHip const) const
-        {
-            return internal::cudaHipAtomic;
-        }
-    };
 } // namespace alpaka::onAcc::trait
+
+namespace alpaka::unifiedCudaHip::trait
+{
+    template<>
+    struct IsUnifiedExecutor<alpaka::exec::GpuCuda> : std::true_type
+    {
+    };
+} // namespace alpaka::unifiedCudaHip::trait

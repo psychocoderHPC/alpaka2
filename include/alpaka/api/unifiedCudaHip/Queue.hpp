@@ -283,6 +283,7 @@ namespace alpaka::onHost
                 auto* const srcPtr = (void*) onHost::data(source);
 
                 auto copyKind = unifiedCudaHip::MemcpyKind<
+                    ApiInterface,
                     ALPAKA_TYPEOF(alpaka::internal::getApi(dest)),
                     ALPAKA_TYPEOF(alpaka::internal::getApi(source))>::kind;
 

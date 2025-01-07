@@ -5,7 +5,8 @@
 #pragma once
 
 #include "alpaka/api/cpu/executor.hpp"
-#include "alpaka/api/unifiedCudaHip/executor.hpp"
+#include "alpaka/api/cuda/executor.hpp"
+#include "alpaka/api/hip/executor.hpp"
 
 namespace alpaka::exec
 {

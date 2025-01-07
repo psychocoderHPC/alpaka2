@@ -4,11 +4,24 @@
 
 #pragma once
 
-namespace alpaka::onAcc::internal
+namespace alpaka
 {
-    struct CudaHipAtomic
+    namespace onAcc::internal
     {
-    };
+        struct CudaHipAtomic
+        {
+        };
 
-    constexpr auto cudaHipAtomic = CudaHipAtomic{};
-} // namespace alpaka::onAcc::internal
+        constexpr auto cudaHipAtomic = CudaHipAtomic{};
+
+    } // namespace onAcc::internal
+
+    namespace math::internal
+    {
+        struct CudaHipMath
+        {
+        };
+
+        constexpr auto cudaHipMath = CudaHipMath{};
+    } // namespace math::internal
+} // namespace alpaka

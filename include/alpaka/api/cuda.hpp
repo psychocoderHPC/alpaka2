@@ -5,5 +5,8 @@
 #pragma once
 
 #include "alpaka/api/cuda/Api.hpp"
+#include "alpaka/api/cuda/Device.hpp"
 #include "alpaka/api/cuda/IdxLayer.hpp"
 #include "alpaka/api/cuda/Platform.hpp"
+#include "alpaka/api/cuda/executor.hpp"
+#include "alpaka/api/cuda/math.hpp"

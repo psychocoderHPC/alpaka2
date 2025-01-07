@@ -4,16 +4,9 @@
 
 #pragma once
 
+#include "alpaka/api/unifiedCudaHip/concepts.hpp"
+#include "alpaka/api/unifiedCudaHip/trait.hpp"
 #include "alpaka/core/config.hpp"
-
-#if ALPAKA_LANG_CUDA
-#    include "alpaka/core/ApiCudaRt.hpp"
-#elif ALPAKA_LANG_HIP
-#    include "alpaka/core/ApiHipRt.hpp"
-#endif
-
-#include "alpaka/api/cpu/Api.hpp"
-#include "alpaka/api/cuda/Api.hpp"
 
 #include <cstdint>
 
@@ -21,49 +14,28 @@ namespace alpaka::onHost
 {
     namespace unifiedCudaHip
     {
-        template<typename T_Dest, typename T_Source>
+        template<typename T_ApiInterface, typename T_Dest, typename T_Source>
         struct MemcpyKind
         {
             static_assert(sizeof(T_Dest) && false, "Not supported memcpy kind.");
         };
 
-#if ALPAKA_LANG_CUDA
-        template<>
-        struct MemcpyKind<api::Cpu, api::Cuda>
+        template<typename T_ApiInterface, alpaka::concepts::UnifiedCudaHipApi T_Source>
+        struct MemcpyKind<T_ApiInterface, api::Cpu, T_Source>
         {
-            static constexpr auto kind = ApiCudaRt::memcpyDeviceToHost;
+            static constexpr auto kind = T_ApiInterface::memcpyDeviceToHost;
         };
 
-        template<>
-        struct MemcpyKind<api::Cuda, api::Cuda>
+        template<typename T_ApiInterface, alpaka::concepts::UnifiedCudaHipApi T_SourceDestApi>
+        struct MemcpyKind<T_ApiInterface, T_SourceDestApi, T_SourceDestApi>
         {
-            static constexpr auto kind = ApiCudaRt::memcpyDeviceToDevice;
+            static constexpr auto kind = T_ApiInterface::memcpyDeviceToDevice;
         };
 
-        template<>
-        struct MemcpyKind<api::Cuda, api::Cpu>
+        template<typename T_ApiInterface, alpaka::concepts::UnifiedCudaHipApi T_Dest>
+        struct MemcpyKind<T_ApiInterface, T_Dest, api::Cpu>
         {
-            static constexpr auto kind = ApiCudaRt::memcpyHostToDevice;
+            static constexpr auto kind = T_ApiInterface::memcpyHostToDevice;
         };
-#endif
-#if ALPAKA_LANG_HIP
-        template<>
-        struct MemcpyKind<api::Cpu, api::Hip>
-        {
-            static constexpr auto kind = ApiHipRt::memcpyDeviceToHost;
-        };
-
-        template<>
-        struct MemcpyKind<api::Hip, api::Hip>
-        {
-            static constexpr auto kind = ApiHipRt::memcpyDeviceToDevice;
-        };
-
-        template<>
-        struct MemcpyKind<api::Hip, api::Cpu>
-        {
-            static constexpr auto kind = ApiHipRt::memcpyHostToDevice;
-        };
-#endif
     } // namespace unifiedCudaHip
 } // namespace alpaka::onHost

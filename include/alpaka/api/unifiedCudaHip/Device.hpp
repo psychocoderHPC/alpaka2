@@ -231,19 +231,6 @@ namespace alpaka::onHost
         };
 #    endif
     } // namespace internal
-
-    namespace trait
-    {
-        template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<exec::GpuCuda, unifiedCudaHip::Device<T_Platform>> : std::true_type
-        {
-        };
-
-        template<typename T_Platform>
-        struct IsMappingSupportedBy::Op<exec::GpuHip, unifiedCudaHip::Device<T_Platform>> : std::true_type
-        {
-        };
-    } // namespace trait
 } // namespace alpaka::onHost
 
 #endif

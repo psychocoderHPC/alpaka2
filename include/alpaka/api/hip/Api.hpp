@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "alpaka/api/unifiedCudaHip/trait.hpp"
 #include "alpaka/concepts.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/onHost/trait.hpp"
@@ -48,4 +49,12 @@ namespace alpaka
         };
 #endif
     } // namespace onHost::trait
+
+    namespace unifiedCudaHip::trait
+    {
+        template<>
+        struct IsUnifiedApi<api::Hip> : std::true_type
+        {
+        };
+    } // namespace unifiedCudaHip::trait
 } // namespace alpaka
