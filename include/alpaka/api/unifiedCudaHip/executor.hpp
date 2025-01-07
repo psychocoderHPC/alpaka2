@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "alpaka/api/cuda/tag.hpp"
 #include "alpaka/api/trait.hpp"
+#include "alpaka/api/unifiedCudaHip/tag.hpp"
 
 #include <cassert>
 #include <tuple>

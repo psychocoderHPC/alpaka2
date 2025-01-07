@@ -102,12 +102,12 @@ namespace alpaka::onAcc
                 return ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA::ALPAKA_PP_CAT(name, id);                                  \
             }                                                                                                         \
             template<typename T_Api>                                                                                  \
-            requires(std::is_same_v<alpaka::api::Hip, T_Api>)                                                        \
+            requires(std::is_same_v<alpaka::api::Hip, T_Api>)                                                         \
             constexpr auto& get(T_Api) const                                                                          \
             {                                                                                                         \
                 static_assert(                                                                                        \
-                    sizeof(T_Api) && ALPAKA_LANG_HIP != ALPAKA_VERSION_NUMBER_NOT_AVAILABLE,                         \
-                    "This call requires a CUDA compiler.");                                                           \
+                    sizeof(T_Api) && ALPAKA_LANG_HIP != ALPAKA_VERSION_NUMBER_NOT_AVAILABLE,                          \
+                    "This call requires a HIP compiler.");                                                           \
                 return ALPAKA_NAMESPACE_DEVICE_GLOBAL_CUDA::ALPAKA_PP_CAT(name, id);                                  \
             }                                                                                                         \
         };                                                                                                            \

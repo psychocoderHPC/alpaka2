@@ -207,14 +207,14 @@ namespace alpaka
         template<typename T>
         static inline Error_t funcGetAttributes(FuncAttributes_t* attr, T* func)
         {
-//#    if ALPAKA_COMP_GNUC
-//#        pragma GCC diagnostic push
-//#        pragma GCC diagnostic ignored "-Wconditionally-supported"
-//#    endif
+            // #    if ALPAKA_COMP_GNUC
+            // #        pragma GCC diagnostic push
+            // #        pragma GCC diagnostic ignored "-Wconditionally-supported"
+            // #    endif
             return ::hipFuncGetAttributes(attr, reinterpret_cast<void const*>(func));
-//#    if ALPAKA_COMP_GNUC
-//#        pragma GCC diagnostic pop
-//#    endif
+            // #    if ALPAKA_COMP_GNUC
+            // #        pragma GCC diagnostic pop
+            // #    endif
         }
 
         static inline Error_t getDeviceCount(int* count)

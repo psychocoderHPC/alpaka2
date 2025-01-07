@@ -16,9 +16,9 @@ namespace alpaka
 {
     namespace api
     {
-        struct Cuda
+        struct Hip
         {
-            using element_type = Cuda;
+            using element_type = Hip;
 
             auto get() const
             {
@@ -27,24 +27,23 @@ namespace alpaka
 
             void _()
             {
-                static_assert(concepts::Api<Cuda>);
+                static_assert(concepts::Api<Hip>);
             }
 
             static std::string getName()
             {
-                return "Cuda";
+                return "Hip";
             }
         };
 
-        constexpr auto cuda = Cuda{};
-
+        constexpr auto hip = Hip{};
     } // namespace api
 
     namespace onHost::trait
     {
-#if ALPAKA_LANG_CUDA
+#if ALPAKA_LANG_HIP
         template<>
-        struct IsPlatformAvailable::Op<api::Cuda> : std::true_type
+        struct IsPlatformAvailable::Op<api::Hip> : std::true_type
         {
         };
 #endif

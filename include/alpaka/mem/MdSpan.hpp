@@ -6,6 +6,7 @@
 #pragma once
 
 #include "alpaka/Vec.hpp"
+#include "alpaka/CVec.hpp"
 #include "alpaka/core/config.hpp"
 
 #include <type_traits>
