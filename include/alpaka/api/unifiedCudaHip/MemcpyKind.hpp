@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/unifiedCudaHip/concepts.hpp"
 #include "alpaka/api/unifiedCudaHip/trait.hpp"
 #include "alpaka/core/config.hpp"
