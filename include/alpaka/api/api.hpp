@@ -7,6 +7,7 @@
 
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cuda/Api.hpp"
+#include "alpaka/api/hip/Api.hpp"
 #include "alpaka/meta/filter.hpp"
 #include "alpaka/onHost/trait.hpp"
 

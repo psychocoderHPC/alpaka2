@@ -19,7 +19,7 @@
 
 namespace alpaka::onHost
 {
-    namespace cuda
+    namespace unifiedCudaHip
     {
         template<typename T_Dest, typename T_Source>
         struct MemcpyKind
@@ -65,5 +65,5 @@ namespace alpaka::onHost
             static constexpr auto kind = ApiHipRt::memcpyHostToDevice;
         };
 #endif
-    } // namespace cuda
+    } // namespace unifiedCudaHip
 } // namespace alpaka::onHost

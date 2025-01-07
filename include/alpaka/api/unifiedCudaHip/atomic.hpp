@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "alpaka/api/cuda/atomicBuiltIn.hpp"
-#include "alpaka/api/cuda/tag.hpp"
+#include "alpaka/api/unifiedCudaHip/atomicBuiltIn.hpp"
+#include "alpaka/api/unifiedCudaHip/tag.hpp"
 #include "alpaka/core/Unreachable.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/onAcc/atomicHierarchy.hpp"

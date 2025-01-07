@@ -82,14 +82,14 @@ namespace alpaka::uniform_cuda_hip::detail
     }
 } // namespace alpaka::uniform_cuda_hip::detail
 
-#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(cmd, throw, ...)                                                    \
+#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(ApiInterfaceType, cmd, throw, ...)                                  \
         do                                                                                                            \
         {                                                                                                             \
-            ::alpaka::uniform_cuda_hip::detail::rtCheckLastError<TApi, throw>(                                        \
+            ::alpaka::uniform_cuda_hip::detail::rtCheckLastError<ApiInterfaceType, throw>(                            \
                 "'" #cmd "' A previous API call (not this one) set the error ",                                       \
                 __FILE__,                                                                                             \
                 __LINE__);                                                                                            \
-            ::alpaka::uniform_cuda_hip::detail::rtCheckIgnore<TApi, throw>(                                           \
+            ::alpaka::uniform_cuda_hip::detail::rtCheckIgnore<ApiInterfaceType, throw>(                               \
                 cmd,                                                                                                  \
                 #cmd,                                                                                                 \
                 __FILE__,                                                                                             \
@@ -98,16 +98,18 @@ namespace alpaka::uniform_cuda_hip::detail
         } while(0)
 
 //! CUDA/HIP runtime error checking with log and exception, ignoring specific error values
-#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IGNORE(cmd, ...)                                                         \
-        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(cmd, true, __VA_ARGS__)
+#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IGNORE(ApiInterfaceType, cmd, ...)                                       \
+        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(ApiInterfaceType, cmd, true, __VA_ARGS__)
 
 //! CUDA/HIP runtime error checking with log and exception.
-#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(cmd) ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(cmd, true, )
+#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterfaceType, cmd)                                                   \
+        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(ApiInterfaceType, cmd, true, )
 
 //! CUDA/HIP runtime error checking with log and exception, ignoring specific error values
-#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IGNORE_NOEXCEPT(cmd, ...)                                                \
-        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(cmd, false, __VA_ARGS__)
+#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IGNORE_NOEXCEPT(ApiInterfaceType, cmd, ...)                              \
+        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(ApiInterfaceType, cmd, false, __VA_ARGS__)
 
 //! CUDA/HIP runtime error checking with log.
-#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(cmd) ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(cmd, false, )
+#    define ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterfaceType, cmd)                                          \
+        ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_IMPL(ApiInterfaceType, cmd, false, )
 #endif

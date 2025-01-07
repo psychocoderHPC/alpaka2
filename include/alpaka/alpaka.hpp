@@ -9,7 +9,7 @@
 #include "alpaka/Vec.hpp"
 #include "alpaka/api/api.hpp"
 #include "alpaka/api/cpu.hpp"
-#include "alpaka/api/cuda.hpp"
+#include "alpaka/api/unifiedCudaHip.hpp"
 #include "alpaka/core/DemangleTypeNames.hpp"
 #include "alpaka/core/Dict.hpp"
 #include "alpaka/core/Tag.hpp"
