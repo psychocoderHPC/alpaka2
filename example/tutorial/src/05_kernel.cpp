@@ -6,7 +6,6 @@
 
 #include <alpaka/alpaka.hpp>
 
-#include <cassert>
 #include <cstdio>
 #include <random>
 
@@ -116,8 +115,8 @@ void testVectorAddKernel(
     for(uint32_t i = 0; i < size; ++i)
     {
         float sum = in1_h[i] + in2_h[i];
-        assert(out_h[i] < sum + epsilon);
-        assert(out_h[i] > sum - epsilon);
+        verify(out_h[i] < sum + epsilon);
+        verify(out_h[i] > sum - epsilon);
     }
     std::cout << "success\n";
 
@@ -145,8 +144,8 @@ void testVectorAddKernel(
     for(uint32_t i = 0; i < size; ++i)
     {
         float sum = in1_h[i] + in2_h[i];
-        assert(out_h[i] < sum + epsilon);
-        assert(out_h[i] > sum - epsilon);
+        verify(out_h[i] < sum + epsilon);
+        verify(out_h[i] > sum - epsilon);
     }
     std::cout << "success\n";
 }
@@ -221,8 +220,8 @@ void testVectorAddKernel3D(
     {
         auto lIdx = alpaka::mapToND(ndsize, i);
         float sum = in1_h[lIdx] + in2_h[lIdx];
-        assert(out_h[lIdx] < sum + epsilon);
-        assert(out_h[lIdx] > sum - epsilon);
+        verify(out_h[lIdx] < sum + epsilon);
+        verify(out_h[lIdx] > sum - epsilon);
     }
     std::cout << "success\n";
 }
