@@ -6,7 +6,6 @@
 
 #include <alpaka/alpaka.hpp>
 
-#include <cassert>
 #include <cstdio>
 #include <random>
 
@@ -193,7 +192,7 @@ void testVectorAddKernel(
     constexpr auto frameExtent = 32u;
     auto numFrames = size / frameExtent;
     // The kernel assumes that the problem size is a multiple of the frame size.
-    assert((numFrames * frameExtent) == size);
+    verify((numFrames * frameExtent) == size);
 
     auto frameSpec = alpaka::onHost::FrameSpec{numFrames, alpaka::CVec<uint32_t, frameExtent>{}};
 
@@ -214,8 +213,8 @@ void testVectorAddKernel(
     for(uint32_t i = 0; i < size; ++i)
     {
         float sum = in1_h[i] + in2_h[i];
-        assert(out_h[i] < sum + epsilon);
-        assert(out_h[i] > sum - epsilon);
+        verify(out_h[i] < sum + epsilon);
+        verify(out_h[i] > sum - epsilon);
     }
     std::cout << "success\n";
 }
@@ -271,7 +270,7 @@ void testVectorAddKernel3D(
     auto frameExtent = alpaka::CVec<uint32_t, 4, 4, 2>{};
     auto numFrames = ndsize / frameExtent;
     // The kernel assumes that the problem size is a multiple of the frame size.
-    assert((numFrames * frameExtent).product() == size);
+    verify((numFrames * frameExtent).product() == size);
 
     auto frameSpec = alpaka::onHost::FrameSpec{numFrames, frameExtent};
 
@@ -291,8 +290,8 @@ void testVectorAddKernel3D(
     {
         auto lIdx = alpaka::mapToND(ndsize, i);
         float sum = in1_h[lIdx] + in2_h[lIdx];
-        assert(out_h[lIdx] < sum + epsilon);
-        assert(out_h[lIdx] > sum - epsilon);
+        verify(out_h[lIdx] < sum + epsilon);
+        verify(out_h[lIdx] > sum - epsilon);
     }
     std::cout << "success\n";
 }
