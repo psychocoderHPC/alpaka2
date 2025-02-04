@@ -204,6 +204,15 @@ namespace alpaka::onHost
                 unifiedCudaHip::Device<T_Platform> const& device,
                 T_Mapping const& executor,
                 FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                T_KernelBundle const& kernelBundle) const requires alpaka::concepts::CVector<T_NumThreads>
+            {
+                return dataBlocking.getThreadSpec();
+            }
+
+            auto operator()(
+                unifiedCudaHip::Device<T_Platform> const& device,
+                T_Mapping const& executor,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
                 auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;

@@ -84,7 +84,7 @@ namespace alpaka::onHost
                         auto const blockSharedMemEntry = DictEntry{layer::shared, std::ref(blockSharedMem)};
                         auto const blockSyncEntry = DictEntry{action::sync, onAcc::cpu::OmpSync{}};
 
-                        using NumThreadsVecType = typename ThreadSpecType::NumThreadsVecType;
+                        using NumThreadsVecType = typename ThreadSpecType::NumThreadsVecType::UniVec;
                         using ThreadIdxType = typename NumThreadsVecType::type;
 #    pragma omp for
                         for(ThreadIdxType i = 0; i < blockCountND.product(); ++i)

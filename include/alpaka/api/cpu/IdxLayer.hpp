@@ -24,9 +24,19 @@ namespace alpaka::onAcc
                 return IndexVecType::all(0);
             }
 
+            constexpr auto idx() const requires alpaka::concepts::CVector<IndexVecType>
+            {
+                return IndexVecType::template all<0>();
+            }
+
             constexpr auto count() const
             {
                 return IndexVecType::all(1);
+            }
+
+            constexpr auto count() const requires alpaka::concepts::CVector<IndexVecType>
+            {
+                return IndexVecType::template all<1u>();
             }
         };
 

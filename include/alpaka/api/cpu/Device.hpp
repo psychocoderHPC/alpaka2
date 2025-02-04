@@ -176,6 +176,16 @@ namespace alpaka::onHost
                 cpu::Device<T_Platform> const& device,
                 T_Mapping const& executor,
                 FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                T_KernelBundle const& kernelBundle) const requires alpaka::concepts::CVector<T_NumThreads>
+            {
+                auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
+                return ThreadSpec{numThreadBlocks, T_NumThreads::template all<1u>()};
+            }
+
+            auto operator()(
+                cpu::Device<T_Platform> const& device,
+                T_Mapping const& executor,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
                 T_KernelBundle const& kernelBundle) const
             {
                 auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
@@ -212,6 +222,17 @@ namespace alpaka::onHost
             FrameSpec<T_NumBlocks, T_NumThreads>,
             T_KernelBundle>
         {
+            auto operator()(
+                cpu::Device<T_Platform> const& device,
+                exec::CpuOmpBlocksAndThreads const& executor,
+                FrameSpec<T_NumBlocks, T_NumThreads> const& dataBlocking,
+                T_KernelBundle const& kernelBundle) const requires alpaka::concepts::CVector<T_NumThreads>
+            {
+                auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
+
+                return ThreadSpec{numThreadBlocks, T_NumThreads::template all<1u>()};
+            }
+
             auto operator()(
                 cpu::Device<T_Platform> const& device,
                 exec::CpuOmpBlocksAndThreads const& executor,

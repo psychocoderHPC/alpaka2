@@ -18,7 +18,7 @@ namespace alpaka::onHost
     {
         using type = typename T_NumBlocks::type;
         using NumBlocksVecType = typename T_NumBlocks::UniVec;
-        using NumThreadsVecType = typename T_NumThreads::UniVec;
+        using NumThreadsVecType = T_NumThreads;
 
         consteval uint32_t dim() const
         {
