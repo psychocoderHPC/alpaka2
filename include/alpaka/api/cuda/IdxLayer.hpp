@@ -14,31 +14,40 @@ namespace alpaka::onAcc
 {
     namespace unifiedCudaHip
     {
-        template<typename T_IdxType, uint32_t T_dim>
+        template<typename T_NumBlocksType>
         struct BlockLayer
         {
             constexpr auto idx() const
             {
-                return Vec<T_IdxType, 3u>{::blockIdx.z, ::blockIdx.y, ::blockIdx.x}.template rshrink<T_dim>();
+                return Vec<typename T_NumBlocksType::type, 3u>{::blockIdx.z, ::blockIdx.y, ::blockIdx.x}
+                    .template rshrink<T_NumBlocksType::dim()>();
             }
 
             constexpr auto count() const
             {
-                return Vec<T_IdxType, 3u>{::gridDim.z, ::gridDim.y, ::gridDim.x}.template rshrink<T_dim>();
+                return Vec<typename T_NumBlocksType::type, 3u>{::gridDim.z, ::gridDim.y, ::gridDim.x}
+                    .template rshrink<T_NumBlocksType::dim()>();
             }
         };
 
-        template<typename T_IdxType, uint32_t T_dim>
+        template<typename T_NumThreadsType>
         struct ThreadLayer
         {
             constexpr auto idx() const
             {
-                return Vec<T_IdxType, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}.template rshrink<T_dim>();
+                return Vec<typename T_NumThreadsType::type, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}
+                    .template rshrink<T_NumThreadsType::dim()>();
             }
 
             constexpr auto count() const
             {
-                return Vec<T_IdxType, 3u>{::blockDim.z, ::blockDim.y, ::blockDim.x}.template rshrink<T_dim>();
+                return Vec<typename T_NumThreadsType::type, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}
+                    .template rshrink<T_NumThreadsType::dim()>();
+            }
+
+            constexpr auto count() const requires alpaka::concepts::CVector<T_NumThreadsType>
+            {
+                return T_NumThreadsType{};
             }
         };
     } // namespace unifiedCudaHip

@@ -79,6 +79,22 @@ namespace alpaka
                     Values{});
                 return result;
             }
+
+            template<T T_value>
+            static constexpr auto all()
+            {
+                using IotaSeq = std::make_integer_sequence<T, dim()>;
+                return integerSequenceToCVec(IotaSeq{}, [](auto&&) constexpr { return T_value; });
+            }
+
+        private:
+            template<T... T_indecies>
+            static constexpr auto integerSequenceToCVec(
+                std::integer_sequence<T, T_indecies...>,
+                auto const op = std::identity{})
+            {
+                return CVec<T, op(T_indecies)...>{};
+            };
         };
 
         template<typename T>
@@ -212,6 +228,12 @@ namespace alpaka
                 Vec result([=](uint32_t const) { return value; });
                 return result;
             }
+        }
+
+        template<T_Type T_v>
+        static constexpr auto all() requires requires { T_Storage::template all<T_v>(); }
+        {
+            return Vec<T_Type, T_dim, ALPAKA_TYPEOF(T_Storage::template all<T_v>())>{};
         }
 
         constexpr Vec toRT() const

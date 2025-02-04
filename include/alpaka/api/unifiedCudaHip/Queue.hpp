@@ -108,8 +108,8 @@ namespace alpaka::onHost
         template<
             typename T_Api,
             typename T_Executor,
-            typename T_IdxType,
-            uint32_t T_dim,
+            typename T_NumBlocksType,
+            typename T_NumThreadsType,
             typename TKernelBundle,
             typename T_NumFrames,
             typename T_FrameSize>
@@ -120,8 +120,8 @@ namespace alpaka::onHost
         {
             auto acc = onAcc::Acc{
                 Dict{
-                    DictEntry(layer::block, onAcc::unifiedCudaHip::BlockLayer<T_IdxType, T_dim>{}),
-                    DictEntry(layer::thread, onAcc::unifiedCudaHip::ThreadLayer<T_IdxType, T_dim>{}),
+                    DictEntry(layer::block, onAcc::unifiedCudaHip::BlockLayer<T_NumBlocksType>{}),
+                    DictEntry(layer::thread, onAcc::unifiedCudaHip::ThreadLayer<T_NumThreadsType>{}),
                     DictEntry(frame::count, numFrames),
                     DictEntry(frame::extent, frameExtent),
                     DictEntry(action::sync, onAcc::unifiedCudaHip::Sync{}),
@@ -131,13 +131,18 @@ namespace alpaka::onHost
             kernelBundle(acc);
         }
 
-        template<typename T_Api, typename T_Executor, typename T_IdxType, uint32_t T_dim, typename TKernelBundle>
+        template<
+            typename T_Api,
+            typename T_Executor,
+            typename T_NumBlocksType,
+            typename T_NumThreadsType,
+            typename TKernelBundle>
         __global__ void gpuKernel(TKernelBundle const kernelBundle)
         {
             auto acc = onAcc::Acc{
                 Dict{
-                    DictEntry(layer::block, onAcc::unifiedCudaHip::BlockLayer<T_IdxType, T_dim>{}),
-                    DictEntry(layer::thread, onAcc::unifiedCudaHip::ThreadLayer<T_IdxType, T_dim>{}),
+                    DictEntry(layer::block, onAcc::unifiedCudaHip::BlockLayer<T_NumBlocksType>{}),
+                    DictEntry(layer::thread, onAcc::unifiedCudaHip::ThreadLayer<T_NumThreadsType>{}),
                     DictEntry(action::sync, onAcc::unifiedCudaHip::Sync{}),
                     DictEntry(object::api, T_Api{}),
                     DictEntry(object::exec, T_Executor{})},
@@ -145,16 +150,16 @@ namespace alpaka::onHost
             kernelBundle(acc);
         }
 
-        template<typename TIdx, uint32_t T_dim>
-        ALPAKA_FN_HOST auto convertVecToUniformCudaHipDim(Vec<TIdx, T_dim> const& vec) -> dim3
+        ALPAKA_FN_HOST auto convertVecToUniformCudaHipDim(alpaka::concepts::Vector auto const& vec) -> dim3
         {
+            constexpr auto vecDim = ALPAKA_TYPEOF(vec)::dim();
             dim3 dim(1, 1, 1);
-            if constexpr(T_dim >= 1u)
-                dim.x = static_cast<unsigned>(vec[T_dim - 1u]);
-            if constexpr(T_dim >= 2u)
-                dim.y = static_cast<unsigned>(vec[T_dim - 2u]);
-            if constexpr(T_dim >= 3u)
-                dim.z = static_cast<unsigned>(vec[T_dim - 3u]);
+            if constexpr(vecDim >= 1u)
+                dim.x = static_cast<unsigned>(vec[vecDim - 1u]);
+            if constexpr(vecDim >= 2u)
+                dim.y = static_cast<unsigned>(vec[vecDim - 2u]);
+            if constexpr(vecDim >= 3u)
+                dim.z = static_cast<unsigned>(vec[vecDim - 3u]);
 
             return dim;
         }
@@ -183,8 +188,8 @@ namespace alpaka::onHost
                 auto kernelName = gpuKernel<
                     ALPAKA_TYPEOF(onHost::getApi(queue)),
                     T_Executor,
-                    typename T_NumBlocks::type,
-                    T_NumBlocks::dim(),
+                    T_NumBlocks,
+                    T_NumThreads,
                     T_KernelBundle,
                     T_Args...>;
 
