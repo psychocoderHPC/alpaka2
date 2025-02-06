@@ -6,6 +6,8 @@
 
 #include "alpaka/core/config.hpp"
 
+#include <type_traits>
+
 // Boost.Uuid errors with VS2017 when intrin.h is not included
 #if defined(_MSC_VER) && _MSC_VER >= 1910
 #    include <intrin.h>

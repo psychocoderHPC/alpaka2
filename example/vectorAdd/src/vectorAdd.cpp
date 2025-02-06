@@ -85,7 +85,7 @@ auto example(T_Cfg const& cfg) -> int
     std::default_random_engine eng{rd()};
     std::uniform_int_distribution<Data> dist(1, 42);
 
-    for(auto i(0); i < extent; ++i)
+    for(auto i(0u); i < extent; ++i)
     {
         bufHostA.getMdSpan()[i] = dist(eng);
         bufHostB.getMdSpan()[i] = dist(eng);

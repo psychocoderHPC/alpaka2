@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/cast.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/core/util.hpp"
 #include "alpaka/trait.hpp"
@@ -121,7 +122,7 @@ namespace alpaka
         using type = T_Type;
         using ParamType = type;
 
-        using index_type = T_Type;
+        using index_type = uint32_t;
         using size_type = uint32_t;
         using rank_type = uint32_t;
 
@@ -189,15 +190,6 @@ namespace alpaka
         {
         }
 
-        template<
-            typename T_OtherType,
-            typename T_OtherStorage,
-            typename = std::enable_if_t<std::is_convertible_v<T_OtherType, T_Type>>>
-        constexpr explicit Vec(Vec<T_OtherType, T_dim, T_OtherStorage> const& other)
-            : Vec([&](uint32_t const i) constexpr { return static_cast<T_Type>(other[i]); })
-        {
-        }
-
         /** Allow static_cast / explicit cast to member type for 1D vector */
         template<uint32_t T_deferDim = T_dim, typename = typename std::enable_if<T_deferDim == 1u>::type>
         constexpr explicit operator type()
@@ -216,24 +208,25 @@ namespace alpaka
          * @param value Value which is set for all dimensions
          * @return new Vec<...>
          */
-        static constexpr auto all(T_Type const& value)
+        static constexpr auto all(concepts::IsConvertible<T_Type> auto const& value)
         {
             if constexpr(requires { detail::isTemplateSignatureStorage_v<T_Storage>; })
             {
-                UniVec result([=](uint32_t const) { return value; });
+                UniVec result([=](uint32_t const) { return static_cast<T_Type>(value); });
                 return result;
             }
             else
             {
-                Vec result([=](uint32_t const) { return value; });
+                Vec result([=](uint32_t const) { return static_cast<T_Type>(value); });
                 return result;
             }
         }
 
-        template<T_Type T_v>
+        template<auto T_v>
+        requires requires { concepts::IsConvertible<ALPAKA_TYPEOF(T_v), T_Type>; }
         static constexpr auto all() requires requires { T_Storage::template all<T_v>(); }
         {
-            return Vec<T_Type, T_dim, ALPAKA_TYPEOF(T_Storage::template all<T_v>())>{};
+            return Vec<T_Type, T_dim, ALPAKA_TYPEOF(T_Storage::template all<static_cast<T_Type>(T_v)>())>{};
         }
 
         constexpr Vec toRT() const
@@ -252,6 +245,7 @@ namespace alpaka
         }
 
         constexpr Vec& operator=(Vec const&) = default;
+        constexpr Vec& operator=(Vec&&) = default;
 
         constexpr Vec operator-() const
         {
@@ -278,7 +272,7 @@ namespace alpaka
         }                                                                                                             \
         return *this;                                                                                                 \
     }                                                                                                                 \
-    constexpr Vec& operator op(T_Type const value)                                                                    \
+    constexpr Vec& operator op(concepts::IsLosslessConvertible<T_Type> auto const value)                              \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
         {                                                                                                             \
@@ -305,12 +299,12 @@ namespace alpaka
 
         /** @} */
 
-        constexpr decltype(auto) operator[](uint32_t const idx)
+        constexpr decltype(auto) operator[](std::integral auto const idx)
         {
             return Storage::operator[](idx);
         }
 
-        constexpr decltype(auto) operator[](uint32_t const idx) const
+        constexpr decltype(auto) operator[](std::integral auto const idx) const
         {
             return Storage::operator[](idx);
         }
@@ -321,21 +315,19 @@ namespace alpaka
          * @{
          */
 #define ALPAKA_NAMED_ARRAY_ACCESS(functionName, dimValue)                                                             \
-    template<uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= dimValue + 1u, int> = 0>                     \
-    constexpr decltype(auto) functionName()                                                                           \
+    constexpr decltype(auto) functionName() requires(T_dim >= dimValue + 1)                                           \
     {                                                                                                                 \
         return (*this)[T_dim - 1u - dimValue];                                                                        \
     }                                                                                                                 \
-    template<uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= dimValue + 1u, int> = 0>                     \
-    constexpr decltype(auto) functionName() const                                                                     \
+    constexpr decltype(auto) functionName() const requires(T_dim >= dimValue + 1)                                     \
     {                                                                                                                 \
         return (*this)[T_dim - 1u - dimValue];                                                                        \
     }
 
-        ALPAKA_NAMED_ARRAY_ACCESS(x, 0)
-        ALPAKA_NAMED_ARRAY_ACCESS(y, 1)
-        ALPAKA_NAMED_ARRAY_ACCESS(z, 2)
-        ALPAKA_NAMED_ARRAY_ACCESS(w, 3)
+        ALPAKA_NAMED_ARRAY_ACCESS(x, 0u)
+        ALPAKA_NAMED_ARRAY_ACCESS(y, 1u)
+        ALPAKA_NAMED_ARRAY_ACCESS(z, 2u)
+        ALPAKA_NAMED_ARRAY_ACCESS(w, 3u)
 
 #undef ALPAKA_NAMED_ARRAY_ACCESS
 
@@ -391,7 +383,7 @@ namespace alpaka
          *         Indexing will wrapp around when the begin of the origin vector is reached.
          */
         template<uint32_t T_numElements>
-        constexpr Vec<type, T_numElements> rshrink(int const startIdx) const
+        constexpr Vec<type, T_numElements> rshrink(std::integral auto const startIdx) const
         {
             static_assert(T_numElements <= T_dim);
             Vec<type, T_numElements> result;
@@ -407,8 +399,8 @@ namespace alpaka
          * @tparam dimToRemove index which shall be removed; range: [ 0; T_dim - 1 ]
          * @return vector with `T_dim - 1` elements
          */
-        template<uint32_t dimToRemove, uint32_t T_deferDim = T_dim, std::enable_if_t<T_deferDim >= 2u, int> = 0>
-        constexpr Vec<type, T_dim - 1u> remove() const
+        template<std::integral auto dimToRemove>
+        constexpr Vec<type, T_dim - 1u> remove() const requires(T_dim >= 2u)
         {
             Vec<type, T_dim - 1u> result{};
             for(int i = 0u; i < static_cast<int>(T_dim - 1u); ++i)
@@ -628,10 +620,12 @@ namespace alpaka
         return result;                                                                                                \
     }                                                                                                                 \
                                                                                                                       \
-    template<typename T_Type, uint32_t T_dim, typename T_Storage>                                                     \
-    constexpr auto operator op(                                                                                       \
-        const Vec<T_Type, T_dim, T_Storage>& lhs,                                                                     \
-        typename Vec<T_Type, T_dim, T_Storage>::ParamType rhs)                                                        \
+    template<                                                                                                         \
+        typename T_Type,                                                                                              \
+        concepts::IsLosslessConvertible<T_Type> T_ValueType,                                                          \
+        uint32_t T_dim,                                                                                               \
+        typename T_Storage>                                                                                           \
+    constexpr auto operator op(const Vec<T_Type, T_dim, T_Storage>& lhs, T_ValueType rhs)                             \
     {                                                                                                                 \
         /* to avoid allocation side effects the result is always a vector                                             \
          * with default policies                                                                                      \
@@ -641,10 +635,12 @@ namespace alpaka
             result[i] = lhs[i] op rhs;                                                                                \
         return result;                                                                                                \
     }                                                                                                                 \
-    template<typename T_Type, uint32_t T_dim, typename T_Storage>                                                     \
-    constexpr auto operator op(                                                                                       \
-        typename Vec<T_Type, T_dim, T_Storage>::ParamType lhs,                                                        \
-        const Vec<T_Type, T_dim, T_Storage>& rhs)                                                                     \
+    template<                                                                                                         \
+        typename T_Type,                                                                                              \
+        concepts::IsLosslessConvertible<T_Type> T_ValueType,                                                          \
+        uint32_t T_dim,                                                                                               \
+        typename T_Storage>                                                                                           \
+    constexpr auto operator op(T_ValueType lhs, const Vec<T_Type, T_dim, T_Storage>& rhs)                             \
     {                                                                                                                 \
         /* to avoid allocation side effects the result is always a vector                                             \
          * with default policies                                                                                      \
@@ -681,15 +677,10 @@ namespace alpaka
      *
      * @{
      */
-    template<
-        typename T_IntegralType,
-        typename T_Storage,
-        typename T_OtherStorage,
-        uint32_t T_dim,
-        typename = std::enable_if_t<std::is_integral_v<T_IntegralType> && T_dim >= 2>>
+    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage, uint32_t T_dim>
     constexpr T_IntegralType linearize(
         Vec<T_IntegralType, T_dim - 1u, T_Storage> const& dim,
-        Vec<T_IntegralType, T_dim, T_OtherStorage> const& idx)
+        Vec<T_IntegralType, T_dim, T_OtherStorage> const& idx) requires(T_dim >= 2u)
     {
         T_IntegralType linearIdx{idx[0]};
         for(uint32_t d = 1u; d < T_dim; ++d)
@@ -698,12 +689,7 @@ namespace alpaka
         return linearIdx;
     }
 
-    template<
-        typename T_IntegralType,
-        typename T_Storage,
-        typename T_OtherStorage,
-        uint32_t T_dim,
-        typename = std::enable_if_t<std::is_integral_v<T_IntegralType>>>
+    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage, uint32_t T_dim>
     constexpr T_IntegralType linearize(
         Vec<T_IntegralType, T_dim, T_Storage> const& dim,
         Vec<T_IntegralType, T_dim, T_OtherStorage> const& idx)
@@ -711,11 +697,7 @@ namespace alpaka
         return linearize(dim.template rshrink<T_dim - 1u>(), idx);
     }
 
-    template<
-        typename T_IntegralType,
-        typename T_Storage,
-        typename T_OtherStorage,
-        typename = std::enable_if_t<std::is_integral_v<T_IntegralType>>>
+    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage>
     ALPAKA_FN_HOST_ACC T_IntegralType
     linearize(Vec<T_IntegralType, 1u, T_Storage> const&, Vec<T_IntegralType, 1u, T_OtherStorage> const& idx)
     {
@@ -735,12 +717,10 @@ namespace alpaka
      *
      * @{
      */
-    template<
-        typename T_IntegralType,
-        typename T_Storage,
-        uint32_t T_dim,
-        typename = std::enable_if_t<std::is_integral_v<T_IntegralType> && T_dim >= 2u>>
-    constexpr auto mapToND(Vec<T_IntegralType, T_dim, T_Storage> const& dim, T_IntegralType linearIdx)
+    template<std::integral T_IntegralType, typename T_Storage, uint32_t T_dim>
+    constexpr Vec<T_IntegralType, T_dim> mapToND(
+        Vec<T_IntegralType, T_dim, T_Storage> const& dim,
+        T_IntegralType linearIdx) requires(T_dim >= 2u)
     {
         constexpr uint32_t reducedDim = T_dim - 1u;
         Vec<T_IntegralType, reducedDim> pitchExtents;
@@ -758,13 +738,12 @@ namespace alpaka
         return result;
     }
 
-    template<
-        typename T_IntegralType,
-        typename T_Storage,
-        typename = std::enable_if_t<std::is_integral_v<T_IntegralType>>>
-    ALPAKA_FN_HOST_ACC auto mapToND(Vec<T_IntegralType, 1u, T_Storage> const& dim, T_IntegralType linearIdx)
+    template<std::integral T_IntegralType, typename T_Storage>
+    ALPAKA_FN_HOST_ACC Vec<T_IntegralType, 1u> mapToND(
+        Vec<T_IntegralType, 1u, T_Storage> const& dim,
+        T_IntegralType linearIdx)
     {
-        return linearIdx;
+        return {linearIdx};
     }
 
     /** @} */
@@ -846,6 +825,25 @@ namespace alpaka
     {
         return trait::getVec_t<T>{any};
     }
+
+    namespace internal
+    {
+        template<typename T_To, typename T_Type, uint32_t T_dim, typename T_Storage>
+        struct PCast::Op<T_To, alpaka::Vec<T_Type, T_dim, T_Storage>>
+        {
+            decltype(auto) operator()(auto&& input) const
+                requires std::convertible_to<T_Type, T_To> && (!std::same_as<T_To, T_Type>)
+            {
+                return typename alpaka::Vec<T_To, T_dim, T_Storage>::UniVec([&](uint32_t idx) constexpr
+                                                                            { return static_cast<T_To>(input[idx]); });
+            }
+
+            decltype(auto) operator()(auto&& input) const requires std::same_as<T_To, T_Type>
+            {
+                return input;
+            }
+        };
+    } // namespace internal
 }; // namespace alpaka
 
 namespace std
