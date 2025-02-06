@@ -41,7 +41,7 @@ namespace alpaka::onAcc
 
             constexpr auto count() const
             {
-                return Vec<typename T_NumThreadsType::type, 3u>{::threadIdx.z, ::threadIdx.y, ::threadIdx.x}
+                return Vec<typename T_NumThreadsType::type, 3u>{::blockDim.z, ::blockDim.y, ::blockDim.x}
                     .template rshrink<T_NumThreadsType::dim()>();
             }
 
