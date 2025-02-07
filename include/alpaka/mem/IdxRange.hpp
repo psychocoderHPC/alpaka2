@@ -104,7 +104,7 @@ namespace alpaka
 
     template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End>
     ALPAKA_FN_HOST_ACC IdxRange(T_Begin const&, T_End const&)
-        -> IdxRange<typename trait::getVec_t<T_Begin>::UniVec, typename trait::getVec_t<T_End>::UniVec>;
+        -> IdxRange<typename trait::getVec_t<T_Begin>::UniVec, typename trait::getVec_t<T_End>::UniVec,typename trait::getVec_t<T_End>::UniVec>;
 
     template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End, concepts::VectorOrScalar T_Stride>
     ALPAKA_FN_HOST_ACC IdxRange(T_Begin const&, T_End const&, T_Stride const&) -> IdxRange<
