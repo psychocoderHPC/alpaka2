@@ -223,7 +223,7 @@ namespace alpaka
         }
 
         template<auto T_v>
-        requires requires { concepts::IsConvertible<ALPAKA_TYPEOF(T_v), T_Type>; }
+        requires(isConvertible_v<ALPAKA_TYPEOF(T_v), T_Type>)
         static constexpr auto all() requires requires { T_Storage::template all<T_v>(); }
         {
             return Vec<T_Type, T_dim, ALPAKA_TYPEOF(T_Storage::template all<static_cast<T_Type>(T_v)>())>{};

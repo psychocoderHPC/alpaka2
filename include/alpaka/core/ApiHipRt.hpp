@@ -6,7 +6,7 @@
 
 #include <alpaka/core/config.hpp>
 
-#ifdef ALPAKA_LANG_HIP
+#if ALPAKA_LANG_HIP
 
 #    include <hip/hip_runtime_api.h>
 #    include <hip/hip_version.h>

@@ -216,7 +216,7 @@ namespace alpaka::onHost
                 T_KernelBundle const& kernelBundle) const
             {
                 auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
-#        if 0
+#        if 1
                 using IdxType = typename T_NumBlocks::type;
                 // @todo get this number from device properties
                 static auto const maxBlocks = device.m_properties.m_multiProcessorCount * 16u;

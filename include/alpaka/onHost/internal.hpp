@@ -10,7 +10,6 @@
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/Handle.hpp"
-#include "alpaka/onHost/concepts.hpp"
 
 namespace alpaka::onHost
 {
