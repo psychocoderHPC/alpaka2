@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/api/api.hpp"
 #include "alpaka/api/trait.hpp"
 #include "alpaka/math/math.hpp"
 

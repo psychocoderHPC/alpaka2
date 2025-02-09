@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "alpaka/Vec.hpp"
 #include "alpaka/core/Tag.hpp"
 #include "alpaka/core/util.hpp"
 

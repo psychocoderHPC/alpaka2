@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/math/math.hpp"
 
 #include <algorithm>

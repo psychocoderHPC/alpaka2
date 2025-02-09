@@ -3,11 +3,11 @@
  */
 
 #pragma once
+#include "alpaka/api/cpu/block/mem/SharedStorage.hpp"
+#include "alpaka/core/Vectorize.hpp"
 #include "alpaka/core/common.hpp"
-#if ALPAKA_OMP
 
-#    include "alpaka/api/cpu/block/mem/SharedStorage.hpp"
-#    include "alpaka/core/Vectorize.hpp"
+#if ALPAKA_OMP
 
 namespace alpaka::onAcc
 {

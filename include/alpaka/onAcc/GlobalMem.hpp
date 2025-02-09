@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/Vec.hpp"
+#include "alpaka/api/api.hpp"
 #include "alpaka/core/PP.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/mem/MdSpan.hpp"
