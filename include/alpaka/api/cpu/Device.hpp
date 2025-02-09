@@ -7,6 +7,7 @@
 #include "alpaka/api/cpu/Api.hpp"
 #include "alpaka/api/cpu/Queue.hpp"
 #include "alpaka/api/cpu/sysInfo.hpp"
+#include "alpaka/core/AlignedAlloc.hpp"
 #include "alpaka/core/Utility.hpp"
 #include "alpaka/internal.hpp"
 #include "alpaka/onHost.hpp"
@@ -131,8 +132,9 @@ namespace alpaka::onHost
                 constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
-                    auto* ptr = new T_Type[extents.x()];
-                    auto deleter = [](T_Type* ptr) { delete[](ptr); };
+                    auto* ptr
+                        = reinterpret_cast<T_Type*>(alpaka::core::alignedAlloc(256u, extents.x() * sizeof(T_Type)));
+                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(256u, ptr); };
                     auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
                     auto data = std::make_shared<
                         onHost::
@@ -146,8 +148,9 @@ namespace alpaka::onHost
                 }
                 else
                 {
-                    auto* ptr = new T_Type[extents.product()];
-                    auto deleter = [](T_Type* ptr) { delete[](ptr); };
+                    auto* ptr = reinterpret_cast<T_Type*>(
+                        alpaka::core::alignedAlloc(256u, extents.product() * sizeof(T_Type)));
+                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(256u, ptr); };
                     auto pitches = mem::calculatePitchesFromExtents<T_Type>(extents);
                     auto data = std::make_shared<
                         onHost::
@@ -190,25 +193,25 @@ namespace alpaka::onHost
             {
                 auto numThreadBlocks = dataBlocking.getThreadSpec().m_numBlocks;
 #if 0
-                using IdxType = typename T_NumBlocks::type;
-                // @todo get this number from device properties
-                static auto const maxBlocks = device.m_properties.m_multiProcessorCount;
+               using IdxType = typename T_NumBlocks::type;
+               // @todo get this number from device properties
+               static auto const maxBlocks = device.m_properties.m_multiProcessorCount;
 
 
-                while(numThreadBlocks.product() > maxBlocks)
-                {
-                    uint32_t maxIdx = 0u;
-                    auto maxValue = numThreadBlocks[0];
-                    for(auto i = 0u; i < T_NumBlocks::dim(); ++i)
-                        if(maxValue < numThreadBlocks[i])
-                        {
-                            maxIdx = i;
-                            maxValue = numThreadBlocks[i];
-                        }
-                    if(numThreadBlocks.product() > maxBlocks)
-                        numThreadBlocks[maxIdx] = core::divCeil(numThreadBlocks[maxIdx], IdxType{2u});
+               while(numThreadBlocks.product() > maxBlocks)
+               {
+                   uint32_t maxIdx = 0u;
+                   auto maxValue = numThreadBlocks[0];
+                   for(auto i = 0u; i < T_NumBlocks::dim(); ++i)
+                       if(maxValue < numThreadBlocks[i])
+                       {
+                           maxIdx = i;
+                           maxValue = numThreadBlocks[i];
+                       }
+                   if(numThreadBlocks.product() > maxBlocks)
+                       numThreadBlocks[maxIdx] = core::divCeil(numThreadBlocks[maxIdx], IdxType{2u});
 
-                }
+               }
 #endif
                 auto const numThreads = Vec<typename T_NumThreads::type, T_NumThreads::dim()>::all(1);
                 return ThreadSpec{numThreadBlocks, numThreads};
