@@ -129,12 +129,14 @@ namespace alpaka::onHost
         {
             auto operator()(cpu::Device<T_Platform>& device, T_Extents const& extents) const
             {
+                using IdxType =  typename T_Extents::type;
+                constexpr IdxType alignment = 256u;
                 constexpr auto dim = T_Extents::dim();
                 if constexpr(dim == 1u)
                 {
                     auto* ptr
-                        = reinterpret_cast<T_Type*>(alpaka::core::alignedAlloc(256u, extents.x() * sizeof(T_Type)));
-                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(256u, ptr); };
+                        = reinterpret_cast<T_Type*>(alpaka::core::alignedAlloc(alignment, extents.x() * sizeof(T_Type)));
+                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(alignment, ptr); };
                     auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
                     auto data = std::make_shared<
                         onHost::
@@ -148,10 +150,16 @@ namespace alpaka::onHost
                 }
                 else
                 {
+                    auto rowExtentInBytes = extents.x() * static_cast<IdxType>(sizeof(T_Type));
+                    auto rowPitchInBytes = core::divCeil(rowExtentInBytes,alignment) * alignment;
+                    auto pitches = mem::calculatePitches<T_Type>(extents,rowPitchInBytes);
+
+                    // product of pitches does contain the size for the first dimension
+                    size_t memSizeInByte = lpCast<size_t>(pitches).product() * extents[0];
                     auto* ptr = reinterpret_cast<T_Type*>(
-                        alpaka::core::alignedAlloc(256u, extents.product() * sizeof(T_Type)));
-                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(256u, ptr); };
-                    auto pitches = mem::calculatePitchesFromExtents<T_Type>(extents);
+                        alpaka::core::alignedAlloc(alignment, memSizeInByte ));
+                    auto deleter = [](T_Type* ptr) { alpaka::core::alignedFree(alignment, ptr); };
+
                     auto data = std::make_shared<
                         onHost::
                             Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPEOF(pitches)>>(
