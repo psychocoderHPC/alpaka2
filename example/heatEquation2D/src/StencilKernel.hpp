@@ -65,6 +65,7 @@ struct StencilKernel
 
             // go over only core cells
             // Vec{1, 1}; offset for halo above and to the left
+#if 0
             for(alpaka::concepts::Dim<2u> auto idx2D : onAcc::makeIdxMap(
                     acc,
                     onAcc::worker::threadsInBlock,
@@ -76,6 +77,23 @@ struct StencilKernel
                 uNextBuf[bufIdx] = sdata[idx2D] * (1.0 - 2.0 * rX - 2.0 * rY) + sdata[idx2D - xDir] * rX
                                    + sdata[idx2D + xDir] * rX + sdata[idx2D - yDir] * rY + sdata[idx2D + yDir] * rY;
             }
+#else
+            auto guardOffset = CVec<uint32_t, 1u, 1u>{};
+            onAcc::forEach<8, 8>(
+                acc,
+                onAcc::worker::threadsInBlock,
+                chunkSize,
+                [&](auto const&, auto& next, auto const& self, auto const& mx,auto const& px, auto const& my,auto const& py) constexpr {
+                    next = self.load() * (1.0 - 2.0 * rX - 2.0 * rY) + mx.load() * rX + px.load() * rX + my.load() * rY
+                           + py.load() * rY;
+                },
+                uNextBuf.shift(blockStartIdx + guardOffset),
+                sdata.shift(guardOffset),
+                sdata.shift(guardOffset - xDir),
+                sdata.shift(xDir + guardOffset),
+                sdata.shift(guardOffset - yDir),
+                sdata.shift(yDir + guardOffset));
+#endif
         }
     }
 };

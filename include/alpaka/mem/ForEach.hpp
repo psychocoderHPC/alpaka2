@@ -87,24 +87,29 @@ namespace alpaka::onAcc
     ALPAKA_FN_ACC constexpr void forEach(
         auto const& acc,
         auto const workGroup,
-        auto extents,
+        alpaka::concepts::Vector auto ex,
         auto&& func,
         auto&& data0,
         auto&&... dataN)
     {
-        using ValueType = ALPAKA_TYPEOF(data0[0u]);
+        auto extents = typename ALPAKA_TYPEOF(ex)::UniVec{ex};
+        using ValueType = ALPAKA_TYPEOF(data0[ALPAKA_TYPEOF(extents)::all(0)]);
 #if ALPAKA_SIMD_V2
-        constexpr uint32_t maxSimdWidth = 32;
+        constexpr uint32_t maxSimdWidth = 16;
 
         // 16 for CUDA
         constexpr uint32_t cachlineBytes =
 #    ifdef __cpp_lib_hardware_interference_size
+#        if (ALPAKA_LANG_HIP && defined(__HIP_DEVICE_COMPILE__) && __HIP_DEVICE_COMPILE__ == 1) || (ALPAKA_LANG_CUDA && __CUDA_ARCH__)
+            16;
+#        else
             std::hardware_constructive_interference_size;
+#        endif
 #    else
             64; // Fallback value, typically 64 bytes
 #    endif
 #    if __CUDA_ARCH__
-        static_assert(cachlineBytes == 16);
+        static_assert(cachlineBytes == 16 && maxSimdWidth == 16);
 #    endif
         constexpr uint32_t width
             = simdWidthContiguous<ValueType, maxSimdWidth, T_maxWidthInByte, T_maxConcurrencyInByte, cachlineBytes>();

@@ -94,6 +94,24 @@ namespace alpaka
             return m_extent;
         }
 
+        constexpr auto shift(concepts::Vector auto const& idx) const
+        {
+            auto me = *this;
+            me.m_ptr =&(*this)[idx];
+            me.m_extent = m_extent - idx;
+
+            return me;
+        }
+
+        constexpr auto shift(concepts::Vector auto const& idx)
+        {
+            auto me = *this;
+            me.m_ptr =&(*this)[idx];
+            me.m_extent = m_extent - idx;
+
+            return me;
+        }
+
     protected:
         /** get the pointer of the value relative to the origin pointer m_ptr
          *
@@ -362,6 +380,16 @@ namespace alpaka
             auto const createExtents = []<std::size_t... T_extent>(std::index_sequence<T_extent...>)
             { return CVec<index_type, std::extent_v<T_ArrayType, T_extent>...>{}; }();
             return createExtents(std::make_integer_sequence<uint32_t, dim()>{});
+        }
+
+        constexpr auto shift(concepts::Vector auto const& idx) const
+        {
+            return MdSpanArray{*reinterpret_cast<T_ArrayType*>(&(*this)[idx])};
+        }
+
+        constexpr auto shift(concepts::Vector auto const& idx)
+        {
+            return MdSpanArray{*reinterpret_cast<T_ArrayType*>(&(*this)[idx])};
         }
 
     protected:
