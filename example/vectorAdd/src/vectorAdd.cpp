@@ -33,12 +33,23 @@ public:
         using namespace alpaka;
         static_assert(ALPAKA_TYPEOF(numElements)::dim() == 1, "The VectorAddKernel expects 1-dimensional indices!");
 
+#if 0
         // The uniformElements range for loop takes care automatically of the blocks, threads and elements in the
         // kernel launch grid.
         for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{numElements}))
         {
             C[i] = A[i] + B[i];
         }
+#else
+        onAcc::forEach<256, 128>(
+            acc,
+            onAcc::worker::threadsInGrid,
+            numElements,
+            [&](auto const&, auto const& a, auto const& b, auto& c) constexpr { c = a.load() + b.load(); },
+            A,
+            B,
+            C);
+#endif
     }
 };
 
@@ -66,7 +77,7 @@ auto example(T_Cfg const& cfg) -> int
     onHost::Queue queue = devAcc.makeQueue();
 
     // Define the work division
-    IdxVec const extent(123456);
+    IdxVec const extent(123'456'000);
 
     // Define the buffer element type
     using Data = std::uint32_t;
@@ -108,7 +119,7 @@ auto example(T_Cfg const& cfg) -> int
         = KernelBundle{kernel, bufAccA.getMdSpan(), bufAccB.getMdSpan(), bufAccC.getMdSpan(), extent};
 
     Vec<size_t, 1u> chunkSize = 256u;
-    auto dataBlocking = onHost::FrameSpec{core::divCeil(extent, chunkSize), chunkSize};
+    auto dataBlocking = onHost::FrameSpec{core::divCeil(extent, (chunkSize * 64u)), chunkSize};
 
     // Enqueue the kernel execution task
     {
