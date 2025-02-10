@@ -87,7 +87,7 @@ namespace alpaka::onAcc
     ALPAKA_FN_ACC constexpr void forEach(
         auto const& acc,
         auto const workGroup,
-        auto numElements,
+        auto extents,
         auto&& func,
         auto&& data0,
         auto&&... dataN)
@@ -103,7 +103,7 @@ namespace alpaka::onAcc
 #    else
             64; // Fallback value, typically 64 bytes
 #    endif
-#    if __CUDA_ARCH__ && 0
+#    if __CUDA_ARCH__
         static_assert(cachlineBytes == 16);
 #    endif
         constexpr uint32_t width
@@ -123,7 +123,7 @@ namespace alpaka::onAcc
                 = std::max((maxNumRepetitions / numRepetitionsPerCacheline) * numRepetitionsPerCacheline, 1u);
 
             auto const numElemOneRound = width * numRepetitions * wSize;
-            auto const numSimdElem = numElements / numElemOneRound;
+            auto const numSimdElem = extents.x() / numElemOneRound;
             auto const remainderNumElemOffset = numSimdElem * numElemOneRound;
 
 #    if ALPAKA_SIMD_PRINT
@@ -135,7 +135,7 @@ namespace alpaka::onAcc
 #else
             constexpr auto const numRepetitions = std::max(T_maxConcurrencyInByte / width, 1u);
             auto const numElemOneRound = width * numRepetitions * wSize;
-            auto const numSimdElem = numElements / numElemOneRound;
+            auto const numSimdElem = extents.x() / numElemOneRound;
             auto const remainderNumElemOffset = numSimdElem * numElemOneRound;
 #    if ALPAKA_SIMD_PRINT
             std::cout << "typesize" << sizeof(ValueType) << "simd = " << width
@@ -144,16 +144,16 @@ namespace alpaka::onAcc
                       << std::endl;
 #    endif
 #endif
-            using IdxType = ALPAKA_TYPEOF(numElements);
-            auto simdIdxContainer = onAcc::makeIdxMap(
-                acc,
-                workGroup,
-                IdxRange{Vec{static_cast<IdxType>(0)}, Vec{remainderNumElemOffset}, Vec{static_cast<IdxType>(width)}});
+            auto domainSize = extents;
+            domainSize.x() = remainderNumElemOffset;
+            auto stride = ALPAKA_TYPEOF(extents)::all(1);
+            stride.x() = width;
+
+            using IdxType = ALPAKA_TYPEOF(extents);
+            auto simdIdxContainer = onAcc::makeIdxMap(acc, workGroup, IdxRange{IdxType::all(0), domainSize, stride});
 
             for(auto iter = simdIdxContainer.begin(); iter != simdIdxContainer.end();)
             {
-#if 1
-
                 execute<width>(
                     acc,
                     iter,
@@ -161,30 +161,17 @@ namespace alpaka::onAcc
                     ALPAKA_FORWARD(func),
                     ALPAKA_FORWARD(data0),
                     ALPAKA_FORWARD(dataN)...);
-
-#else
-                for(uint32_t i = 0; i < numRepetitions; ++i)
-                {
-                    // if(iter != simdIdxContainer.end())
-                    {
-                        auto const idx = *iter;
-                        func(acc, *reinterpretPtr<width>(data0[idx]), *reinterpretPtr<width>(dataN[idx])...);
-                        ++iter;
-                    }
-                }
-#endif
             }
 
-            for(auto idx : onAcc::makeIdxMap(
-                    acc,
-                    workGroup,
-                    IdxRange{Vec{static_cast<IdxType>(remainderNumElemOffset)}, Vec{numElements}}))
+            auto remainderDomainSize = extents;
+            remainderDomainSize.x() = remainderNumElemOffset;
+            for(auto idx : onAcc::makeIdxMap(acc, workGroup, IdxRange{remainderDomainSize, extents}))
             {
                 func(acc, *reinterpretPtr<1u>(data0[idx]), *reinterpretPtr<1u>(dataN[idx])...);
             }
         }
         else
-            for(auto idx : onAcc::makeIdxMap(acc, workGroup, IdxRange{Vec{numElements}}))
+            for(auto idx : onAcc::makeIdxMap(acc, workGroup, IdxRange{extents}))
             {
                 func(acc, *reinterpretPtr<1u>(data0[idx]), *reinterpretPtr<1u>(dataN[idx])...);
             }
