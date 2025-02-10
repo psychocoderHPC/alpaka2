@@ -79,7 +79,7 @@ struct StencilKernel
             }
 #else
             auto guardOffset = CVec<uint32_t, 1u, 1u>{};
-            onAcc::forEach<8, 8>(
+            onAcc::forEach<8, 64>(
                 acc,
                 onAcc::worker::threadsInBlock,
                 chunkSize,

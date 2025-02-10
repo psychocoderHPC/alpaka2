@@ -94,23 +94,33 @@ namespace alpaka
             return m_extent;
         }
 
+        /** shift the access by idx elements
+         *
+         * @attention The original extents will be lost and getExtents() is the number of valid elements until the end.
+         *
+         * @param idx number of elements to jump over
+         * @return shifted access with origin points to the idx'ed element of the original memory
+         *
+         * @{
+         */
         constexpr auto shift(concepts::Vector auto const& idx) const
         {
-            auto me = *this;
-            me.m_ptr =&(*this)[idx];
-            me.m_extent = m_extent - idx;
+            auto result = *this;
+            result.m_ptr = &(*this)[idx];
+            result.m_extent = m_extent - idx;
 
-            return me;
+            return result;
         }
 
         constexpr auto shift(concepts::Vector auto const& idx)
         {
-            auto me = *this;
-            me.m_ptr =&(*this)[idx];
-            me.m_extent = m_extent - idx;
+            auto result = *this;
+            result.m_ptr = &(*this)[idx];
+            result.m_extent = m_extent - idx;
 
-            return me;
+            return result;
         }
+        /** @} */
 
     protected:
         /** get the pointer of the value relative to the origin pointer m_ptr
@@ -242,6 +252,35 @@ namespace alpaka
             return m_extent;
         }
 
+        /** shift the access by idx elements
+         *
+         * @attention The original extents will be lost and getExtents() is the number of valid elements until the end.
+         *
+         * @param idx number of elements to jump over
+         * @return shifted access with origin points to the idx'ed element of the original memory
+         *
+         * @{
+         */
+        constexpr auto shift(concepts::Vector auto const& idx) const
+        {
+            auto result = *this;
+            result.m_ptr = &(*this)[idx];
+            result.m_extent = m_extent - idx;
+
+            return result;
+        }
+
+        constexpr auto shift(concepts::Vector auto const& idx)
+        {
+            auto result = *this;
+            result.m_ptr = &(*this)[idx];
+            result.m_extent = m_extent - idx;
+
+            return result;
+        }
+
+        /** @} */
+
     protected:
         element_type* m_ptr;
         T_Extents m_extent;
@@ -279,7 +318,24 @@ namespace alpaka
         using type = T[T_Extent{}[T_dim]];
     };
 
-    template<typename T_ArrayType>
+    namespace detail
+    {
+        template<typename T_ArrayType>
+        requires(std::is_array_v<T_ArrayType>)
+        inline constexpr auto getExtents()
+        {
+            constexpr uint32_t dim = std::rank_v<T_ArrayType>;
+            using index_type = uint32_t;
+
+            constexpr auto createExtents = []<size_t... extents>(std::index_sequence<extents...>) constexpr
+            { return alpaka::CVec<index_type, std::extent_v<T_ArrayType, static_cast<index_type>(extents)>...>{}; };
+
+            return createExtents(std::make_integer_sequence<size_t, dim>{});
+        }
+
+    } // namespace detail
+
+    template<typename T_ArrayType, typename T_Extents = decltype(detail::getExtents<T_ArrayType>())>
     struct MdSpanArray
     {
         static_assert(
@@ -287,9 +343,9 @@ namespace alpaka
             "MdSpanArray can only be used if std::is_array_v<T> is true for the given type.");
     };
 
-    template<typename T_ArrayType>
+    template<typename T_ArrayType, typename T_Extents>
     requires(std::is_array_v<T_ArrayType>)
-    struct MdSpanArray<T_ArrayType>
+    struct MdSpanArray<T_ArrayType, T_Extents>
     {
         using extentType = std::extent<T_ArrayType, std::rank_v<T_ArrayType>>;
         using element_type = std::remove_all_extents_t<T_ArrayType>;
@@ -335,7 +391,11 @@ namespace alpaka
          * @param extents number of elements
          * @param pitchBytes pitch in bytes per dimension
          */
-        constexpr MdSpanArray(T_ArrayType& staticSizedArray) : m_ptr(staticSizedArray)
+        constexpr MdSpanArray(T_ArrayType& staticSizedArray) : m_ptr(staticSizedArray), m_extents(T_Extents{})
+        {
+        }
+
+        constexpr MdSpanArray(T_ArrayType& staticSizedArray, T_Extents const & extents) : m_ptr(staticSizedArray), m_extents(extents)
         {
         }
 
@@ -377,22 +437,39 @@ namespace alpaka
 
         constexpr auto getExtents() const
         {
-            auto const createExtents = []<std::size_t... T_extent>(std::index_sequence<T_extent...>)
-            { return CVec<index_type, std::extent_v<T_ArrayType, T_extent>...>{}; }();
-            return createExtents(std::make_integer_sequence<uint32_t, dim()>{});
+            return m_extents;
         }
 
+        /** shift the access by idx elements
+         *
+         * @attention A shifted object is loosing the compile time extents information.
+         * The original extents will be lost and getExtents() is the number of valid elements until the end.
+         *
+         * @param idx number of elements to jump over
+         * @return shifted access with origin points to the idx'ed element of the original memory
+         *
+         * @{
+         */
         constexpr auto shift(concepts::Vector auto const& idx) const
         {
-            return MdSpanArray{*reinterpret_cast<T_ArrayType*>(&(*this)[idx])};
+            auto extents = m_extents - idx;
+            return MdSpanArray<T_ArrayType, ALPAKA_TYPEOF(extents)>{
+                *reinterpret_cast<T_ArrayType*>(&(*this)[idx]),
+                extents};
         }
 
         constexpr auto shift(concepts::Vector auto const& idx)
         {
-            return MdSpanArray{*reinterpret_cast<T_ArrayType*>(&(*this)[idx])};
+            auto extents = m_extents - idx;
+            return MdSpanArray<T_ArrayType, ALPAKA_TYPEOF(extents)>{
+                *reinterpret_cast<T_ArrayType*>(&(*this)[idx]),
+                extents};
         }
+
+        /** @} */
 
     protected:
         T_ArrayType& m_ptr;
+        T_Extents m_extents;
     };
 } // namespace alpaka
