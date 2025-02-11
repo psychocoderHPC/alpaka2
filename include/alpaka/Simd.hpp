@@ -20,11 +20,15 @@
 namespace alpaka
 {
 
-    template<typename T_Type, uint32_t T_dim, typename T_Storage = ArrayStorage<T_Type, T_dim>>
+    template<
+        size_t T_memAlignmentInByte,
+        typename T_Type,
+        uint32_t T_dim,
+        typename T_Storage = ArrayStorage<T_Type, T_dim>>
     struct Simd;
 
-    template<typename T_Type, uint32_t T_dim, typename T_Storage>
-    struct alignas(sizeof(T_Type) * T_dim) Simd : private T_Storage
+    template<size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    struct alignas(std::min(T_memAlignmentInByte, sizeof(T_Type) * T_dim)) Simd : private T_Storage
     {
         using Storage = T_Storage;
         using type = T_Type;
@@ -35,7 +39,7 @@ namespace alpaka
         using rank_type = uint32_t;
 
         // universal vec used as fallback if T_Storage is holding the state in the template signature
-        using UniSimd = Simd<T_Type, T_dim>;
+        using UniSimd = Simd<T_memAlignmentInByte, T_Type, T_dim>;
 
         /*Simds without elements are not allowed*/
         static_assert(T_dim > 0u);
@@ -75,8 +79,8 @@ namespace alpaka
          *   constexpr auto vec1 = Simd{ 1 };
          *   constexpr auto vec2 = Simd{ 1, 2 };
          *   //or explicit
-         *   constexpr auto vec3 = Simd<int, 3u>{ 1, 2, 3 };
-         *   constexpr auto vec4 = Simd<int, 3u>{ {1, 2, 3} };
+         *   constexpr auto vec3 = Simd<T_memAlignmentInByte,int, 3u>{ 1, 2, 3 };
+         *   constexpr auto vec4 = Simd<T_memAlignmentInByte,int, 3u>{ {1, 2, 3} };
          * @endcode
          */
         template<typename... T_Args, typename = std::enable_if_t<(std::is_convertible_v<T_Args, T_Type> && ...)>>
@@ -93,7 +97,7 @@ namespace alpaka
         /** constructor allows changing the storage policy
          */
         template<typename T_OtherStorage>
-        constexpr Simd(Simd<T_Type, T_dim, T_OtherStorage> const& other)
+        constexpr Simd(Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage> const& other)
             : Simd([&](uint32_t const i) constexpr { return other[i]; })
         {
         }
@@ -139,7 +143,11 @@ namespace alpaka
         requires(isConvertible_v<ALPAKA_TYPEOF(T_v), T_Type>)
         static constexpr auto all() requires requires { T_Storage::template all<T_v>(); }
         {
-            return Simd<T_Type, T_dim, ALPAKA_TYPEOF(T_Storage::template all<static_cast<T_Type>(T_v)>())>{};
+            return Simd<
+                T_memAlignmentInByte,
+                T_Type,
+                T_dim,
+                ALPAKA_TYPEOF(T_Storage::template all<static_cast<T_Type>(T_v)>())>{};
         }
 
         constexpr Simd toRT() const
@@ -170,7 +178,7 @@ namespace alpaka
  */
 #define ALPAKA_VECTOR_ASSIGN_OP(op)                                                                                   \
     template<typename T_OtherStorage>                                                                                 \
-    constexpr Simd& operator op(Simd<T_Type, T_dim, T_OtherStorage> const& rhs)                                       \
+    constexpr Simd& operator op(Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage> const& rhs)                 \
     {                                                                                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
         {                                                                                                             \
@@ -264,10 +272,10 @@ namespace alpaka
          * @return First T_numElements elements of the origin vector
          */
         template<uint32_t T_numElements>
-        constexpr Simd<T_Type, T_numElements> rshrink() const
+        constexpr Simd<T_memAlignmentInByte, T_Type, T_numElements> rshrink() const
         {
             static_assert(T_numElements <= T_dim);
-            Simd<T_Type, T_numElements> result{};
+            Simd<T_memAlignmentInByte, T_Type, T_numElements> result{};
             for(uint32_t i = 0u; i < T_numElements; i++)
                 result[T_numElements - 1u - i] = (*this)[T_dim - 1u - i];
 
@@ -278,10 +286,10 @@ namespace alpaka
          *
          * Removes the last value.
          */
-        constexpr Simd<T_Type, T_dim - 1u> eraseBack() const requires(T_dim > 1u)
+        constexpr Simd<T_memAlignmentInByte, T_Type, T_dim - 1u> eraseBack() const requires(T_dim > 1u)
         {
             constexpr auto reducedDim = T_dim - 1u;
-            Simd<T_Type, reducedDim> result{};
+            Simd<T_memAlignmentInByte, T_Type, reducedDim> result{};
             for(uint32_t i = 0u; i < reducedDim; i++)
                 result[i] = (*this)[i];
 
@@ -296,10 +304,10 @@ namespace alpaka
          *         Indexing will wrapp around when the begin of the origin vector is reached.
          */
         template<uint32_t T_numElements>
-        constexpr Simd<type, T_numElements> rshrink(std::integral auto const startIdx) const
+        constexpr Simd<T_memAlignmentInByte, type, T_numElements> rshrink(std::integral auto const startIdx) const
         {
             static_assert(T_numElements <= T_dim);
-            Simd<type, T_numElements> result;
+            Simd<T_memAlignmentInByte, type, T_numElements> result;
             for(uint32_t i = 0u; i < T_numElements; i++)
                 result[T_numElements - 1u - i] = (*this)[(T_dim + startIdx - i) % T_dim];
             return result;
@@ -313,9 +321,9 @@ namespace alpaka
          * @return vector with `T_dim - 1` elements
          */
         template<std::integral auto dimToRemove>
-        constexpr Simd<type, T_dim - 1u> remove() const requires(T_dim >= 2u)
+        constexpr Simd<T_memAlignmentInByte, type, T_dim - 1u> remove() const requires(T_dim >= 2u)
         {
-            Simd<type, T_dim - 1u> result{};
+            Simd<T_memAlignmentInByte, type, T_dim - 1u> result{};
             for(int i = 0u; i < static_cast<int>(T_dim - 1u); ++i)
             {
                 // skip component which must be deleted
@@ -358,7 +366,7 @@ namespace alpaka
          * @return true if all components in both vectors are equal, else false
          */
         template<typename T_OtherStorage>
-        constexpr bool operator==(Simd<T_Type, T_dim, T_OtherStorage> const& rhs) const
+        constexpr bool operator==(Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage> const& rhs) const
         {
             bool result = true;
             for(uint32_t i = 0u; i < T_dim; i++)
@@ -375,13 +383,13 @@ namespace alpaka
          * @return true if one component in both vectors are not equal, else false
          */
         template<typename T_OtherStorage>
-        constexpr bool operator!=(Simd<T_Type, T_dim, T_OtherStorage> const& rhs) const
+        constexpr bool operator!=(Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage> const& rhs) const
         {
             return !((*this) == rhs);
         }
 
         template<typename T_OtherStorage>
-        constexpr auto min(Simd<T_Type, T_dim, T_OtherStorage> const& rhs) const
+        constexpr auto min(Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage> const& rhs) const
         {
             Simd result{};
             for(uint32_t d = 0u; d < T_dim; d++)
@@ -425,28 +433,28 @@ namespace alpaka
         }
     };
 
-    template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
-    constexpr auto get(Simd<T_Type, T_dim, T_Storage> const& v)
+    template<std::size_t I, size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    constexpr auto get(Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage> const& v)
     {
         return v[I];
     }
 
-    template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
-    constexpr auto& get(Simd<T_Type, T_dim, T_Storage>& v)
+    template<std::size_t I, size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    constexpr auto& get(Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>& v)
     {
         return v[I];
     }
 
-    template<typename Type>
-    struct Simd<Type, 0>
+    template<size_t T_memAlignmentInByte, typename Type>
+    struct Simd<T_memAlignmentInByte, Type, 0>
     {
         using type = Type;
         static constexpr uint32_t T_dim = 0;
 
         template<typename OtherType>
-        constexpr operator Simd<OtherType, 0>() const
+        constexpr operator Simd<T_memAlignmentInByte, OtherType, 0>() const
         {
-            return Simd<OtherType, 0>();
+            return Simd<T_memAlignmentInByte, OtherType, 0>();
         }
 
         /**
@@ -478,13 +486,8 @@ namespace alpaka
         }
     };
 
-    // type deduction guide
-    template<typename T_1, typename... T_Args>
-    ALPAKA_FN_HOST_ACC Simd(T_1, T_Args...)
-        -> Simd<T_1, uint32_t(sizeof...(T_Args) + 1u), ArrayStorage<T_1, uint32_t(sizeof...(T_Args) + 1u)>>;
-
-    template<typename Type, uint32_t T_dim, typename T_Storage>
-    std::ostream& operator<<(std::ostream& s, Simd<Type, T_dim, T_Storage> const& vec)
+    template<size_t T_memAlignmentInByte, typename Type, uint32_t T_dim, typename T_Storage>
+    std::ostream& operator<<(std::ostream& s, Simd<T_memAlignmentInByte, Type, T_dim, T_Storage> const& vec)
     {
         return s << vec.toString();
     }
@@ -493,46 +496,53 @@ namespace alpaka
  * @{
  */
 #define ALPAKA_VECTOR_BINARY_OP(resultScalarType, op)                                                                 \
-    template<typename T_Type, uint32_t T_dim, typename T_Storage, typename T_OtherStorage>                            \
+    template<                                                                                                         \
+        size_t T_memAlignmentInByte,                                                                                  \
+        typename T_Type,                                                                                              \
+        uint32_t T_dim,                                                                                               \
+        typename T_Storage,                                                                                           \
+        typename T_OtherStorage>                                                                                      \
     constexpr auto operator op(                                                                                       \
-        const Simd<T_Type, T_dim, T_Storage>& lhs,                                                                    \
-        const Simd<T_Type, T_dim, T_OtherStorage>& rhs)                                                               \
+        const Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>& lhs,                                              \
+        const Simd<T_memAlignmentInByte, T_Type, T_dim, T_OtherStorage>& rhs)                                         \
     {                                                                                                                 \
         /* to avoid allocation side effects the result is always a vector                                             \
          * with default policies                                                                                      \
          */                                                                                                           \
-        Simd<resultScalarType, T_dim> result{};                                                                       \
+        Simd<T_memAlignmentInByte, resultScalarType, T_dim> result{};                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
             result[i] = lhs[i] op rhs[i];                                                                             \
         return result;                                                                                                \
     }                                                                                                                 \
                                                                                                                       \
     template<                                                                                                         \
+        size_t T_memAlignmentInByte,                                                                                  \
         typename T_Type,                                                                                              \
         concepts::IsLosslessConvertible<T_Type> T_ValueType,                                                          \
         uint32_t T_dim,                                                                                               \
         typename T_Storage>                                                                                           \
-    constexpr auto operator op(const Simd<T_Type, T_dim, T_Storage>& lhs, T_ValueType rhs)                            \
+    constexpr auto operator op(const Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>& lhs, T_ValueType rhs)      \
     {                                                                                                                 \
         /* to avoid allocation side effects the result is always a vector                                             \
          * with default policies                                                                                      \
          */                                                                                                           \
-        Simd<resultScalarType, T_dim> result{};                                                                       \
+        Simd<T_memAlignmentInByte, resultScalarType, T_dim> result{};                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
             result[i] = lhs[i] op rhs;                                                                                \
         return result;                                                                                                \
     }                                                                                                                 \
     template<                                                                                                         \
+        size_t T_memAlignmentInByte,                                                                                  \
         typename T_Type,                                                                                              \
         concepts::IsLosslessConvertible<T_Type> T_ValueType,                                                          \
         uint32_t T_dim,                                                                                               \
         typename T_Storage>                                                                                           \
-    constexpr auto operator op(T_ValueType lhs, const Simd<T_Type, T_dim, T_Storage>& rhs)                            \
+    constexpr auto operator op(T_ValueType lhs, const Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>& rhs)      \
     {                                                                                                                 \
         /* to avoid allocation side effects the result is always a vector                                             \
          * with default policies                                                                                      \
          */                                                                                                           \
-        Simd<resultScalarType, T_dim> result{};                                                                       \
+        Simd<T_memAlignmentInByte, resultScalarType, T_dim> result{};                                                 \
         for(uint32_t i = 0u; i < T_dim; i++)                                                                          \
             result[i] = lhs op rhs[i];                                                                                \
         return result;                                                                                                \
@@ -552,97 +562,13 @@ namespace alpaka
     /** @} */
 
 
-    /** Give the linear index of an N-dimensional index within an N-dimensional index space.
-     *
-     * @tparam T_IntegralType vector data type (must be an integral type)
-     * @tparam T_dim dimension of the vector, should be >= 2
-     * @param dim N-dimensional dim of the index space (N can be one dimension less compared to idx)
-     * @param idx N-dimensional index within the index space
-     *            @attention behaviour is undefined for negative index
-     *            @attention if idx is outside of dim the result will be outside of the the index domain too
-     * @return linear index within the index domain
-     *
-     * @{
-     */
-    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage, uint32_t T_dim>
-    constexpr T_IntegralType linearize(
-        Simd<T_IntegralType, T_dim - 1u, T_Storage> const& dim,
-        Simd<T_IntegralType, T_dim, T_OtherStorage> const& idx) requires(T_dim >= 2u)
-    {
-        T_IntegralType linearIdx{idx[0]};
-        for(uint32_t d = 1u; d < T_dim; ++d)
-            linearIdx = linearIdx * dim[d - 1u] + idx[d];
-
-        return linearIdx;
-    }
-
-    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage, uint32_t T_dim>
-    constexpr T_IntegralType linearize(
-        Simd<T_IntegralType, T_dim, T_Storage> const& dim,
-        Simd<T_IntegralType, T_dim, T_OtherStorage> const& idx)
-    {
-        return linearize(dim.template rshrink<T_dim - 1u>(), idx);
-    }
-
-    template<std::integral T_IntegralType, typename T_Storage, typename T_OtherStorage>
-    ALPAKA_FN_HOST_ACC T_IntegralType
-    linearize(Simd<T_IntegralType, 1u, T_Storage> const&, Simd<T_IntegralType, 1u, T_OtherStorage> const& idx)
-    {
-        return idx.x();
-    }
-
-    /** @} */
-
-    /** Maps a linear index to an N-dimensional index
-     *
-     * @tparam T_IntegralType vector data type (must be an integral type)
-     * @param dim N-dimensional index space
-     * @param linearIdx Linear index within dim.
-     *        @attention If linearIdx is an index outside of dim the result will be outside of the index domain
-     * too.
-     * @return N-dimensional index
-     *
-     * @{
-     */
-    template<std::integral T_IntegralType, typename T_Storage, uint32_t T_dim>
-    constexpr Simd<T_IntegralType, T_dim> mapToND(
-        Simd<T_IntegralType, T_dim, T_Storage> const& dim,
-        T_IntegralType linearIdx) requires(T_dim >= 2u)
-    {
-        constexpr uint32_t reducedDim = T_dim - 1u;
-        Simd<T_IntegralType, reducedDim> pitchExtents;
-        pitchExtents.back() = dim.back();
-        for(uint32_t d = 1u; d < T_dim - 1u; ++d)
-            pitchExtents[reducedDim - 1u - d] = dim[T_dim - 1u - d] * pitchExtents[reducedDim - d];
-
-        Simd<T_IntegralType, T_dim> result;
-        for(uint32_t d = 0u; d < T_dim - 1u; ++d)
-        {
-            result[d] = linearIdx / pitchExtents[d];
-            linearIdx -= pitchExtents[d] * result[d];
-        }
-        result[T_dim - 1u] = linearIdx;
-        return result;
-    }
-
-    template<std::integral T_IntegralType, typename T_Storage>
-    ALPAKA_FN_HOST_ACC Simd<T_IntegralType, 1u> mapToND(
-        Simd<T_IntegralType, 1u, T_Storage> const& dim,
-        T_IntegralType linearIdx)
-    {
-        return {linearIdx};
-    }
-
-    /** @} */
-
-
     template<typename T>
     struct IsSimd : std::false_type
     {
     };
 
-    template<typename T_Type, uint32_t T_dim, typename T_Storage>
-    struct IsSimd<Simd<T_Type, T_dim, T_Storage>> : std::true_type
+    template<size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    struct IsSimd<Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>> : std::true_type
     {
     };
 
@@ -667,46 +593,22 @@ namespace alpaka
 
     namespace trait
     {
-        template<typename T_Type, uint32_t T_dim, typename T_Storage>
-        struct GetDim<alpaka::Simd<T_Type, T_dim, T_Storage>>
+        template<size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+        struct GetDim<alpaka::Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>>
         {
             static constexpr uint32_t value = T_dim;
         };
-
-        template<typename T>
-        struct GetSimd;
-
-        template<std::integral T>
-        struct GetSimd<T>
-        {
-            using type = Simd<T, 1u>;
-        };
-
-        template<typename T_Type, uint32_t T_dim, typename T_Storage>
-        struct GetSimd<alpaka::Simd<T_Type, T_dim, T_Storage>>
-        {
-            using type = alpaka::Simd<T_Type, T_dim, T_Storage>;
-        };
-
-        template<typename T>
-        using getSimd_t = typename GetSimd<T>::type;
     } // namespace trait
-
-    template<typename T>
-    consteval auto getSimd(T const& any)
-    {
-        return trait::getSimd_t<T>{any};
-    }
 
     namespace internal
     {
-        template<typename T_To, typename T_Type, uint32_t T_dim, typename T_Storage>
-        struct PCast::Op<T_To, alpaka::Simd<T_Type, T_dim, T_Storage>>
+        template<size_t T_memAlignmentInByte, typename T_To, typename T_Type, uint32_t T_dim, typename T_Storage>
+        struct PCast::Op<T_To, alpaka::Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>>
         {
             constexpr decltype(auto) operator()(auto&& input) const
                 requires std::convertible_to<T_Type, T_To> && (!std::same_as<T_To, T_Type>)
             {
-                return typename alpaka::Simd<T_To, T_dim, T_Storage>::UniSimd(
+                return typename alpaka::Simd<T_memAlignmentInByte, T_To, T_dim, T_Storage>::UniSimd(
                     [&](uint32_t idx) constexpr { return static_cast<T_To>(input[idx]); });
             }
 
@@ -720,14 +622,14 @@ namespace alpaka
 
 namespace std
 {
-    template<typename T_Type, uint32_t T_dim, typename T_Storage>
-    struct tuple_size<alpaka::Simd<T_Type, T_dim, T_Storage>>
+    template<size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    struct tuple_size<alpaka::Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>>
     {
         static constexpr std::size_t value = T_dim;
     };
 
-    template<std::size_t I, typename T_Type, uint32_t T_dim, typename T_Storage>
-    struct tuple_element<I, alpaka::Simd<T_Type, T_dim, T_Storage>>
+    template<std::size_t I, size_t T_memAlignmentInByte, typename T_Type, uint32_t T_dim, typename T_Storage>
+    struct tuple_element<I, alpaka::Simd<T_memAlignmentInByte, T_Type, T_dim, T_Storage>>
     {
         using type = T_Type;
     };

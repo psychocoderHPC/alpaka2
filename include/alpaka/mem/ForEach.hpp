@@ -6,6 +6,7 @@
 
 #include "alpaka/Simd.hpp"
 #include "alpaka/Vec.hpp"
+#include "alpaka/api/trait.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onAcc.hpp"
 
@@ -22,36 +23,28 @@ namespace alpaka::onAcc
         t[0];
     };
 
-    template<uint32_t T_width>
+    template<uint32_t T_memAlignmentInByte, uint32_t T_width>
     inline constexpr auto* reinterpretPtr(auto&& data)
     {
         using DataTypeType = std::remove_reference_t<decltype(data)>;
         using DstType = std::conditional_t<
             std::is_const_v<DataTypeType>,
-            Simd<ALPAKA_TYPEOF(data), T_width> const*,
-            Simd<ALPAKA_TYPEOF(data), T_width>*>;
+            Simd<T_memAlignmentInByte, ALPAKA_TYPEOF(data), T_width> const*,
+            Simd<T_memAlignmentInByte, ALPAKA_TYPEOF(data), T_width>*>;
 
         return reinterpret_cast<DstType>(&data);
     }
 
-    template<uint32_t T_maxWidthInByte, typename T_Type>
-    inline constexpr auto simdWidth()
-    {
-        constexpr uint32_t maxNumElements = T_maxWidthInByte / sizeof(T_Type);
-        constexpr uint32_t width = std::max(maxNumElements, 1u);
-        return width;
-    }
-
-    template<uint32_t T_width>
+    template<uint32_t T_memAlignmentInByte, uint32_t T_width>
     constexpr auto executeDo(auto const& acc, auto& iter, auto&& func, auto&&... data)
     {
         auto const idx = *iter;
-        func(acc, *reinterpretPtr<T_width>(data[idx])...);
+        func(acc, *reinterpretPtr<T_memAlignmentInByte, T_width>(data[idx])...);
         ++iter;
         return true;
     }
 
-    template<uint32_t T_width, uint32_t... T_repeat>
+    template<uint32_t T_memAlignmentInByte, uint32_t T_width, uint32_t... T_repeat>
     constexpr void execute(
         auto const& acc,
         auto& iter,
@@ -59,19 +52,18 @@ namespace alpaka::onAcc
         auto&& func,
         auto&&... data)
     {
-        ((T_repeat + 1 != 0u && executeDo<T_width>(acc, iter, ALPAKA_FORWARD(func), ALPAKA_FORWARD(data)...)), ...);
+        ((T_repeat + 1 != 0u
+          && executeDo<T_memAlignmentInByte, T_width>(acc, iter, ALPAKA_FORWARD(func), ALPAKA_FORWARD(data)...)),
+         ...);
     }
 
     template<
         typename T_Type,
-        uint32_t T_MaxSimdWitdthInByte, // 16 for CUDA
-        uint32_t T_memAlignInByte, // 128 for CUDA
         uint32_t T_maxConcurrencyInByte,
         uint32_t T_cacheInByte> // 16 for CUDA
-    inline constexpr auto simdWidthContiguous()
+    inline constexpr auto calcSimdWidth()
     {
-        constexpr uint32_t maxSimdBytes
-            = std::min(std::min(T_MaxSimdWitdthInByte, T_memAlignInByte), T_maxConcurrencyInByte);
+        constexpr uint32_t maxSimdBytes = std::min(T_cacheInByte, T_maxConcurrencyInByte);
         // T_maxConcurrencyInByte);
 
         constexpr uint32_t numElemPerSimd = maxSimdBytes / sizeof(T_Type);
@@ -80,10 +72,8 @@ namespace alpaka::onAcc
         return simdWidth;
     }
 
-#define ALPAKA_SIMD_V2 1
-
     // forEach function interface
-    template<uint32_t T_maxWidthInByte, uint32_t T_maxConcurrencyInByte>
+    template<uint32_t T_maxConcurrencyInByte, size_t T_memAlignmentInByte = 0u>
     ALPAKA_FN_ACC constexpr void forEach(
         auto const& acc,
         auto const workGroup,
@@ -94,33 +84,25 @@ namespace alpaka::onAcc
     {
         auto extents = typename ALPAKA_TYPEOF(ex)::UniVec{ex};
         using ValueType = ALPAKA_TYPEOF(data0[ALPAKA_TYPEOF(extents)::all(0)]);
-#if ALPAKA_SIMD_V2
-        constexpr uint32_t maxSimdWidth = 16;
 
-        // 16 for CUDA
-        constexpr uint32_t cachlineBytes =
-#    ifdef __cpp_lib_hardware_interference_size
-#        if (ALPAKA_LANG_HIP && defined(__HIP_DEVICE_COMPILE__) && __HIP_DEVICE_COMPILE__ == 1) || (ALPAKA_LANG_CUDA && __CUDA_ARCH__)
-            16;
-#        else
-            std::hardware_constructive_interference_size;
-#        endif
-#    else
-            64; // Fallback value, typically 64 bytes
-#    endif
-#    if __CUDA_ARCH__
-        static_assert(cachlineBytes == 16 && maxSimdWidth == 16);
-#    endif
+        // @attention ALPAKA_TYPEOF() must be used because HIP 6.0 compile error that data0.getAlignment() is not a constant expression
+        constexpr uint32_t minAlignmentFromDataInByte
+            = static_cast<uint32_t>(std::min({ALPAKA_TYPEOF(data0)::getAlignment().x(), ALPAKA_TYPEOF(dataN)::getAlignment().x()...}));
+
+        constexpr uint32_t dataAlignmentInByte
+            = T_memAlignmentInByte != 0u ? static_cast<uint32_t>(alignof(ValueType)) : minAlignmentFromDataInByte;
+
+        /** @todo `getApi` must be moved to alpaka namespace */
+        constexpr uint32_t maxArchSimdWidth = getArchSimdWidth<ValueType>(thisApi());
+        constexpr uint32_t cachlineBytes = getCachelineSize(thisApi());
+
         constexpr uint32_t width
-            = simdWidthContiguous<ValueType, maxSimdWidth, T_maxWidthInByte, T_maxConcurrencyInByte, cachlineBytes>();
-        // = simdWidth<maxSimdWidth*sizeof(ValueType),ValueType>();
-#else
-        constexpr auto width = simdWidth<T_maxWidthInByte, ValueType>();
-#endif
+            = std::min(maxArchSimdWidth, calcSimdWidth<ValueType, T_maxConcurrencyInByte, cachlineBytes>());
+
         if constexpr(width != 1u)
         {
             auto const wSize = workGroup.size(acc).x();
-#if ALPAKA_SIMD_V2
+
             constexpr uint32_t simdWidthInByte = width * sizeof(ValueType);
             constexpr uint32_t maxNumRepetitions = std::max(T_maxConcurrencyInByte / simdWidthInByte, 1u);
             constexpr uint32_t numRepetitionsPerCacheline = std::max(cachlineBytes / simdWidthInByte, 1u);
@@ -131,24 +113,14 @@ namespace alpaka::onAcc
             auto const numSimdElem = extents.x() / numElemOneRound;
             auto const remainderNumElemOffset = numSimdElem * numElemOneRound;
 
-#    if ALPAKA_SIMD_PRINT
+#if ALPAKA_SIMD_PRINT
             std::cout << "typesize" << sizeof(ValueType) << "simd = " << width
                       << " numRepetitions = " << numRepetitions << " numElemOneRound = " << numElemOneRound
                       << " numSimdElem = " << numSimdElem << " remainderNumElemOffset = " << remainderNumElemOffset
-                      << " maxNumRepetitions = " << maxNumRepetitions << std::endl;
-#    endif
-#else
-            constexpr auto const numRepetitions = std::max(T_maxConcurrencyInByte / width, 1u);
-            auto const numElemOneRound = width * numRepetitions * wSize;
-            auto const numSimdElem = extents.x() / numElemOneRound;
-            auto const remainderNumElemOffset = numSimdElem * numElemOneRound;
-#    if ALPAKA_SIMD_PRINT
-            std::cout << "typesize" << sizeof(ValueType) << "simd = " << width
-                      << " numRepetitions = " << numRepetitions << " numElemOneRound = " << numElemOneRound
-                      << " numSimdElem = " << numSimdElem << " remainderNumElemOffset = " << remainderNumElemOffset
+                      << " maxNumRepetitions = " << maxNumRepetitions << "align =" << minAlignmentFromData
                       << std::endl;
-#    endif
 #endif
+
             auto domainSize = extents;
             domainSize.x() = remainderNumElemOffset;
             auto stride = ALPAKA_TYPEOF(extents)::all(1);
@@ -159,7 +131,7 @@ namespace alpaka::onAcc
 
             for(auto iter = simdIdxContainer.begin(); iter != simdIdxContainer.end();)
             {
-                execute<width>(
+                execute<dataAlignmentInByte, width>(
                     acc,
                     iter,
                     std::make_integer_sequence<uint32_t, numRepetitions>{},
@@ -172,13 +144,19 @@ namespace alpaka::onAcc
             remainderDomainSize.x() = remainderNumElemOffset;
             for(auto idx : onAcc::makeIdxMap(acc, workGroup, IdxRange{remainderDomainSize, extents}))
             {
-                func(acc, *reinterpretPtr<1u>(data0[idx]), *reinterpretPtr<1u>(dataN[idx])...);
+                func(
+                    acc,
+                    *reinterpretPtr<dataAlignmentInByte, 1u>(data0[idx]),
+                    *reinterpretPtr<dataAlignmentInByte, 1u>(dataN[idx])...);
             }
         }
         else
             for(auto idx : onAcc::makeIdxMap(acc, workGroup, IdxRange{extents}))
             {
-                func(acc, *reinterpretPtr<1u>(data0[idx]), *reinterpretPtr<1u>(dataN[idx])...);
+                func(
+                    acc,
+                    *reinterpretPtr<dataAlignmentInByte, 1u>(data0[idx]),
+                    *reinterpretPtr<dataAlignmentInByte, 1u>(dataN[idx])...);
             }
     }
 

@@ -79,11 +79,19 @@ struct StencilKernel
             }
 #else
             auto guardOffset = CVec<uint32_t, 1u, 1u>{};
-            onAcc::forEach<8, 64>(
+
+            onAcc::forEach<64>(
                 acc,
                 onAcc::worker::threadsInBlock,
                 chunkSize,
-                [&](auto const&, auto& next, auto const& self, auto const& mx,auto const& px, auto const& my,auto const& py) constexpr {
+                [&](auto const&,
+                    auto& next,
+                    auto const& self,
+                    auto const& mx,
+                    auto const& px,
+                    auto const& my,
+                    auto const& py) constexpr
+                {
                     next = self.load() * (1.0 - 2.0 * rX - 2.0 * rY) + mx.load() * rX + px.load() * rX + my.load() * rY
                            + py.load() * rY;
                 },

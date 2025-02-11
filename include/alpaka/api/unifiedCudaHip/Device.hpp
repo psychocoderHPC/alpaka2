@@ -171,13 +171,14 @@ namespace alpaka::onHost
 
                 auto deleter = [](T_Type* ptr)
                 { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::free(ptr)); };
-                auto data = std::make_shared<
-                    onHost::Data<Handle<std::decay_t<decltype(device)>>, T_Type, T_Extents, ALPAKA_TYPEOF(pitches)>>(
-                    device.getSharedPtr(),
-                    ptr,
-                    extents,
-                    pitches,
-                    deleter);
+
+                constexpr Idx alignment = 128u;
+                auto data = std::make_shared<onHost::Data<
+                    Handle<std::decay_t<decltype(device)>>,
+                    T_Type,
+                    T_Extents,
+                    ALPAKA_TYPEOF(pitches),
+                    CVec<size_t, alignment>>>(device.getSharedPtr(), ptr, extents, pitches, deleter);
                 return onHost::View<std::decay_t<decltype(data)>, T_Extents>(data);
             }
         };

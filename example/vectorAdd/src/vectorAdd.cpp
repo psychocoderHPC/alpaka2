@@ -41,7 +41,7 @@ public:
             C[i] = A[i] + B[i];
         }
 #else
-        onAcc::forEach<256, 128>(
+        onAcc::forEach<64>(
             acc,
             onAcc::worker::threadsInGrid,
             numElements,

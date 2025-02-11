@@ -103,7 +103,7 @@ struct CopyKernel
     {
         // for(auto [index] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
         //     c[index] = a[index];
-        onAcc::forEach<128, 64>(
+        onAcc::forEach<64>(
             acc,
             onAcc::worker::threadsInGrid,
             alpaka::Vec{arraySize},
@@ -131,7 +131,7 @@ struct MultKernel
         for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
             b[i] = scalar * c[i];
 #else
-        onAcc::forEach<128, 64>(
+        onAcc::forEach<64>(
             acc,
             onAcc::worker::threadsInGrid,
             alpaka::Vec{arraySize},
@@ -159,7 +159,7 @@ struct AddKernel
         for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
             c[i] = a[i] + b[i];
 #else
-        onAcc::forEach<128, 64>(
+        onAcc::forEach<64>(
             acc,
             onAcc::worker::threadsInGrid,
             alpaka::Vec{arraySize},
@@ -190,7 +190,7 @@ struct TriadKernel
         for(auto [i] : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{arraySize}))
             a[i] = b[i] + scalar * c[i];
 #else
-        onAcc::forEach<128, 64>(
+        onAcc::forEach<64>(
             acc,
             onAcc::worker::threadsInGrid,
             alpaka::Vec{arraySize},
@@ -265,7 +265,7 @@ struct DotKernel
                 }
 #    else
 
-                onAcc::forEach<128, 64>(
+                onAcc::forEach<64>(
                     acc,
                     onAcc::WorkerGroup{frameIdx + elemIdxInFrame, frameDataExtent},
                     alpaka::Vec{arraySize},
