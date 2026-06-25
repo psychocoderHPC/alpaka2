@@ -273,6 +273,7 @@ namespace alpaka::onHost
             friend struct internal::Memset;
             friend struct alpaka::internal::GetApi;
             friend struct internal::AllocDeferred;
+            friend struct internal::IgnoreVisibility;
         };
     } // namespace cpu
 
