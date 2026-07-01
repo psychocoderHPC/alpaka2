@@ -324,7 +324,7 @@ namespace alpaka::onHost
                 auto newQueue = std::make_shared<cpu::OmpCollectiveQueue<cpu::Device<T_Platform>>>(
                     std::move(queueHandle),
                     device.queueWaitFns.size(),
-                    device.m_numaIdx);
+                    device.m_cpuGroupIdx);
 
                 std::weak_ptr<cpu::OmpCollectiveQueue<cpu::Device<T_Platform>>> weakPtrToQueue = newQueue;
                 device.queueWaitFns.emplace_back(

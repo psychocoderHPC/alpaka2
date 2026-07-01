@@ -173,7 +173,7 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(alpaka::onHost::logger::event);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{queuesGuard};
-                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), queueWaitFns.size());
+                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), events.size());
 
                 events.emplace_back(newEvent);
                 return newEvent;
