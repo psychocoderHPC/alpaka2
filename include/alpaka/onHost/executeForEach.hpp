@@ -1,8 +1,9 @@
-/* Copyright 2023 Jeffrey Kelling, Bernhard Manfred Gruber, Jan Stephan, Aurora Perego, Andrea Bocci
+/* Copyright 2023 Jeffrey Kelling, Bernhard Manfred Gruber, Jan Stephan, Aurora Perego, Andrea Bocci, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #include "alpaka/api/api.hpp"
+#include "alpaka/interface.hpp"
 #include "alpaka/onHost/DeviceSelector.hpp"
 
 #include <functional>
@@ -56,9 +57,10 @@ namespace alpaka::onHost
      * @return The disjunction of all returned error codes. If false, the result is `EXIT_SUCCESS`;
      *          otherwise, at least a failure occurred.
      */
-    inline int executeForEachIfHasDevice(auto&& callable, auto const& tupleOfBackends)
+    template<alpaka::concepts::Backend... T_Backends>
+    inline int executeForEachIfHasDevice(auto&& callable, std::tuple<T_Backends...> const& tupleOfBackends)
     {
-        auto exe = [=](auto const& backend)
+        auto exe = [=](alpaka::concepts::Backend auto const& backend)
         {
             auto devSelector = onHost::makeDeviceSelector(backend[object::deviceSpec]);
             if(devSelector.isAvailable())

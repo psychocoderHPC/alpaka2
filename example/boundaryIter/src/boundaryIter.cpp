@@ -1,4 +1,4 @@
-/* Copyright 2025 Anton Reinhard
+/* Copyright 2025 Anton Reinhard, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -172,6 +172,7 @@ auto main() -> int
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& backend) { return example(backend[object::deviceSpec], backend[object::exec]); },
+        [=](alpaka::concepts::Backend auto const& backend)
+        { return example(backend[object::deviceSpec], backend[object::exec]); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

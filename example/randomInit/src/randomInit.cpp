@@ -392,9 +392,9 @@ auto main(int argc, char* argv[]) -> int
     using namespace alpaka;
     // Execute the example once for each enabled API and executor.
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& tag)
+        [=](alpaka::concepts::Backend auto const& backend)
         {
-            bool retVal = exampleUniformDist(tag, numElements) || exampleNormalDist(tag, numElementsNormal);
+            bool retVal = exampleUniformDist(backend, numElements) || exampleNormalDist(tag, numElementsNormal);
             return retVal == false ? EXIT_SUCCESS : EXIT_FAILURE;
         },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));

@@ -1,4 +1,4 @@
-/* Copyright 2024 Andrea Bocci, René Widera
+/* Copyright 2024 Andrea Bocci, René Widera, Tim Hanel
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -336,7 +336,7 @@ auto main() -> int
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& backend)
+        [=](concepts::Backend auto const& backend)
         { return example(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

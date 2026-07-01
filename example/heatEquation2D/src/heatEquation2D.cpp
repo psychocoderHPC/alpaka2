@@ -1,5 +1,5 @@
 /* Copyright 2020 Benjamin Worpitz, Matthias Werner, Jakob Krude, Sergei Bastrakov, Bernhard Manfred Gruber,
- * Tapish Narwal, Anton Reinhard
+ * Tapish Narwal, Anton Reinhard, Tim Hanel
  * SPDX-License-Identifier: ISC
  */
 
@@ -343,7 +343,7 @@ auto main(int argc, char* argv[]) -> int
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& backend)
+        [=](alpaka::concepts::Backend auto const& backend)
         {
             return alpaka::example::heatEquation::example(
                 backend[object::deviceSpec],

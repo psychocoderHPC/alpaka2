@@ -1,7 +1,7 @@
 Terms & Structure
 =================
 
-.. sectionauthor:: Simeon Ehrig, René Widera
+.. sectionauthor:: Simeon Ehrig, René Widera, Tim Hanel
 
 
 Host and Accelerator
@@ -220,6 +220,13 @@ Kernel
 
 Executor
 --------
+
+.. _backend:
+
+Backend
+-------
+
+A ``Backend`` is a configuration dictionary (``alpaka::Dict``), typically returned by ``onHost::allBackends(...)``, that provides a ``DeviceSpec`` and an ``Executor``.
 
 .. _thread_spec:
 

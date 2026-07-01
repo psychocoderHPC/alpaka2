@@ -1,4 +1,4 @@
-/* Copyright 2025 Mehmet Yusufoglu, René Widera
+/* Copyright 2025 Mehmet Yusufoglu, René Widera, Tim Hanel
  * SPDX-License-Identifier: ISC
  */
 
@@ -351,6 +351,7 @@ auto main(int argc, char* argv[]) -> int
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& tag) { return example(tag, numElements, numberOfRuns, enableStdForEach); },
+        [=](alpaka::concepts::Backend auto const& backend)
+        { return example(backend, numElements, numberOfRuns, enableStdForEach); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

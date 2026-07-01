@@ -1,4 +1,4 @@
-/* Copyright 2025 Anton Reinhard
+/* Copyright 2025 Anton Reinhard, Tim Hanel
  * SPDX-License-Identifier: ISC
  *
  * This file contains the main setup and surrounding functions for the scan example.
@@ -199,7 +199,7 @@ auto main(int argc, char* argv[]) -> int
 
     // Execute the example once for each enabled API and executor.
     auto result = onHost::executeForEachIfHasDevice(
-        [=](auto const& backend)
+        [=](alpaka::concepts::Backend auto const& backend)
         {
             return alpaka::example::scan::example(
                 backend[alpaka::object::deviceSpec],

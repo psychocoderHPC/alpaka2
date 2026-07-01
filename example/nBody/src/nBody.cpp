@@ -1,4 +1,4 @@
-/* Copyright 2025 Anton Reinhard
+/* Copyright 2025 Anton Reinhard, Tim Hanel
  * SPDX-License-Identifier: ISC
  */
 
@@ -379,14 +379,14 @@ auto main(int argc, char* argv[]) -> int
     if(benchmarkMode)
     {
         return onHost::executeForEachIfHasDevice(
-            [=](auto const& backend)
+            [=](alpaka::concepts::Backend auto const& backend)
             { return alpaka::example::nBody::benchmark(backend[object::deviceSpec], backend[object::exec], dt); },
             onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
     }
     else
     {
         return onHost::executeForEachIfHasDevice(
-            [=](auto const& backend)
+            [=](alpaka::concepts::Backend auto const& backend)
             {
                 return alpaka::example::nBody::example(
                     backend[object::deviceSpec],

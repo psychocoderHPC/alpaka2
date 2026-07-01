@@ -1,4 +1,4 @@
-/* Copyright 2024 Andrea Bocci, René Widera
+/* Copyright 2024 Andrea Bocci, René Widera, Tim Hanel
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -265,7 +265,7 @@ auto main() -> int
 
     // Execute the example once for each enabled API, device kind, and executor.
     return onHost::executeForEachIfHasDevice(
-        [=](auto const& backend)
+        [=](alpaka::concepts::Backend auto const& backend)
         { return example(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

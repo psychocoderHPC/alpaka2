@@ -1,24 +1,27 @@
-/* Copyright 2025 Anton Reinhard
+/* Copyright 2025 Anton Reinhard, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #include <alpaka/alpaka.hpp>
 
+#include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstddef>
+#include <type_traits>
 
 using namespace alpaka;
 
 using Data = std::size_t;
+using TestBackends = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
 
 template<typename TIdx>
 void testVector()
 {
-    STATIC_CHECK(concepts::Vector<alpaka::Vec<TIdx, TIdx{0}>>); // only disallowed at runtime
-    STATIC_CHECK(concepts::Vector<alpaka::Vec<Data, TIdx{1}>>);
-    STATIC_CHECK(concepts::Vector<alpaka::Vec<Data, TIdx{2}>>);
-    STATIC_CHECK(concepts::Vector<alpaka::Vec<Data, TIdx{3}>>);
+    STATIC_CHECK(concepts::Vector<Vec<TIdx, TIdx{0}>>); // only disallowed at runtime
+    STATIC_CHECK(concepts::Vector<Vec<Data, TIdx{1}>>);
+    STATIC_CHECK(concepts::Vector<Vec<Data, TIdx{2}>>);
+    STATIC_CHECK(concepts::Vector<Vec<Data, TIdx{3}>>);
     STATIC_CHECK_FALSE(concepts::CVector<alpaka::Vec<TIdx, TIdx{0}>>); // only disallowed at runtime
     STATIC_CHECK_FALSE(concepts::CVector<alpaka::Vec<Data, TIdx{1}>>);
     STATIC_CHECK_FALSE(concepts::CVector<alpaka::Vec<Data, TIdx{2}>>);
@@ -81,4 +84,14 @@ TEST_CASE("thread spec concepts", "[concepts][threadspec]")
 
     STATIC_CHECK_FALSE(onHost::concepts::ThreadSpec<ThreadSpec<TestVec2, TestVec2>, int>);
     STATIC_CHECK_FALSE(onHost::concepts::ThreadSpec<ThreadSpec<TestVec1, TestVec1>, size_t, 2>);
+}
+
+TEMPLATE_LIST_TEST_CASE("backend concept", "[concepts][backend]", TestBackends)
+{
+    auto backend = TestType::makeDict();
+
+    STATIC_CHECK(alpaka::concepts::Backend<TestType>);
+    STATIC_CHECK_FALSE(alpaka::concepts::Backend<decltype(backend[alpaka::object::deviceSpec])>);
+    CHECK(alpaka::getApi(backend) == alpaka::getApi(backend[alpaka::object::deviceSpec]));
+    CHECK(alpaka::getDeviceKind(backend) == alpaka::getDeviceKind(backend[alpaka::object::deviceSpec]));
 }
