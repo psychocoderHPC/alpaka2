@@ -41,6 +41,15 @@ namespace alpaka::onHost
                 }
             }
 
+            /** Execute the kernel bundle with OpenMP.
+             *
+             * @attention If this method is called from within an existing OpenMP parallel scope the function must be
+             * called collectivly. All existing threads will execute the kernel bundle together and there will be no
+             * thread synchronization after the function call.
+             *
+             * If the function is called from without beeing in a parallel OpenMP scope a OpenMP parallel for loop will
+             * be used for exection.
+             */
             void operator()(auto const& kernelBundle, auto const& dict) const
             {
                 using NumThreadsVecType = typename T_ThreadSpec::NumThreadsVecType;
@@ -107,8 +116,10 @@ namespace alpaka::onHost
 
                 if(::omp_in_parallel() != 0)
                 {
-                    /* we are already in a OpenMP parllel section, do not start a new section to avoid nested
-                     * parallelism which is typical slow
+                    /* We are already in a OpenMP parllel section, do not start a new section to avoid nested
+                     * parallelism which is typical slow.
+                     * There is no synchronization after the function execution happen, the caller is responsible for
+                     * it.
                      */
                     fn();
                 }

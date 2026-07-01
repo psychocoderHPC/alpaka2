@@ -33,7 +33,11 @@ struct KernelND
 {
     ALPAKA_FN_ACC void operator()(auto const& acc, auto out, auto counter) const
     {
+#    if ALPAKA_COMP_NVCC && ALPAKA_ARCH_PTX
+        uint32_t ompThreadIdx = 0;
+#    else
         uint32_t ompThreadIdx = omp_get_thread_num();
+#    endif
         for(auto i : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{out.getExtents()}))
         {
             out[i] = ompThreadIdx;
@@ -63,8 +67,9 @@ void testCombinationOmpParallel(auto queue, auto exec, concepts::Vector auto ext
     // take care invokeSingle can be called outside of a OpenMP parallel section
     auto hBuffCounter = onHost::omp::invokeSingle([&] { return onHost::allocHostLike(hBuff); });
 
-    // Test as many as possible queue methods within the parallel section, because all of them have a special
-    // implementation.
+    /* Test as many as possible queue methods within the parallel section, because all of them have a special
+     * implementation.
+     */
 #    pragma omp parallel num_threads(numOmpThreads)
     {
         /* Any non queue function can be call as lambda via the invoke helper method.
@@ -80,7 +85,7 @@ void testCombinationOmpParallel(auto queue, auto exec, concepts::Vector auto ext
         // wait is required because memset and fill are non-blocking and concurrent
         onHost::wait(queue);
         auto numFrames = ALPAKA_TYPEOF(extents)::fill(1);
-        /* we need as many blocks as we have numOmpThreads threads to guarantee each thread is executing at least one
+        /* We need as frames blocks as we have numOmpThreads threads to guarantee each thread is executing at least one
          * element. This is required for our validation.
          */
         numFrames.x() = numOmpThreads;
@@ -93,11 +98,13 @@ void testCombinationOmpParallel(auto queue, auto exec, concepts::Vector auto ext
 
         onHost::memcpy(queue, hBuff, dBuff);
         onHost::memcpy(queue, hBuffCounter, dBuffCounter);
-        // no wait is performed because the queue is blocking
     }
+    // we need to wait because memcpy within the parallel region will not block
+    onHost::wait(queue);
 
-    // Use REQUIRE instead of CHECK to avoid spamming the output if the results are wrong.
-    // we create a histogram to check that all threads are used
+    /* Use REQUIRE instead of CHECK to avoid spamming the output if the results are wrong.
+     * we create a histogram to check that all threads are used.
+     */
     std::vector<uint32_t> threadCounter(numOmpThreads, 0u);
     meta::ndLoopIncIdx(
         extents,
@@ -112,7 +119,7 @@ void testCombinationOmpParallel(auto queue, auto exec, concepts::Vector auto ext
         REQUIRE(count != 0u);
 }
 
-// test the queue ompCollective outside of a parallel section
+// test the queue ompCollective outside a parallel section
 void testCombinationNoParallel(auto queue, auto exec, concepts::Vector auto extents)
 {
     auto dBuff = onHost::alloc<ALPAKA_TYPEOF(extents)>(queue.getDevice(), extents);
@@ -122,7 +129,12 @@ void testCombinationNoParallel(auto queue, auto exec, concepts::Vector auto exte
     auto hBuffCounter = onHost::allocHostLike(dBuffCounter);
 
     onHost::memset(queue, dBuff, 0u);
-    onHost::memset(queue, dBuffCounter, 0u);
+    onHost::fill(queue, dBuffCounter, 0u);
+
+    /* This wait is not required because the queue ompCollective is blocking but for testing that wait is callable this
+     * is important.
+     */
+    onHost::wait(queue);
 
     queue.enqueue(
         onHost::FrameSpec{extents, ALPAKA_TYPEOF(extents)::fill(1), exec},

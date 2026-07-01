@@ -44,6 +44,8 @@ namespace alpaka::onHost
             ~Device()
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::device);
+                // wait for all queues before we destroy the device
+                wait();
             }
 
             Device(Device const&) = delete;
