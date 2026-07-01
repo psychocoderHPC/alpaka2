@@ -1,4 +1,4 @@
-/* Copyright 2024 René Widera
+/* Copyright 2024 René Widera, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -70,6 +70,11 @@ namespace alpaka::onAcc
         constexpr auto getDeviceKind() const
         {
             return T_Storage::operator[](object::deviceKind);
+        }
+
+        constexpr auto getExecutor() const
+        {
+            return T_Storage::operator[](object::exec);
         }
 
         /** Check if a frame spec was used to enqueue the kernel

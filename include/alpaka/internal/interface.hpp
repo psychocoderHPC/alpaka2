@@ -1,4 +1,4 @@
-/* Copyright 2024 René Widera
+/* Copyright 2024 René Widera, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -68,6 +68,27 @@ namespace alpaka
         inline constexpr auto getApi(onHost::Handle<T_Any>&& anyHandle)
         {
             return GetApi::Op<ALPAKA_TYPEOF(*anyHandle.get())>{}(*anyHandle.get());
+        }
+
+        template<typename T_Any>
+        struct GetExecutor::Op
+        {
+            inline constexpr auto operator()(auto&& any) const -> decltype(any.getExecutor())
+            {
+                return any.getExecutor();
+            }
+        };
+
+        template<typename T_Any>
+        inline constexpr auto getExecutor(T_Any&& any) -> decltype(GetExecutor::Op<std::decay_t<T_Any>>{}(any))
+        {
+            return GetExecutor::Op<std::decay_t<T_Any>>{}(ALPAKA_FORWARD(any));
+        }
+
+        template<typename T_Any>
+        inline constexpr auto getExecutor(onHost::Handle<T_Any>&& anyHandle)
+        {
+            return GetExecutor::Op<ALPAKA_TYPEOF(*anyHandle.get())>{}(*anyHandle.get());
         }
 
         struct GetDeviceType

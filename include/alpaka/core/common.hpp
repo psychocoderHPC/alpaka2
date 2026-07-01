@@ -1,4 +1,4 @@
-/* Copyright 2024 Axel Hübl, Benjamin Worpitz, Matthias Werner, Jan Stephan, René Widera, Andrea Bocci, Aurora Perego
+/* Copyright 2024 Axel Hübl, Benjamin Worpitz, Matthias Werner, Jan Stephan, René Widera, Andrea Bocci, Aurora Perego, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -7,6 +7,19 @@
 #include "alpaka/core/config.hpp"
 
 #include <type_traits>
+
+namespace alpaka::internal
+{
+    // Forward declaration to avoid a circular include between Dict and the interface helpers.
+    struct GetExecutor
+    {
+        template<typename T_Any>
+        struct Op;
+    };
+
+    template<typename T_Any>
+    inline constexpr auto getExecutor(T_Any&& any) -> decltype(GetExecutor::Op<std::decay_t<T_Any>>{}(any));
+} // namespace alpaka::internal
 
 #if ALPAKA_LANG_HIP
 // HIP defines some keywords like __forceinline__ in header files.
