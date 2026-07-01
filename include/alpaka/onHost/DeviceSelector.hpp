@@ -1,9 +1,10 @@
-/* Copyright 2024 René Widera
+/* Copyright 2024 René Widera, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once
 
+#include "alpaka/concepts.hpp"
 #include "alpaka/onHost/Device.hpp"
 #include "alpaka/onHost/DeviceSpec.hpp"
 #include "alpaka/utility.hpp"
@@ -18,6 +19,10 @@ namespace alpaka::onHost
             DeviceSpec<T_Api, T_DeviceKind>::isValid(),
             "Invalid combination of device kind and api. The api does not know how to talk to the device or the "
             "required dependencies to enable the api are not fulfilled.");
+
+        constexpr DeviceSelector(alpaka::concepts::Backend auto backend) : DeviceSelector(backend[object::deviceSpec])
+        {
+        }
 
         constexpr DeviceSelector(DeviceSpec<T_Api, T_DeviceKind> deviceSpec)
             : m_platform(internal::makePlatform(deviceSpec.getApi(), deviceSpec.getDeviceKind()))
@@ -72,6 +77,12 @@ namespace alpaka::onHost
     template<typename T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
     inline auto makeDeviceSelector(DeviceSpec<T_Api, T_DeviceKind> deviceSpec)
     {
+        return DeviceSelector{deviceSpec};
+    }
+
+    inline auto makeDeviceSelector(alpaka::concepts::Backend auto backend)
+    {
+        auto deviceSpec = backend[object::deviceSpec];
         return DeviceSelector{deviceSpec};
     }
 

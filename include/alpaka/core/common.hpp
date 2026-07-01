@@ -1,5 +1,5 @@
-/* Copyright 2024 Axel Hübl, Benjamin Worpitz, Matthias Werner, Jan Stephan, René Widera, Andrea Bocci, Aurora Perego, Tim Hanel
- * SPDX-License-Identifier: MPL-2.0
+/* Copyright 2024 Axel Hübl, Benjamin Worpitz, Matthias Werner, Jan Stephan, René Widera, Andrea Bocci, Aurora Perego,
+ * Tim Hanel SPDX-License-Identifier: MPL-2.0
  */
 
 #pragma once

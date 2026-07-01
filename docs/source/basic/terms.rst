@@ -226,7 +226,7 @@ Executor
 Backend
 -------
 
-A ``Backend`` is a configuration dictionary (``alpaka::Dict``), typically returned by ``onHost::allBackends(...)``, that provides a ``DeviceSpec`` and an ``Executor``.
+A ``Backend`` the combination of a ``DeviceSpec`` and an ``Executor``. It is typically returned by ``onHost::allBackends(...)``.
 
 .. _thread_spec:
 

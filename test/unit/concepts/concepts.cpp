@@ -14,6 +14,7 @@ using namespace alpaka;
 
 using Data = std::size_t;
 using TestBackends = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
+using DictWithoutDeviceSpecOrExec = Dict<DictEntry<object::Api, api::Host>>;
 
 template<typename TIdx>
 void testVector()
@@ -91,6 +92,7 @@ TEMPLATE_LIST_TEST_CASE("backend concept", "[concepts][backend]", TestBackends)
     auto backend = TestType::makeDict();
 
     STATIC_CHECK(alpaka::concepts::Backend<TestType>);
+    STATIC_CHECK_FALSE(alpaka::concepts::Backend<DictWithoutDeviceSpecOrExec>);
     STATIC_CHECK_FALSE(alpaka::concepts::Backend<decltype(backend[alpaka::object::deviceSpec])>);
     CHECK(alpaka::getApi(backend) == alpaka::getApi(backend[alpaka::object::deviceSpec]));
     CHECK(alpaka::getDeviceKind(backend) == alpaka::getDeviceKind(backend[alpaka::object::deviceSpec]));

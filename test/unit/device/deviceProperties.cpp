@@ -1,4 +1,4 @@
-/* Copyright 2026 René Widera
+/* Copyright 2026 René Widera, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
@@ -7,6 +7,8 @@
 #include <alpakaTest/deviceHelper.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
+
+#include <type_traits>
 
 using namespace alpaka;
 
@@ -34,4 +36,17 @@ TEMPLATE_LIST_TEST_CASE("deviceProperties", "[device][property]", TestApis)
     INFO("dim = 5 blocksPerGrid = " << deviceProperties.getMaxBlocksPerGrid<5>());
     // This call is required else no information will be shown on the terminal.
     SUCCEED("-----------------------------");
+}
+
+TEMPLATE_LIST_TEST_CASE("device selector from backend", "[device][selector]", TestApis)
+{
+    auto backend = TestType::makeDict();
+    STATIC_CHECK(alpaka::concepts::Backend<decltype(backend)>);
+
+    auto selectorFromBackend = onHost::makeDeviceSelector(backend);
+    auto selectorFromDeviceSpec = onHost::makeDeviceSelector(backend[object::deviceSpec]);
+
+    STATIC_CHECK(std::is_same_v<decltype(selectorFromBackend), decltype(selectorFromDeviceSpec)>);
+    CHECK(selectorFromBackend.isAvailable() == selectorFromDeviceSpec.isAvailable());
+    CHECK(selectorFromBackend.getDeviceCount() == selectorFromDeviceSpec.getDeviceCount());
 }

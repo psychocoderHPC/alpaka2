@@ -394,7 +394,7 @@ auto main(int argc, char* argv[]) -> int
     return onHost::executeForEachIfHasDevice(
         [=](alpaka::concepts::Backend auto const& backend)
         {
-            bool retVal = exampleUniformDist(backend, numElements) || exampleNormalDist(tag, numElementsNormal);
+            bool retVal = exampleUniformDist(backend, numElements) || exampleNormalDist(backend, numElementsNormal);
             return retVal == false ? EXIT_SUCCESS : EXIT_FAILURE;
         },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));

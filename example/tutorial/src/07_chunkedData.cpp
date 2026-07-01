@@ -336,7 +336,7 @@ auto main() -> int
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
     return onHost::executeForEachIfHasDevice(
-        [=](concepts::Backend auto const& backend)
+        [=](alpaka::concepts::Backend auto const& backend)
         { return example(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }
