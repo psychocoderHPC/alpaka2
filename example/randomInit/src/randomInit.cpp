@@ -394,8 +394,8 @@ auto main(int argc, char* argv[]) -> int
     return onHost::executeForEachIfHasDevice(
         [=](auto const& tag)
         {
-            auto retVal = exampleUniformDist(tag, numElements) || exampleNormalDist(tag, numElementsNormal);
-            return retVal;
+            bool retVal = exampleUniformDist(tag, numElements) || exampleNormalDist(tag, numElementsNormal);
+            return retVal == false ? EXIT_SUCCESS : EXIT_FAILURE;
         },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }
