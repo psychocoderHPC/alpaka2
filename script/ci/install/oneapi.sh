@@ -46,8 +46,8 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     # shellcheck source=script/ci/install/oneapi/setvars.sh
     source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
 
-    APCI_C_COMPILER=$(which icx)
-    APCI_CXX_COMPILER=$(which icpx)
+    APCI_C_COMPILER="${ONEAPI_PATH}/compiler/${APCI_ONEAPI}/bin/icx"
+    APCI_CXX_COMPILER="${ONEAPI_PATH}/compiler/${APCI_ONEAPI}/bin/icpx"
 
     echo_green "${APCI_C_COMPILER} --version"
     $APCI_C_COMPILER --version
