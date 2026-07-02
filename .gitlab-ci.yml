@@ -3,6 +3,8 @@
     APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
     APCI_RUN_CTEST: "ON"
     APCI_HIP : 0
+    APCI_ONEAPI : 0
+    APCI_ONEAPI_TARGET: none
   script:
     - $APCI_ALPAKA_ROOT/script/ci/job_info.sh
     - $APCI_ALPAKA_ROOT/script/ci/install_dependencies.sh
@@ -109,3 +111,98 @@ hipcc-7.2-rocm-container:
     APCI_DEVICE_COMPILER : clang@22
     APCI_CMAKE: 3.28.3
     APCI_HIP : 7.2
+
+icpx-2025.1-cpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.1
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.1
+    APCI_ONEAPI_TARGET: cpu
+
+icpx-2025.1-gpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.1
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.1
+    APCI_ONEAPI_TARGET: intel_gpu
+    APCI_RUN_CTEST: "OFF"
+
+icpx-2025.2-cpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.2
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.2
+    APCI_ONEAPI_TARGET: cpu
+
+icpx-2025.2-gpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.2
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.2
+    APCI_ONEAPI_TARGET: intel_gpu
+    APCI_RUN_CTEST: "OFF"
+
+icpx-2025.3-cpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.3
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.3
+    APCI_ONEAPI_TARGET: cpu
+
+icpx-2025.3-gpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2025.3
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2025.3
+    APCI_ONEAPI_TARGET: intel_gpu
+    APCI_RUN_CTEST: "OFF"
+
+icpx-2026.0-cpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2026.0
+    APCI_ONEAPI_TARGET: cpu
+
+icpx-2026.0-gpu:
+   image: docker.io/ubuntu:24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2026.0
+    APCI_ONEAPI_TARGET: intel_gpu
+    APCI_RUN_CTEST: "OFF"
+
+icpx-2026.0-cpu-intel-container:
+   image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2026.0
+    APCI_ONEAPI_TARGET: cpu
+
+icpx-2026.0-gpu-intel-container:
+   image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
+   extends: .base
+   variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_ONEAPI: 2026.0
+    APCI_ONEAPI_TARGET: intel_gpu
+    APCI_RUN_CTEST: "OFF"

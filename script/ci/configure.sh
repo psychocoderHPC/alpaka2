@@ -15,7 +15,7 @@ parse_compiler_version "$APCI_DEVICE_COMPILER"
 CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
 
 # TODO: remove me, if all install scripts are ported
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" ]]; then
+if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
     load_variable_if_not_exist APCI_CMAKE_BIN_PATH
     load_variable_if_not_exist APCI_C_COMPILER
     load_variable_if_not_exist APCI_CXX_COMPILER
@@ -24,6 +24,7 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" ]]; then
         -S "${APCI_ALPAKA_ROOT}"
         -B "/build"
         -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
         -Dalpaka_COMPILE_PEDANTIC=ON
         -Dalpaka_DOCS=ON
         -Dalpaka_TESTS=ON
@@ -64,6 +65,37 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" ]]; then
                 -DCMAKE_HIP_ARCHITECTURES="${APCI_AMD_GPU_ARCH}"
                 -DGPU_TARGETS="${APCI_AMD_GPU_ARCH}")
         fi
+    fi
+
+    if [[ "$APCI_ONEAPI" != 0 ]]; then
+        load_variable_if_not_exist ONEAPI_PATH
+
+        # shellcheck source=script/ci/install/oneapi/setvars.sh
+        source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
+
+        ap_deps['alpaka_DEP_ONEAPI']=ON
+
+        CMAKE_ARGS+=(-Dalpaka_EXEC_CpuSerial=OFF)
+
+        declare -A ap_sycl_targets=(
+            ["alpaka_ONEAPI_Cpu"]=OFF
+            ["alpaka_ONEAPI_IntelGpu"]=OFF
+            ["alpaka_ONEAPI_NvidiaGpu"]=OFF
+            ["alpaka_ONEAPI_AmdGpu"]=OFF
+        )
+
+        if [[ "${APCI_ONEAPI_TARGET}" == "cpu" ]]; then
+            ap_sycl_targets['alpaka_ONEAPI_Cpu']=ON
+        elif [[ "${APCI_ONEAPI_TARGET}" == "intel_gpu" ]]; then
+            ap_sycl_targets['alpaka_ONEAPI_IntelGpu']=ON
+        else
+            exit_error "APCI_ONEAPI_TARGET unknown value: ${APCI_ONEAPI_TARGET}.\n" \
+                "Only supported values are: cpu, intel_gpu"
+        fi
+
+        for target in "${!ap_sycl_targets[@]}"; do
+            CMAKE_ARGS+=("-D${target}=${ap_sycl_targets[$target]}")
+        done
     fi
 
     for dep in "${!ap_deps[@]}"; do

@@ -12,7 +12,7 @@ script_msg "Run CMake build (build.sh)"
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 # TODO: remove me, if all install scripts are ported
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" ]]; then
+if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
     load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
     echo_green "${APCI_CMAKE_BIN_PATH}/cmake --build /build -j${APCI_BUILD_THREADS}"

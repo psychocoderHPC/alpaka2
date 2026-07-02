@@ -60,6 +60,14 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     APCI_AMD_GPU_ARCH=gfx90a
     export APCI_AMD_GPU_ARCH
 
+    if [[ ! "${APCI_DEVICE_COMPILER}" =~ "icpx" ]] && [[ -z ${APCI_ONEAPI+x} ]]; then
+        export APCI_ONEAPI=0
+    fi
+
+    if [[ "${APCI_ONEAPI}" == 0 ]] && [[ -z ${APCI_ONEAPI_TARGET+x} ]]; then
+        export APCI_ONEAPI_TARGET=none
+    fi
+
     max_num_build_threads=$(nproc)
     total_memory_bytes=$(free -b | awk '/Mem:/ { print $2 }')
 fi
