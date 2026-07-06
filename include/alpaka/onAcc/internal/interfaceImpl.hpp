@@ -74,7 +74,10 @@ namespace alpaka::onAcc
                 auto blockIdxInGrid = acc.getIdxWithin(onAcc::origin::grid, onAcc::unit::blocks);
                 auto numBlocksInGrid = acc.getExtentsOf(onAcc::origin::grid, onAcc::unit::blocks);
                 auto linearBlockIdx = linearize(numBlocksInGrid, blockIdxInGrid);
-                return linearBlockIdx + Vec{warp::internal::getWarpIdx(acc)};
+
+                std::integral auto linearNumWarpsInBlock
+                    = acc.getExtentsOf(onAcc::origin::block, onAcc::unit::warps).product();
+                return linearBlockIdx * linearNumWarpsInBlock + Vec{warp::internal::getWarpIdx(acc)};
             }
         };
 
