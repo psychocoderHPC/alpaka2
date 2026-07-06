@@ -145,3 +145,52 @@ lazy_apt_update() {
         DEBIAN_FRONTEND=noninteractive retry_cmd apt update
     fi
 }
+
+# Print a string to install a specific version of an apt package.
+#
+# Args:
+#   1. Name of the package
+#   2. Version searching for
+#
+# If you want to install a specific version an apt package you have to
+# set the exact version which can contain a patch level, distribution
+# depending patch level and more. The function is searching for a
+# apt version, which matches best the given version string.
+#
+# The printed value can be directly used in a `apt install` command.
+apt_package_version() {
+    if [[ $# -lt 1 ]]; then
+        exit_error "apt_package_version(): no package name set."
+    fi
+
+    if [[ $# -lt 2 ]]; then
+        exit_error "apt_package_version(): no package version set."
+    fi
+
+    local apt_ver
+    # search for a specific version
+    # if more than one apt version matches the given version, take the latest version
+    apt_ver=$(apt list --all-versions "$1" |
+        cut -d " " -f 2 |
+        grep "$2" |
+        sort | tail -n 1)
+
+    if [[ "${apt_ver}" == "" ]]; then
+        exit_error "apt_package_version(): Didn't find any apt version for package $1 with version $2 ."
+    fi
+
+    echo "$1=$apt_ver"
+}
+
+# print a variable in the format `name=value`, if the value is not empty
+# usage: echo_if_not_empty <variable_name>
+echo_if_not_empty() {
+    if [[ $# -lt 1 ]]; then
+        exit_error "echo_if_not_empty(): no variable name set."
+    fi
+
+    local var_name="$1"
+    if [[ "${!var_name}" != "" ]]; then
+        echo "${var_name}=${!var_name}"
+    fi
+}

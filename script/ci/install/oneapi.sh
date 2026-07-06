@@ -35,8 +35,7 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
             retry_cmd sudo DEBIAN_FRONTEND=noninteractive apt update
 
             quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y \
-                intel-oneapi-common-vars \
-                intel-oneapi-runtime-libs \
+                "$(apt_package_version intel-oneapi-runtime-opencl "${APCI_ONEAPI}")" \
                 intel-oneapi-compiler-dpcpp-cpp-"${APCI_ONEAPI}"
 
             ONEAPI_PATH=/opt/intel/oneapi
@@ -46,8 +45,12 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     # shellcheck source=script/ci/install/oneapi/setvars.sh
     source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
 
-    APCI_C_COMPILER="${ONEAPI_PATH}/compiler/${APCI_ONEAPI}/bin/icx"
-    APCI_CXX_COMPILER="${ONEAPI_PATH}/compiler/${APCI_ONEAPI}/bin/icpx"
+    echo "Search for icx and icpx with 'which'"
+    # Use which to search for the compiler. If the /opt/intel/oneapi/setvars.sh script
+    # does not work, which will not find anything and the script exit because of return
+    # code non 0.
+    APCI_C_COMPILER="$(which icx)"
+    APCI_CXX_COMPILER="$(which icpx)"
 
     echo_green "${APCI_C_COMPILER} --version"
     $APCI_C_COMPILER --version

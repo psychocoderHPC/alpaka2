@@ -10,6 +10,14 @@ source "${APCI_ALPAKA_ROOT}/script/ci/utils/default.sh"
 
 script_msg "Run CTest (test.sh)"
 
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
+
+if [[ "$APCI_ONEAPI" != 0 ]]; then
+    if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
+        export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/2025.1/lib/:${LD_LIBRARY_PATH}"
+    fi
+fi
+
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 # TODO: remove me, if all install scripts are ported
 # HIP jobs will be tested
@@ -17,7 +25,9 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
     if [[ "${APCI_RUN_CTEST}" == "ON" ]]; then
         load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
-        echo_green "${APCI_CMAKE_BIN_PATH}/ctest --test-dir /build --output-on-failure"
+        echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+            "${APCI_CMAKE_BIN_PATH}/ctest" \
+            "--test-dir /build --output-on-failure"
         if [[ -z ${GITHUB_ACTIONS+x} ]]; then
             "${APCI_CMAKE_BIN_PATH}/ctest" --test-dir /build --output-on-failure
         fi

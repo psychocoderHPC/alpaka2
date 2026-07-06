@@ -13,6 +13,7 @@ script_msg "Run CMake configure (configure.sh)"
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 
 CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 # TODO: remove me, if all install scripts are ported
 if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
@@ -93,6 +94,10 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
                 "Only supported values are: cpu, intel_gpu"
         fi
 
+        if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
+            export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/2025.1/lib/:${APCI_ONEAPI}"
+        fi
+
         for target in "${!ap_sycl_targets[@]}"; do
             CMAKE_ARGS+=("-D${target}=${ap_sycl_targets[$target]}")
         done
@@ -102,7 +107,9 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         CMAKE_ARGS+=("-D${dep}=${ap_deps[$dep]}")
     done
 
-    echo_green "${APCI_CMAKE_BIN_PATH}/cmake ${CMAKE_ARGS[*]}"
+    echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+        "${APCI_CMAKE_BIN_PATH}/cmake" \
+        "${CMAKE_ARGS[*]}"
     if [[ -z ${GITHUB_ACTIONS+x} ]]; then
         "${APCI_CMAKE_BIN_PATH}/cmake" "${CMAKE_ARGS[@]}"
     fi
