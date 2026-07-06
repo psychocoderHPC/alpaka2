@@ -10,6 +10,32 @@ source "${APCI_ALPAKA_ROOT}/script/ci/utils/default.sh"
 
 script_msg "Run CMake build (build.sh)"
 
+# Return the number of build threads depending on the
+# - maximum number of available threads (first parameter)
+# - available memory (second parameter)
+# - required memory per thread (configure via variable ACPI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES)
+function get_build_threads() {
+    if [[ $# -lt 2 ]]; then
+        echo -e "\e[1;31m[ERROR]: " \
+            "get_build_threads() set as first argument maximum number of available build threads " \
+            "and as second argument max number of available memory in bytes" \
+            "\e[0m"
+        exit 1
+    fi
+
+    local max_possible_build_threads=$(($2 / ACPI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES))
+
+    if [[ $max_possible_build_threads -lt 1 ]]; then
+        max_possible_build_threads=1
+    fi
+
+    if [[ $1 -le $max_possible_build_threads ]]; then
+        echo "$1"
+    else
+        echo "$max_possible_build_threads"
+    fi
+}
+
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 if [[ "$APCI_ONEAPI" != 0 ]]; then
@@ -21,11 +47,16 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     fi
 fi
 
+if [[ -z ${APCI_BUILD_THREADS+x} ]]; then
+    APCI_BUILD_THREADS=$(get_build_threads "${APCI_MAX_NUM_BUILD_THREADS}" "${APCI_TOTAL_MEMORY_BYTES}")
+fi
+
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 # TODO: remove me, if all install scripts are ported
 if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
     load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
+    echo_green "Set APCI_BUILD_THREADS to overwrite automatically calculated number of build threads."
     echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \
         "${APCI_CMAKE_BIN_PATH}/cmake" \
         --build /build \
