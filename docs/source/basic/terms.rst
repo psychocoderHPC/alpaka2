@@ -226,7 +226,7 @@ Executor
 Backend
 -------
 
-A ``Backend`` the combination of a ``DeviceSpec`` and an ``Executor``. It is typically returned by ``onHost::allBackends(...)``.
+A ``Backend`` is the combination of a ``DeviceSpec`` and an ``Executor``. It is typically returned by ``onHost::allBackends(...)``.
 
 .. _thread_spec:
 

@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Benjamin Worpitz, Erik Zenker, Axel Hübl, Jan Stephan, René Widera, Jeffrey Kelling, Andrea Bocci,
-#                Bernhard Manfred Gruber, Aurora Perego
+#                Bernhard Manfred Gruber, Aurora Perego, Tim Hanel
 # SPDX-License-Identifier: MPL-2.0
 #
 
@@ -126,8 +126,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/alpakaConfig.cmake DESTINATION ${CMAKE
 install(DIRECTORY ${_alpaka_TESTS_DIR} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR} USE_SOURCE_PERMISSIONS)
 
 # Files required to validate optional features std::atomic_ref and std::simd
-install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdAtomicRef.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/tests)
-install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdSimd.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/tests)
+install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdAtomicRef.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/test)
+install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdSimd.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/test)
 
 # Load alpaka's languages after FetchContent_MakeAvailable()
 #

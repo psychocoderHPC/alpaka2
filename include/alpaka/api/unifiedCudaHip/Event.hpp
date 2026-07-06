@@ -5,8 +5,6 @@
 
 #pragma once
 
-#pragma once
-
 #include "alpaka/api/cuda/IdxLayer.hpp"
 #include "alpaka/api/generic.hpp"
 #include "alpaka/api/hip/IdxLayer.hpp"
