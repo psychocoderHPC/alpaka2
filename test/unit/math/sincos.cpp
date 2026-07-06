@@ -39,16 +39,24 @@ struct SinCosTestKernel
 
 TEMPLATE_LIST_TEST_CASE("sincos", "[sincos]", TestBackends)
 {
-    auto cfg = TestType::makeDict();
+    auto deviceExec = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
+    onHost::Device device = test::getDevice(deviceExec);
+    concepts::Executor auto exec = test::getExecutor(deviceExec);
     SinCosTestKernel kernel;
 
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernel, 0.42f)); // float
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernel, 0.42)); // double
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernel, alpaka::math::Complex<float>{0.35f, -0.24f})); // complex
-                                                                                                             // float
+    REQUIRE(alpaka::test::executeOnComputeDevice(device, exec, kernel, 0.42f)); // float
+    REQUIRE(alpaka::test::executeOnComputeDevice<double>(device, exec, kernel, 0.42)); // double
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice(
+            device,
+            exec,
+            kernel,
+            alpaka::math::Complex<float>{0.35f, -0.24f})); // complex
+                                                           // float
     REQUIRE(
         alpaka::test::executeOnComputeDevice<double>(
-            cfg,
+            device,
+            exec,
             kernel,
             alpaka::math::Complex<double>{0.35, -0.24})); // complex double
 }

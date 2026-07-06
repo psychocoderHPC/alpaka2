@@ -82,28 +82,55 @@ TEMPLATE_LIST_TEST_CASE("powMixedTypes", "[powMixedTypes]", TestBackends)
     alpaka::math::Complex<float> floatComplexArg{0.35f, -0.24f};
     alpaka::math::Complex<double> doubleComplexArg{0.35, -0.24};
 
+    auto deviceExec = test::getDeviceExecutorOrSkipTest(cfg);
+    onHost::Device device = test::getDevice(deviceExec);
+    concepts::Executor auto exec = test::getExecutor(deviceExec);
+
     // all combinations of pow(real, real)
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernelFloat, floatArg, floatArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelDouble, floatArg, doubleArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelDouble, doubleArg, floatArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelDouble, doubleArg, doubleArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice(device, exec, kernelFloat, floatArg, floatArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice<double>(device, exec, kernelDouble, floatArg, doubleArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice<double>(device, exec, kernelDouble, doubleArg, floatArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice<double>(device, exec, kernelDouble, doubleArg, doubleArg));
 
     // all combinations of pow(real, complex)
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernelComplexFloat, floatArg, floatComplexArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, floatArg, doubleComplexArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleArg, floatComplexArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleArg, doubleComplexArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice(device, exec, kernelComplexFloat, floatArg, floatComplexArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, floatArg, doubleComplexArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, doubleArg, floatComplexArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, doubleArg, doubleComplexArg));
 
     // all combinations of pow(complex, real)
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernelComplexFloat, floatComplexArg, floatArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, floatComplexArg, doubleArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleComplexArg, floatArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleComplexArg, doubleArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice(device, exec, kernelComplexFloat, floatComplexArg, floatArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, floatComplexArg, doubleArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, doubleComplexArg, floatArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(device, exec, kernelComplexDouble, doubleComplexArg, doubleArg));
 
     // all combinations of pow(complex, complex)
-    REQUIRE(alpaka::test::executeOnComputeDevice(cfg, kernelComplexFloat, floatComplexArg, floatComplexArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, floatComplexArg, doubleComplexArg));
-    REQUIRE(alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleComplexArg, floatComplexArg));
+    REQUIRE(alpaka::test::executeOnComputeDevice(device, exec, kernelComplexFloat, floatComplexArg, floatComplexArg));
     REQUIRE(
-        alpaka::test::executeOnComputeDevice<double>(cfg, kernelComplexDouble, doubleComplexArg, doubleComplexArg));
+        alpaka::test::executeOnComputeDevice<double>(
+            device,
+            exec,
+            kernelComplexDouble,
+            floatComplexArg,
+            doubleComplexArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(
+            device,
+            exec,
+            kernelComplexDouble,
+            doubleComplexArg,
+            floatComplexArg));
+    REQUIRE(
+        alpaka::test::executeOnComputeDevice<double>(
+            device,
+            exec,
+            kernelComplexDouble,
+            doubleComplexArg,
+            doubleComplexArg));
 }

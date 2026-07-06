@@ -412,7 +412,10 @@ struct AdlKernel
 
 TEMPLATE_LIST_TEST_CASE("mathOps", "[math] [operator] [adl]", TestBackends)
 {
-    auto cfg = TestType::makeDict();
-    auto testResult = alpaka::test::executeOnComputeDevice(cfg, AdlKernel{});
+    auto deviceExec = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
+    onHost::Device device = test::getDevice(deviceExec);
+    concepts::Executor auto exec = test::getExecutor(deviceExec);
+
+    auto testResult = alpaka::test::executeOnComputeDevice(device, exec, AdlKernel{});
     REQUIRE(testResult);
 }

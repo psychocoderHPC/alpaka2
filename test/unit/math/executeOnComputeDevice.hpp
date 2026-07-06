@@ -26,12 +26,8 @@
 namespace alpaka::test
 {
     template<typename T_DataType = alpaka::NotRequired>
-    bool executeOnComputeDevice(auto cfg, auto kernelFnObj, auto&&... args)
+    bool executeOnComputeDevice(auto device, auto exec, auto kernelFnObj, auto&&... args)
     {
-        auto deviceExec = test::getDeviceExecutorOrSkipTest(cfg);
-        onHost::Device device = test::getDevice(deviceExec);
-        concepts::Executor auto exec = test::getExecutor(deviceExec);
-
 #if ALPAKA_LANG_ONEAPI
         // support for double precision is not guaranteed for sycl devices such as Intel GPUs
         if constexpr(std::is_same_v<T_DataType, double> && std::is_same_v<decltype(device.getApi()), api::OneApi>)
