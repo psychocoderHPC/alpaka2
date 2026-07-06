@@ -71,6 +71,7 @@ hipcc-6.2-agc:
     APCI_HIP : 6.2
 
 hipcc-6.3-rocm-container:
+  needs: ["hipcc-6.2-agc"]
   image: rocm/dev-ubuntu-24.04:6.3.4
   extends: .hip
   variables:
@@ -87,6 +88,7 @@ hipcc-6.4:
     APCI_HIP : 6.4.2
 
 hipcc-7.0:
+  needs: ["hipcc-6.4"]
   image: ubuntu:24.04
   extends: .hip
   variables:
@@ -103,6 +105,7 @@ hipcc-7.1:
     APCI_HIP : 7.1
 
 hipcc-7.2-rocm-container:
+  needs: ["hipcc-7.1"]
   image: rocm/dev-ubuntu-24.04:7.2
   extends: .hip
   variables:
