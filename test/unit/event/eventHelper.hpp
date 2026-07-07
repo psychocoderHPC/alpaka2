@@ -8,6 +8,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <thread>
+
 namespace alpaka::test::event
 {
     using namespace alpaka;
@@ -271,9 +273,41 @@ namespace alpaka::test::event
             queue.enqueue(m_postEvent);
         }
 
-        bool isComplete() const
+        /** Checks if the kernel execution is NOT finished
+         *
+         * @attention Do not negate the return value for the positive test, use assumeComplete() instead.
+         *
+         * @return true if the kernel is NOT finished yet, else false.
+         */
+        bool assumeNotComplete() const
         {
-            return m_postEvent.isComplete();
+            return !m_postEvent.isComplete();
+        }
+
+        /** Assume the kernel is executed
+         *
+         * Due to the implementation if the host side triggerable kernel for this test the simple status check
+         * can provide a false negative. This method is polling few times to guarantee the information arrives the
+         * kernel even if the tested device is executing other tasks too.
+         *
+         * @attention Do not negate the return value for the negative test, use assumeNotComplete() instead.
+         *
+         * @param repeat Number of repetitions of the status check.
+         * @param ms Milliseconds to wait between the status checks.
+         * @return Return true if kernel is executed, at least after `repeat` status test calls, else false.
+         */
+        bool assumeComplete(uint32_t repeat = 13, size_t ms = 200) const
+        {
+            bool result = false;
+            for(uint32_t i = 0; i < repeat; ++i)
+            {
+                result = m_postEvent.isComplete();
+                if(repeat == false)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+                else
+                    break;
+            }
+            return result;
         }
 
         // inform if the emulated kernel is scheduled by the device and therefore can be triggered and tested for

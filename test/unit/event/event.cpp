@@ -115,12 +115,12 @@ TEMPLATE_LIST_TEST_CASE("test trigger event", "", TestApis)
     }
 
     onHost::Queue queue = device.makeQueue();
-    auto ev = TriggerKernel{device};
-    ev.submit(queue);
+    auto k = TriggerKernel{device};
+    k.submit(queue);
     // we will deadlock here in case the GPU cannot see the state change
-    ev.trigger();
-    ev.wait();
-    CHECK(ev.isComplete() == true);
+    k.trigger();
+    k.wait();
+    CHECK(k.assumeComplete());
 }
 
 TEMPLATE_LIST_TEST_CASE("eventTestShouldBeFalseWhileInQueueAndTrueAfterBeingProcessed", "", TestApis)
@@ -152,14 +152,14 @@ TEMPLATE_LIST_TEST_CASE("eventTestShouldBeFalseWhileInQueueAndTrueAfterBeingProc
     }
 
     onHost::Queue q1 = device.makeQueue();
-    auto e1 = TriggerKernel{device};
+    auto k = TriggerKernel{device};
 
-    e1.submit(q1);
-    REQUIRE(e1.isComplete() == false);
+    k.submit(q1);
+    REQUIRE(k.assumeNotComplete());
 
-    e1.trigger();
-    e1.wait();
-    REQUIRE(e1.isComplete() == true);
+    k.trigger();
+    k.wait();
+    REQUIRE(k.assumeComplete());
 }
 
 TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfNobodyWaitsFor", "", TestApis)
@@ -199,41 +199,41 @@ TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfNobodyWaitsFor", "", Te
     auto k1 = TriggerKernel{device};
     auto k2 = TriggerKernel{device};
     auto e1 = device.makeEvent();
-    REQUIRE(k1.isComplete());
+    REQUIRE(k1.assumeComplete());
 
     k1.submit(q1);
     // wait to detect if the kernel ends before we trigger the end
     std::this_thread::sleep_for(std::chrono::milliseconds(500u));
     // q1 = [k1]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
 
     q1.enqueue(e1);
     // q1 = [k1, e1]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
     REQUIRE(!e1.isComplete());
 
     k2.submit(q1);
     // q1 = [k1, e1, k2]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
     REQUIRE(!e1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k2.assumeNotComplete());
 
     // re-enqueue should be possible
     q1.enqueue(e1);
     // q1 = [k1, k2, e1]
-    REQUIRE(!k1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k1.assumeNotComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
 
     k1.trigger();
     // q1 = [k2, e1]
-    REQUIRE(k1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k1.assumeComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
 
     k2.trigger();
     // q1 = [e1]
-    REQUIRE(k2.isComplete());
+    REQUIRE(k2.assumeComplete());
     onHost::wait(e1);
     REQUIRE(e1.isComplete());
 }
@@ -280,18 +280,18 @@ TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfSomeoneWaitsFor", "", T
 
     k1.submit(q1);
     // q1 = [k1]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
 
     q1.enqueue(e1);
     // q1 = [k1, e1]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
     REQUIRE(!e1.isComplete());
 
     k2.submit(q1);
     // q1 = [k1, e1, k2]
-    REQUIRE(!k1.isComplete());
+    REQUIRE(k1.assumeNotComplete());
     REQUIRE(!e1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k2.assumeNotComplete());
 
     // wait for e1
     q2.waitFor(e1);
@@ -305,23 +305,23 @@ TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfSomeoneWaitsFor", "", T
     q1.enqueue(e1);
     // q1 = [k1, e1, k2, e1_new]
     // q2 = [->e1, e2]
-    REQUIRE(!k1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k1.assumeNotComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(!e2.isComplete());
 
     k1.trigger();
     // q1 = [k2, e1_new]
     // q2 = []
-    REQUIRE(k1.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k1.assumeComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(e2.isComplete());
 
     k2.trigger();
     // q1 = []
     // q2 = []
-    REQUIRE(k2.isComplete());
+    REQUIRE(k2.assumeComplete());
     onHost::wait(e1);
     REQUIRE(e1.isComplete());
     onHost::wait(e2);
@@ -392,20 +392,20 @@ TEMPLATE_LIST_TEST_CASE("waitForEventThatAlreadyFinishedShouldBeSkipped", "", Te
     onHost::wait(e1);
     // q1 = []
     // q2 = [k2, ->e1]
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(e1.isComplete());
 
     // 7. e1 is re-enqueued again but this time into q2
     q2.enqueue(e1);
 
     // q2 = [k2, ->e1, e1]
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
 
     // 8. k2 is triggered
     k2.trigger();
     // q2 = [e1]
-    REQUIRE(k2.isComplete());
+    REQUIRE(k2.assumeComplete());
 
     // 9. e1 had already been signaled, so there should not be waited even though the event is now reused within
     // q2 and its current state is 'unfinished' again. q2 = [e1]
@@ -465,7 +465,7 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = [k1_0, e1]
     k2.submit(q2);
     // q2 = [k2]
-    REQUIRE(!k1_0.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
 
     q2.waitFor(e1);
     // q2 = [k2,->e1]
@@ -483,10 +483,10 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = [k1_0,e1,k1_1,e1_new]
     // q2 = [k2,->e1,e2]
     // q3 = [k3,->e1_new,e3]
-    REQUIRE(!k1_0.isComplete());
-    REQUIRE(!k1_1.isComplete());
-    REQUIRE(!k2.isComplete());
-    REQUIRE(!k3.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
+    REQUIRE(k1_1.assumeNotComplete());
+    REQUIRE(k2.assumeNotComplete());
+    REQUIRE(k3.assumeNotComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(!e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -495,10 +495,10 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = [k1_0,e1,k1_1,e1_new]
     // q2 = [k2,->e1,e2]
     // q3 = [->e1_new,e3]
-    REQUIRE(!k1_0.isComplete());
-    REQUIRE(!k1_1.isComplete());
-    REQUIRE(!k2.isComplete());
-    REQUIRE(k3.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
+    REQUIRE(k1_1.assumeNotComplete());
+    REQUIRE(k2.assumeNotComplete());
+    REQUIRE(k3.assumeComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(!e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -507,10 +507,10 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = [k1_0,e1,k1_1,e1_new]
     // q2 = [->e1,e2]
     // q3 = [->e1_new,e3]
-    REQUIRE(!k1_0.isComplete());
-    REQUIRE(!k1_1.isComplete());
-    REQUIRE(k2.isComplete());
-    REQUIRE(k3.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
+    REQUIRE(k1_1.assumeNotComplete());
+    REQUIRE(k2.assumeComplete());
+    REQUIRE(k3.assumeComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(!e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -521,10 +521,10 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = [k1_1,e1_new]
     // q2 = []
     // q3 = [->e1_new,e3]
-    REQUIRE(k1_0.isComplete());
-    REQUIRE(!k1_1.isComplete());
-    REQUIRE(k2.isComplete());
-    REQUIRE(k3.isComplete());
+    REQUIRE(k1_0.assumeComplete());
+    REQUIRE(k1_1.assumeNotComplete());
+    REQUIRE(k2.assumeComplete());
+    REQUIRE(k3.assumeComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -533,10 +533,10 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
     // q1 = []
     // q2 = []
     // q3 = []
-    REQUIRE(k1_0.isComplete());
-    REQUIRE(k1_1.isComplete());
-    REQUIRE(k2.isComplete());
-    REQUIRE(k3.isComplete());
+    REQUIRE(k1_0.assumeComplete());
+    REQUIRE(k1_1.assumeComplete());
+    REQUIRE(k2.assumeComplete());
+    REQUIRE(k3.assumeComplete());
     REQUIRE(e1.isComplete());
     REQUIRE(e2.isComplete());
     REQUIRE(e3.isComplete());
@@ -590,7 +590,7 @@ TEMPLATE_LIST_TEST_CASE("EventOutOfOrderLifetimeRelease", "", TestApis)
     // q1 = [k1_0, e1]
     k2.submit(q2);
     // q2 = [k2]
-    REQUIRE(!k1_0.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
 
     q3.waitFor(e1);
     // q3 = [->e1]
@@ -605,8 +605,8 @@ TEMPLATE_LIST_TEST_CASE("EventOutOfOrderLifetimeRelease", "", TestApis)
     // q2 = [k2,e1_new,e2]
     // q3 = [->e1,e3]
 
-    REQUIRE(!k1_0.isComplete());
-    REQUIRE(!k2.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
+    REQUIRE(k2.assumeNotComplete());
     REQUIRE(!e1.isComplete());
     REQUIRE(!e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -619,8 +619,8 @@ TEMPLATE_LIST_TEST_CASE("EventOutOfOrderLifetimeRelease", "", TestApis)
     // q2 = []
     // q3 = [->e1,e3]
 
-    REQUIRE(!k1_0.isComplete());
-    REQUIRE(k2.isComplete());
+    REQUIRE(k1_0.assumeNotComplete());
+    REQUIRE(k2.assumeComplete());
     REQUIRE(e1.isComplete());
     REQUIRE(e2.isComplete());
     REQUIRE(!e3.isComplete());
@@ -630,8 +630,8 @@ TEMPLATE_LIST_TEST_CASE("EventOutOfOrderLifetimeRelease", "", TestApis)
     // q2 = []
     // q3 = []
 
-    REQUIRE(k1_0.isComplete());
-    REQUIRE(k2.isComplete());
+    REQUIRE(k1_0.assumeComplete());
+    REQUIRE(k2.assumeComplete());
     REQUIRE(e1.isComplete());
     REQUIRE(e2.isComplete());
     REQUIRE(e3.isComplete());
