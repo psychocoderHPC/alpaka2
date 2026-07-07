@@ -41,10 +41,10 @@ TEMPLATE_LIST_TEST_CASE("deviceProperties", "[device][property]", TestApis)
 TEMPLATE_LIST_TEST_CASE("device selector from backend", "[device][selector]", TestApis)
 {
     auto backend = TestType::makeDict();
-    STATIC_CHECK(alpaka::concepts::Backend<decltype(backend)>);
+    STATIC_CHECK(alpaka::concepts::BackendSpec<decltype(backend)>);
 
     auto selectorFromBackend = onHost::makeDeviceSelector(backend);
-    auto selectorFromDeviceSpec = onHost::makeDeviceSelector(backend[object::deviceSpec]);
+    auto selectorFromDeviceSpec = onHost::makeDeviceSelector(onHost::DeviceSpec{backend});
 
     STATIC_CHECK(std::is_same_v<decltype(selectorFromBackend), decltype(selectorFromDeviceSpec)>);
     CHECK(selectorFromBackend.isAvailable() == selectorFromDeviceSpec.isAvailable());

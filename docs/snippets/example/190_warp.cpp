@@ -54,10 +54,9 @@ struct WarpSumKernel
 TEMPLATE_LIST_TEST_CASE("tutorial warp shuffle reduction", "[docs]", docs::test::TestBackends)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
-    auto exec = cfg[object::exec];
+    auto exec = alpaka::getExecutor(cfg);
 
-    auto selector = onHost::makeDeviceSelector(deviceSpec);
+    auto selector = onHost::makeDeviceSelector(cfg);
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);

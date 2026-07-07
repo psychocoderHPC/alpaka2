@@ -330,13 +330,6 @@ auto main(int argc, char* argv[]) -> int
      */
     return onHost::executeForEachIfHasDevice(
         [=](auto const& backend)
-        {
-            return haccmkAlpaka::example(
-                backend[alpaka::object::deviceSpec],
-                backend[alpaka::object::exec],
-                n2,
-                n1,
-                repeat);
-        },
+        { return haccmkAlpaka::example(onHost::makeDeviceSpec(backend), getExecutor(backend), n2, n1, repeat); },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

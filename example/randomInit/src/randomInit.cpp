@@ -307,8 +307,8 @@ int exampleUniformDist(auto const cfg, size_t numElements)
 {
     using namespace alpaka;
 
-    auto deviceSpec = cfg[object::deviceSpec];
-    auto computeExec = cfg[object::exec];
+    auto deviceSpec = alpaka::onHost::DeviceSpec{cfg};
+    auto computeExec = alpaka::getExecutor(cfg);
 
 
     // Use the single host device
@@ -391,9 +391,12 @@ auto main(int argc, char* argv[]) -> int
 
     using namespace alpaka;
     // Execute the example once for each enabled API and executor.
-    return onHost::executeForEachIfHasDevice(
-        [=](alpaka::concepts::Backend auto const& backend)
+    return onHost::executeForEach(
+        [=](alpaka::concepts::BackendSpec auto const& backend)
         {
+            auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+            if(!selector.isAvailable())
+                return EXIT_SUCCESS;
             bool retVal = exampleUniformDist(backend, numElements) || exampleNormalDist(backend, numElementsNormal);
             return retVal == false ? EXIT_SUCCESS : EXIT_FAILURE;
         },

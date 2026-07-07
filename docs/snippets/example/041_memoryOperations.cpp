@@ -15,8 +15,7 @@ using namespace alpaka;
 
 TEMPLATE_LIST_TEST_CASE("memory", "[docs]", docs::test::TestBackends)
 {
-    auto computeDevSpec = TestType::makeDict()[object::deviceSpec];
-    auto computeDevSelector = alpaka::onHost::makeDeviceSelector(computeDevSpec);
+    auto computeDevSelector = alpaka::onHost::makeDeviceSelector(TestType::makeDict());
     if(!computeDevSelector.isAvailable())
         return;
 
@@ -92,7 +91,7 @@ TEMPLATE_LIST_TEST_CASE("memory", "[docs]", docs::test::TestBackends)
 
 TEMPLATE_LIST_TEST_CASE("memory using std::vector", "[docs]", docs::test::TestBackends)
 {
-    auto computeDevSpec = TestType::makeDict()[object::deviceSpec];
+    auto computeDevSpec = alpaka::onHost::DeviceSpec{TestType::makeDict()};
     auto computeDevSelector = alpaka::onHost::makeDeviceSelector(computeDevSpec);
     if(!computeDevSelector.isAvailable())
         return;

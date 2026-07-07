@@ -35,7 +35,7 @@ TEMPLATE_LIST_TEST_CASE("get executor", "[interface][executor]", TestApis)
 
     static_assert(concepts::HasExecutor<ALPAKA_TYPEOF(cfg)>);
     static_assert(concepts::Executor<ALPAKA_TYPEOF(executor)>);
-    CHECK((executor == cfg[object::exec]));
+    CHECK((executor == alpaka::getExecutor(cfg)));
 
     onHost::Device device = test::getDeviceOrSkipTest(cfg);
     onHost::Queue queue = device.makeQueue();
@@ -56,7 +56,7 @@ TEMPLATE_LIST_TEST_CASE("get device kind", "[interface][deviceKind]", TestApis)
     auto deviceKind = alpaka::getDeviceKind(cfg);
 
     static_assert(concepts::DeviceKind<ALPAKA_TYPEOF(deviceKind)>);
-    CHECK((deviceKind == cfg[object::deviceSpec].getDeviceKind()));
+    CHECK((deviceKind == getDeviceKind(cfg)));
 
     onHost::Device device = test::getDeviceOrSkipTest(cfg);
     onHost::Queue queue = device.makeQueue();

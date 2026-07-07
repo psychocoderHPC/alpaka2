@@ -15,6 +15,7 @@ using namespace alpaka;
 using Data = std::size_t;
 using TestBackends = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
 using DictWithoutDeviceSpecOrExec = Dict<DictEntry<object::Api, api::Host>>;
+using DictWithoutExecutor = Dict<DictEntry<object::Api, api::Host>, DictEntry<object::DeviceKind, deviceKind::Cpu>>;
 
 template<typename TIdx>
 void testVector()
@@ -90,10 +91,12 @@ TEST_CASE("thread spec concepts", "[concepts][threadspec]")
 TEMPLATE_LIST_TEST_CASE("backend concept", "[concepts][backend]", TestBackends)
 {
     auto backend = TestType::makeDict();
+    auto deviceSpec = onHost::DeviceSpec{backend};
 
-    STATIC_CHECK(alpaka::concepts::Backend<TestType>);
-    STATIC_CHECK_FALSE(alpaka::concepts::Backend<DictWithoutDeviceSpecOrExec>);
-    STATIC_CHECK_FALSE(alpaka::concepts::Backend<decltype(backend[alpaka::object::deviceSpec])>);
-    CHECK(alpaka::getApi(backend) == alpaka::getApi(backend[alpaka::object::deviceSpec]));
-    CHECK(alpaka::getDeviceKind(backend) == alpaka::getDeviceKind(backend[alpaka::object::deviceSpec]));
+    STATIC_CHECK(alpaka::concepts::BackendSpec<TestType>);
+    STATIC_CHECK_FALSE(alpaka::concepts::BackendSpec<DictWithoutDeviceSpecOrExec>);
+    STATIC_CHECK_FALSE(alpaka::concepts::BackendSpec<DictWithoutExecutor>);
+    STATIC_CHECK(alpaka::concepts::DeviceSpec<decltype(deviceSpec)>);
+    CHECK(alpaka::getApi(backend) == alpaka::getApi(deviceSpec));
+    CHECK(alpaka::getDeviceKind(backend) == alpaka::getDeviceKind(deviceSpec));
 }

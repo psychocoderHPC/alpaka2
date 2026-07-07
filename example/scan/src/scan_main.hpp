@@ -198,12 +198,15 @@ auto main(int argc, char* argv[]) -> int
     using namespace alpaka;
 
     // Execute the example once for each enabled API and executor.
-    auto result = onHost::executeForEachIfHasDevice(
-        [=](alpaka::concepts::Backend auto const& backend)
+    auto result = onHost::executeForEach(
+        [=](alpaka::concepts::BackendSpec auto const& backend)
         {
+            auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+            if(!selector.isAvailable())
+                return EXIT_SUCCESS;
             return alpaka::example::scan::example(
-                backend[alpaka::object::deviceSpec],
-                backend[alpaka::object::exec],
+                alpaka::onHost::DeviceSpec{backend},
+                alpaka::getExecutor(backend),
                 numElements,
                 enableStdScan,
                 enableCheck,

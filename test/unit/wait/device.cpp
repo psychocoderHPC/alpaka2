@@ -112,8 +112,8 @@ void executeWaitTest(auto& device, auto const& exec)
 
 void prepareAndExecuteWaitTest(auto cfg)
 {
-    auto deviceSpec = cfg[object::deviceSpec];
-    auto exec = cfg[object::exec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
+    auto exec = alpaka::getExecutor(cfg);
 
     auto deviceSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!deviceSelector.isAvailable())

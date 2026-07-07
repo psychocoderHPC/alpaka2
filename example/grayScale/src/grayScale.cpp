@@ -123,8 +123,8 @@ auto example(T_Cfg const& cfg, size_t numElements, size_t numberOfRuns, bool ena
 {
     using IdxVec = Vec<std::size_t, 1u>;
 
-    auto deviceSpec = cfg[object::deviceSpec];
-    auto exec = cfg[object::exec];
+    auto deviceSpec = alpaka::onHost::DeviceSpec{cfg};
+    auto exec = alpaka::getExecutor(cfg);
 
     // Define the buffer element type.
     // Use uint32_t for packed ARGB values
@@ -350,8 +350,13 @@ auto main(int argc, char* argv[]) -> int
      * A list of executors can be found
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
-    return onHost::executeForEachIfHasDevice(
-        [=](alpaka::concepts::Backend auto const& backend)
-        { return example(backend, numElements, numberOfRuns, enableStdForEach); },
+    return onHost::executeForEach(
+        [=](alpaka::concepts::BackendSpec auto const& backend)
+        {
+            auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+            if(!selector.isAvailable())
+                return EXIT_SUCCESS;
+            return example(backend, numElements, numberOfRuns, enableStdForEach);
+        },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }

@@ -113,8 +113,8 @@ int exampleDispatch(auto const cfg, uint32_t numElements, auto const& mean, auto
     }
     using namespace alpaka;
 
-    auto deviceSpec = cfg[object::deviceSpec];
-    auto computeExec = cfg[object::exec];
+    auto deviceSpec = alpaka::onHost::DeviceSpec{cfg};
+    auto computeExec = alpaka::getExecutor(cfg);
 
 
     // Use the single host device

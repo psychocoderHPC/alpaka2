@@ -65,7 +65,7 @@ struct ImageTileHierarchyKernel
 
 TEMPLATE_LIST_TEST_CASE("tutorial hierarchy blocks threads warps", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);
@@ -183,7 +183,7 @@ struct ChunkedVectorAddKernel
 
 TEMPLATE_LIST_TEST_CASE("tutorial chunked frames kernel", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);

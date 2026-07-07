@@ -513,7 +513,7 @@ TEMPLATE_LIST_TEST_CASE("TEST: Babelstream Kernels<Float>", "[benchmark-test]", 
 {
     auto backend = TestType::makeDict();
     // Run tests for the float data type
-    testKernels<float>(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]);
+    testKernels<float>(alpaka::onHost::DeviceSpec{backend}, alpaka::getExecutor(backend));
 }
 
 // Run for all Accs given by the argument
@@ -521,5 +521,5 @@ TEMPLATE_LIST_TEST_CASE("TEST: Babelstream Kernels<Double>", "[benchmark-test]",
 {
     auto backend = TestType::makeDict();
     // Run tests for the double data type
-    testKernels<double>(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]);
+    testKernels<double>(alpaka::onHost::DeviceSpec{backend}, alpaka::getExecutor(backend));
 }

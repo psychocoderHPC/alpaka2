@@ -268,12 +268,15 @@ auto main(int argc, char* argv[]) -> int
      * A list of executors can be found
      * https://alpaka3.readthedocs.io/en/latest/basic/cheatsheet.html#executors
      */
-    return onHost::executeForEachIfHasDevice(
-        [=](alpaka::concepts::Backend auto const& backend)
+    return onHost::executeForEach(
+        [=](alpaka::concepts::BackendSpec auto const& backend)
         {
+            auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+            if(!selector.isAvailable())
+                return EXIT_SUCCESS;
             return example(
-                backend[alpaka::object::deviceSpec],
-                backend[alpaka::object::exec],
+                alpaka::onHost::DeviceSpec{backend},
+                alpaka::getExecutor(backend),
                 numElements,
                 numberOfRuns);
         },

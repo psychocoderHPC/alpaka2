@@ -199,7 +199,7 @@ namespace alpaka::onHost::trait
 
 TEMPLATE_LIST_TEST_CASE("tutorial shared memory chunk", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);
@@ -234,7 +234,7 @@ TEMPLATE_LIST_TEST_CASE("tutorial shared memory chunk", "[docs]", docs::test::Te
 
 TEMPLATE_LIST_TEST_CASE("tutorial shared memory scalar value", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);
@@ -262,7 +262,7 @@ TEMPLATE_LIST_TEST_CASE("tutorial shared memory scalar value", "[docs]", docs::t
 
 TEMPLATE_LIST_TEST_CASE("tutorial dynamic shared memory via member", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);
@@ -304,7 +304,7 @@ TEMPLATE_LIST_TEST_CASE("tutorial dynamic shared memory via member", "[docs]", d
 
 TEMPLATE_LIST_TEST_CASE("tutorial dynamic shared memory via trait", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);

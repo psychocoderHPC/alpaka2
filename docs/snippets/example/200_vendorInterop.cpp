@@ -98,7 +98,7 @@ namespace vendorTutorial
 
 TEMPLATE_LIST_TEST_CASE("tutorial vendor interop dispatch", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);

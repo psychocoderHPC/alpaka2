@@ -89,7 +89,7 @@ TEMPLATE_LIST_TEST_CASE("basic queue wait for event", "", TestApis)
 TEMPLATE_LIST_TEST_CASE("test trigger event", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -126,7 +126,7 @@ TEMPLATE_LIST_TEST_CASE("test trigger event", "", TestApis)
 TEMPLATE_LIST_TEST_CASE("eventTestShouldBeFalseWhileInQueueAndTrueAfterBeingProcessed", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -165,7 +165,7 @@ TEMPLATE_LIST_TEST_CASE("eventTestShouldBeFalseWhileInQueueAndTrueAfterBeingProc
 TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfNobodyWaitsFor", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -241,7 +241,7 @@ TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfNobodyWaitsFor", "", Te
 TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfSomeoneWaitsFor", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -331,7 +331,7 @@ TEMPLATE_LIST_TEST_CASE("eventReEnqueueShouldBePossibleIfSomeoneWaitsFor", "", T
 TEMPLATE_LIST_TEST_CASE("waitForEventThatAlreadyFinishedShouldBeSkipped", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -418,7 +418,7 @@ TEMPLATE_LIST_TEST_CASE("waitForEventThatAlreadyFinishedShouldBeSkipped", "", Te
 TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelease", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())
@@ -545,7 +545,7 @@ TEMPLATE_LIST_TEST_CASE("evReEnqueueWithSomeoneWaitsForEventInOrderLifetimeRelea
 TEMPLATE_LIST_TEST_CASE("EventOutOfOrderLifetimeRelease", "", TestApis)
 {
     auto cfg = TestType::makeDict();
-    auto deviceSpec = cfg[object::deviceSpec];
+    auto deviceSpec = onHost::DeviceSpec{cfg};
 
     auto devSelector = onHost::makeDeviceSelector(deviceSpec);
     if(!devSelector.isAvailable())

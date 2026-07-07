@@ -55,7 +55,7 @@ struct NeighborReuseKernel
 
 TEMPLATE_LIST_TEST_CASE("tutorial in-kernel synchronization", "[docs]", docs::test::TestBackends)
 {
-    auto selector = onHost::makeDeviceSelector(TestType::makeDict()[object::deviceSpec]);
+    auto selector = onHost::makeDeviceSelector(TestType::makeDict());
     if(!selector.isAvailable())
         return;
     onHost::concepts::Device auto device = selector.makeDevice(0);

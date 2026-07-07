@@ -378,19 +378,30 @@ auto main(int argc, char* argv[]) -> int
 
     if(benchmarkMode)
     {
-        return onHost::executeForEachIfHasDevice(
-            [=](alpaka::concepts::Backend auto const& backend)
-            { return alpaka::example::nBody::benchmark(backend[object::deviceSpec], backend[object::exec], dt); },
+        return onHost::executeForEach(
+            [=](alpaka::concepts::BackendSpec auto const& backend)
+            {
+                auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+                if(!selector.isAvailable())
+                    return EXIT_SUCCESS;
+                return alpaka::example::nBody::benchmark(
+                    alpaka::onHost::DeviceSpec{backend},
+                    alpaka::getExecutor(backend),
+                    dt);
+            },
             onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
     }
     else
     {
-        return onHost::executeForEachIfHasDevice(
-            [=](alpaka::concepts::Backend auto const& backend)
+        return onHost::executeForEach(
+            [=](alpaka::concepts::BackendSpec auto const& backend)
             {
+                auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+                if(!selector.isAvailable())
+                    return EXIT_SUCCESS;
                 return alpaka::example::nBody::example(
-                    backend[object::deviceSpec],
-                    backend[object::exec],
+                    alpaka::onHost::DeviceSpec{backend},
+                    alpaka::getExecutor(backend),
                     writePngs,
                     benchmarkMode,
                     numParticles,

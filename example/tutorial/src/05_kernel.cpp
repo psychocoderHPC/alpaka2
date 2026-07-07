@@ -264,8 +264,13 @@ auto main() -> int
     example(onHost::DeviceSpec{api::host, deviceKind::cpu}, exec::cpuSerial);
 
     // Execute the example once for each enabled API, device kind, and executor.
-    return onHost::executeForEachIfHasDevice(
-        [=](alpaka::concepts::Backend auto const& backend)
-        { return example(backend[alpaka::object::deviceSpec], backend[alpaka::object::exec]); },
+    return onHost::executeForEach(
+        [=](alpaka::concepts::BackendSpec auto const& backend)
+        {
+            auto selector = onHost::makeDeviceSelector(alpaka::onHost::DeviceSpec{backend});
+            if(!selector.isAvailable())
+                return EXIT_SUCCESS;
+            return example(alpaka::onHost::DeviceSpec{backend}, alpaka::getExecutor(backend));
+        },
         onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors));
 }
