@@ -57,6 +57,9 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     echo_green "${APCI_CXX_COMPILER} --version"
     $APCI_CXX_COMPILER --version
 
+    echo_green "sycl-ls"
+    sycl-ls
+
     export ONEAPI_PATH
     export APCI_C_COMPILER
     export APCI_CXX_COMPILER

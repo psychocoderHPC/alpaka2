@@ -14,8 +14,13 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 if [[ "$APCI_ONEAPI" != 0 ]]; then
     if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
+        load_variable_if_not_exist ONEAPI_PATH
+        # shellcheck source=script/ci/install/oneapi/setvars.sh
+        source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
         export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/${APCI_ONEAPI}/lib/:${LD_LIBRARY_PATH}"
     fi
+    echo_green "sycl-ls"
+    sycl-ls
 fi
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"
