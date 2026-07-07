@@ -43,35 +43,6 @@ namespace alpaka::onHost
                    : EXIT_FAILURE;
     }
 
-    /**! execute a callable for each backend if there is a device available
-     *
-     * The function contains a runtime check if at least one device is available, if there is no device the callable
-     * will not be executed. Not executed combinations will return EXIT_SUCCESS.
-     *
-     * @attention: Execution is short-circuited and stops after the first error.
-     *
-     * @param callable Callable that can be invoked with each backend and returns an execution status.
-     *        A return value of zero (`EXIT_SUCCESS`) indicates success; any non-zero value indicates a failure.
-     * @param tuple Tuple like list of backends used to invoke the callable.
-     *         otherwise, at least one failure occurred.
-     * @return The disjunction of all returned error codes. If false, the result is `EXIT_SUCCESS`;
-     *          otherwise, at least a failure occurred.
-     */
-    template<alpaka::concepts::Backend... T_Backends>
-    inline int executeForEachIfHasDevice(auto&& callable, std::tuple<T_Backends...> const& tupleOfBackends)
-    {
-        auto exe = [=](alpaka::concepts::Backend auto const& backend)
-        {
-            auto devSelector = onHost::makeDeviceSelector(backend[object::deviceSpec]);
-            if(devSelector.isAvailable())
-            {
-                return callable(backend);
-            }
-            return EXIT_SUCCESS;
-        };
-        return executeForEach(exe, tupleOfBackends);
-    }
-
     /**! execute a callable for each device specification if there is a device available
      *
      * The function contains a runtime check if at least one device is available, if there is no device the callable
@@ -86,7 +57,7 @@ namespace alpaka::onHost
      * @return The disjunction of all returned error codes. If false, the result is `EXIT_SUCCESS`;
      *          otherwise, at least a failure occurred.
      */
-    template<onHost::concepts::DeviceSpec... T_DeviceSpecs>
+    template<alpaka::concepts::DeviceSpec... T_DeviceSpecs>
     inline int executeForEachIfHasDevice(auto&& callable, std::tuple<T_DeviceSpecs...> const& tupleOfDeviceSpecs)
     {
         auto exe = [=](auto const& devSpec)

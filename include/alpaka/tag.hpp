@@ -33,8 +33,6 @@ namespace alpaka
 
         ALPAKA_TAG(launchedWidthFrameSpec);
 
-        ALPAKA_TAG(deviceSpec);
-
         ALPAKA_TAG(dynSharedMemBytes);
 
         struct WarpSize

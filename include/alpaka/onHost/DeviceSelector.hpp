@@ -20,12 +20,8 @@ namespace alpaka::onHost
             "Invalid combination of device kind and api. The api does not know how to talk to the device or the "
             "required dependencies to enable the api are not fulfilled.");
 
-        constexpr DeviceSelector(alpaka::concepts::Backend auto backend) : DeviceSelector(backend[object::deviceSpec])
-        {
-        }
-
-        constexpr DeviceSelector(DeviceSpec<T_Api, T_DeviceKind> deviceSpec)
-            : m_platform(internal::makePlatform(deviceSpec.getApi(), deviceSpec.getDeviceKind()))
+        constexpr DeviceSelector(alpaka::concepts::DeviceSpec auto deviceSpec)
+            : m_platform(internal::makePlatform(getApi(deviceSpec), getDeviceKind(deviceSpec)))
             , m_deviceSpec(deviceSpec)
         {
         }
@@ -73,16 +69,14 @@ namespace alpaka::onHost
         DeviceSpec<T_Api, T_DeviceKind> m_deviceSpec;
     };
 
-    /** create an object to get access to devices */
-    template<typename T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
-    inline auto makeDeviceSelector(DeviceSpec<T_Api, T_DeviceKind> deviceSpec)
-    {
-        return DeviceSelector{deviceSpec};
-    }
+    template<alpaka::concepts::DeviceSpec T_DeviceSpec>
+    DeviceSelector(T_DeviceSpec const& deviceSpec)
+        -> DeviceSelector<ALPAKA_TYPEOF(getApi(deviceSpec)), ALPAKA_TYPEOF(getDeviceKind(deviceSpec))>;
 
-    inline auto makeDeviceSelector(alpaka::concepts::Backend auto backend)
+    /** create an object to get access to devices */
+    template<alpaka::concepts::DeviceSpec T_DeviceSpec>
+    inline auto makeDeviceSelector(T_DeviceSpec deviceSpec)
     {
-        auto deviceSpec = backend[object::deviceSpec];
         return DeviceSelector{deviceSpec};
     }
 

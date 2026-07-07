@@ -6,6 +6,7 @@
 #include "alpaka/KernelBundle.hpp"
 #include "alpaka/api/trait.hpp"
 #include "alpaka/core/Assert.hpp"
+#include "alpaka/core/DictTraits.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"

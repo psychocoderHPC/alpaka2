@@ -6,6 +6,7 @@
 
 #include "alpaka/api/api.hpp"
 #include "alpaka/api/host/hwloc/hwlocConfig.hpp"
+#include "alpaka/concepts.hpp"
 #include "alpaka/core/config.hpp"
 #include "alpaka/tag.hpp"
 
@@ -28,6 +29,13 @@ namespace alpaka::onHost
     {
     public:
         constexpr DeviceSpec(T_Api api, T_DeviceKind deviceType) : m_api(api), m_deviceType(deviceType)
+        {
+        }
+
+        template<alpaka::concepts::DeviceSpec T_DeviceSpec>
+        constexpr DeviceSpec(T_DeviceSpec any)
+            : m_api(alpaka::internal::getApi(any))
+            , m_deviceType(alpaka::internal::getDeviceKind(any))
         {
         }
 
@@ -67,6 +75,20 @@ namespace alpaka::onHost
         T_Api m_api;
         T_DeviceKind m_deviceType;
     };
+
+    template<alpaka::concepts::DeviceSpec T_DeviceSpec>
+    DeviceSpec(T_DeviceSpec const& deviceSpec)
+        -> DeviceSpec<ALPAKA_TYPEOF(getApi(deviceSpec)), ALPAKA_TYPEOF(getDeviceKind(deviceSpec))>;
+
+    /** Create a device specification object.
+     *
+     * @param any Any device specification description providing an api and device kind.
+     */
+    template<alpaka::concepts::DeviceSpec T_DeviceSpec>
+    inline auto makeDeviceSpec(T_DeviceSpec any)
+    {
+        return DeviceSpec{any};
+    }
 
     /** list of enabled device specifications
      *
@@ -109,13 +131,5 @@ namespace alpaka::onHost
         std::tuple{DeviceSpec{api::hip, deviceKind::amdGpu}}
 #endif
     );
-
-    namespace concepts
-    {
-        /** Concept to check for specializations of alpaka::onHost::DeviceSpec
-         */
-        template<typename T>
-        concept DeviceSpec = alpaka::concepts::SpecializationOf<T, onHost::DeviceSpec>;
-    } // namespace concepts
 
 } // namespace alpaka::onHost

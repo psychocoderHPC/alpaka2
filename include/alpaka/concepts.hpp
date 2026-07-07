@@ -7,7 +7,6 @@
 #include "alpaka/api/concepts/api.hpp"
 #include "alpaka/api/trait.hpp"
 #include "alpaka/concepts/hasName.hpp"
-#include "alpaka/core/common.hpp"
 #include "alpaka/mem/concepts/AssignableFrom.hpp"
 #include "alpaka/mem/concepts/ExpectedValueType.hpp"
 #include "alpaka/mem/concepts/IBuffer.hpp"
@@ -61,12 +60,13 @@ namespace alpaka
             { internal::getDeviceKind(t) } -> alpaka::concepts::DeviceKind;
         };
 
-        /** Concept to check for a backend object containing a device specification and executor.
+        /** Concept to check for a backend specification
+         *
+         * The object must provide the possibility for querying the device specification properties and the executor.
          */
         template<typename T>
-        concept Backend = requires(T t) {
-            requires std::decay_t<T>::hasKey(object::deviceSpec);
-            requires alpaka::concepts::DeviceSpec<ALPAKA_TYPEOF(t[object::deviceSpec])>;
+        concept BackendSpec = requires(T t) {
+            requires DeviceSpec<T>;
             { internal::getExecutor(t) } -> alpaka::concepts::Executor;
         };
     } // namespace concepts

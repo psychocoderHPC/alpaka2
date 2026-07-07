@@ -8,18 +8,6 @@
 
 #include <type_traits>
 
-namespace alpaka::internal
-{
-    // Forward declaration to avoid a circular include between Dict and the interface helpers.
-    struct GetExecutor
-    {
-        template<typename T_Any>
-        struct Op;
-    };
-
-    template<typename T_Any>
-    inline constexpr auto getExecutor(T_Any&& any) -> decltype(GetExecutor::Op<std::decay_t<T_Any>>{}(any));
-} // namespace alpaka::internal
 
 #if ALPAKA_LANG_HIP
 // HIP defines some keywords like __forceinline__ in header files.

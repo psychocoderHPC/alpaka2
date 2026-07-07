@@ -223,11 +223,16 @@ Executor
 
 .. _backend:
 
-Backend
--------
+Backend Spec
+------------
 
-A ``Backend`` is the combination of a ``DeviceSpec`` and an ``Executor``. It is typically returned by ``onHost::allBackends(...)``.
+A ``BackendSpec`` (backend specification) provides three properties:
 
+The ``api`` and ``deviceKind``, which describe a ``DeviceSpec``.
+The ``executor``, which describes how thread parallelism is mapped onto the device according to the device specification.
+
+It is typically returned by ``onHost::allBackends(...)``.
+Use ``alpaka::getExecutor(backend)`` to query its executor, and ``alpaka::onHost::DeviceSpec{backend}`` to recover its device specification.
 .. _thread_spec:
 
 Thread Spec

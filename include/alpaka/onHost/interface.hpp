@@ -272,8 +272,8 @@ namespace alpaka::onHost
     /** Build a tuple of backends for a single device specification.
      *
      * A backend is the combination of a device specification and an executor.
-     * Each dictionary stores a `deviceSpec`(query: foo[object::deviceSpec]) entry and an `exec`(query:
-     * foo[object::exec]) entry for the corresponding executor.
+     * Query its executor via `alpaka::getExecutor(backend)` and recover its device
+     * specification via `alpaka::onHost::DeviceSpec{backend}`.
      *
      * @param deviceSpec the device specification to associate with the executors
      * @param listOfExecutors tuple of executor types
@@ -285,7 +285,10 @@ namespace alpaka::onHost
             [deviceSpec](auto... executor) constexpr
             {
                 return std::make_tuple(
-                    Dict{DictEntry{object::deviceSpec, deviceSpec}, DictEntry{object::exec, executor}}...);
+                    Dict{
+                        DictEntry{object::api, getApi(deviceSpec)},
+                        DictEntry{object::deviceKind, getDeviceKind(deviceSpec)},
+                        DictEntry{object::exec, executor}}...);
             },
             listOfExecutors);
     }
@@ -331,7 +334,7 @@ namespace alpaka::onHost
      * @param listOfExecutors tuple of executor types
      * @return a tuple of backend dictionaries covering all device kinds and executors
      */
-    template<concepts::DeviceSpec... T_DevicesSpecs>
+    template<alpaka::concepts::DeviceSpec... T_DevicesSpecs>
     consteval auto allBackends(std::tuple<T_DevicesSpecs...> const& usedDeviceSpecs, auto const& listOfExecutors)
     {
         return std::tuple_cat(createBackendList(usedDeviceSpecs, listOfExecutors));

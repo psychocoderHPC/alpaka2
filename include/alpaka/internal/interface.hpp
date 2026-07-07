@@ -52,14 +52,14 @@ namespace alpaka
             template<typename T_Any>
             struct Op
             {
-                inline constexpr auto operator()(auto&& any) const
+                inline constexpr auto operator()(auto&& any) const -> decltype(any.getApi())
                 {
                     return any.getApi();
                 }
             };
         };
 
-        inline constexpr auto getApi(auto&& any)
+        inline constexpr auto getApi(auto&& any) -> decltype(GetApi::Op<ALPAKA_TYPEOF(any)>{}(any))
         {
             return GetApi::Op<std::decay_t<decltype(any)>>{}(any);
         }
@@ -70,17 +70,20 @@ namespace alpaka
             return GetApi::Op<ALPAKA_TYPEOF(*anyHandle.get())>{}(*anyHandle.get());
         }
 
-        template<typename T_Any>
-        struct GetExecutor::Op
+        struct GetExecutor
         {
-            inline constexpr auto operator()(auto&& any) const -> decltype(any.getExecutor())
+            template<typename T_Any>
+            struct Op
             {
-                return any.getExecutor();
-            }
+                inline constexpr auto operator()(auto&& any) const -> decltype(any.getExecutor())
+                {
+                    return any.getExecutor();
+                }
+            };
         };
 
         template<typename T_Any>
-        inline constexpr auto getExecutor(T_Any&& any) -> decltype(GetExecutor::Op<std::decay_t<T_Any>>{}(any))
+        inline constexpr auto getExecutor(T_Any&& any) -> decltype(GetExecutor::Op<ALPAKA_TYPEOF(any)>{}(any))
         {
             return GetExecutor::Op<std::decay_t<T_Any>>{}(ALPAKA_FORWARD(any));
         }
@@ -96,16 +99,16 @@ namespace alpaka
             template<typename T_Any>
             struct Op
             {
-                inline constexpr auto operator()(auto&& any) const
+                inline constexpr auto operator()(auto&& any) const -> decltype(any.getDeviceKind())
                 {
                     return any.getDeviceKind();
                 }
             };
         };
 
-        inline constexpr auto getDeviceKind(auto&& any)
+        inline constexpr auto getDeviceKind(auto&& any) -> decltype(GetDeviceType::Op<ALPAKA_TYPEOF(any)>{}(any))
         {
-            return GetDeviceType::Op<std::decay_t<decltype(any)>>{}(any);
+            return GetDeviceType::Op<ALPAKA_TYPEOF(any)>{}(any);
         }
 
         struct GetAlignment

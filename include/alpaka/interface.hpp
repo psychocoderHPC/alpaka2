@@ -49,11 +49,6 @@ namespace alpaka
         return alpaka::internal::getApi(*any.get());
     }
 
-    inline constexpr decltype(auto) getApi(alpaka::concepts::Backend auto&& backend)
-    {
-        return getApi(ALPAKA_FORWARD(backend)[object::deviceSpec]);
-    }
-
     namespace concepts
     {
         /** Concept to check if the given type implements the `getExecutor(T x)` function returning an
@@ -88,11 +83,6 @@ namespace alpaka
     inline constexpr decltype(auto) getDeviceKind(alpaka::concepts::HasGet auto&& any)
     {
         return alpaka::internal::getDeviceKind(*any.get());
-    }
-
-    inline constexpr decltype(auto) getDeviceKind(alpaka::concepts::Backend auto&& backend)
-    {
-        return getDeviceKind(ALPAKA_FORWARD(backend)[object::deviceSpec]);
     }
 
     /** @} */
