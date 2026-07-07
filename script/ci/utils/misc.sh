@@ -173,7 +173,7 @@ apt_package_version() {
     apt_ver=$(apt list --all-versions "$1" |
         cut -d " " -f 2 |
         grep "$2" |
-        sort | tail -n 1)
+        sort -V | tail -n 1)
 
     if [[ "${apt_ver}" == "" ]]; then
         exit_error "apt_package_version(): Didn't find any apt version for package $1 with version $2 ."

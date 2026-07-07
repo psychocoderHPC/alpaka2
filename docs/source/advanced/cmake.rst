@@ -368,7 +368,7 @@ Executors
 
      Enable the OpenMP CPU blocks executor `exec::cpuOmpBlocks`.
 
-``alpaka_EXEC_CPU_TbbBlocks``
+``alpaka_EXEC_TbbBlocks``
   .. code-block:: markdown
 
      Enable the TBB CPU blocks executor `exec::cpuTbbBlocks`.
