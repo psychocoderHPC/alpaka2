@@ -13,7 +13,7 @@ script_msg "Run CMake build (build.sh)"
 # Return the number of build threads depending on the
 # - maximum number of available threads (first parameter)
 # - available memory (second parameter)
-# - required memory per thread (configure via variable ACPI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES)
+# - required memory per thread (configure via variable APCI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES)
 function get_build_threads() {
     if [[ $# -lt 2 ]]; then
         echo -e "\e[1;31m[ERROR]: " \
@@ -23,7 +23,7 @@ function get_build_threads() {
         exit 1
     fi
 
-    local max_possible_build_threads=$(($2 / ACPI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES))
+    local max_possible_build_threads=$(($2 / APCI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES))
 
     if [[ $max_possible_build_threads -lt 1 ]]; then
         max_possible_build_threads=1
@@ -48,7 +48,24 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
 fi
 
 if [[ -z ${APCI_BUILD_THREADS+x} ]]; then
-    APCI_BUILD_THREADS=$(get_build_threads "${APCI_MAX_NUM_BUILD_THREADS}" "${APCI_TOTAL_MEMORY_BYTES}")
+    # local container
+    if [[ -z ${GITHUB_ACTIONS+x} ]] && [[ -z ${GITLAB_CI+x} ]]; then
+        max_num_build_threads=$(nproc)
+        total_memory_bytes=$(free -b | awk '/Mem:/ { print $2 }')
+    fi
+
+    if [[ -n ${GITHUB_ACTIONS+x} ]]; then
+        max_num_build_threads=$(nproc)
+        total_memory_bytes=$(free -b | awk '/Mem:/ { print $2 }')
+    fi
+
+    if [[ -n ${GITLAB_CI+x} ]]; then
+        # CI_CPU and CI_RAM_BYTES_TOTAL are predefined on the HZDR runner
+        max_num_build_threads="${CI_CPUS}"
+        total_memory_bytes="${CI_RAM_BYTES_TOTAL}"
+    fi
+
+    APCI_BUILD_THREADS=$(get_build_threads "${max_num_build_threads}" "${total_memory_bytes}")
 fi
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"

@@ -8,7 +8,7 @@
 # setup environment variables depending on os environment (on local system, GitLab CI, GitHub Action ...)
 
 # set the required memory per build thread in GB
-export ACPI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES=$((2 * 1024 ** 3))
+export APCI_REQUIRED_RAM_PER_BUILD_THREAD_BYTES=$((2 * 1024 ** 3))
 
 if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     # force color output
@@ -79,5 +79,4 @@ if [[ -n ${GITLAB_CI+x} ]]; then
         fi
     fi
     export APCI_AMD_GPU_ARCH
-
 fi
