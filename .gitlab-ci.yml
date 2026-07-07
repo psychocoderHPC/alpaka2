@@ -2,6 +2,7 @@
   variables:
     APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
     APCI_RUN_CTEST: "ON"
+    APCI_EXEC_CPU_SERIAL: "OFF"
     APCI_HIP : 0
     APCI_ONEAPI : 0
     APCI_ONEAPI_TARGET: none
@@ -28,6 +29,7 @@ gcc-13:
   variables:
     APCI_DEVICE_COMPILER : gcc@13
     APCI_CMAKE: 3.28.3
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 gcc-15:
   image: docker.io/ubuntu:24.04
@@ -35,6 +37,7 @@ gcc-15:
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 gcc-12-agc:
   image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
@@ -42,6 +45,7 @@ gcc-12-agc:
   variables:
     APCI_DEVICE_COMPILER : gcc@12
     APCI_CMAKE: 3.31.4
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 clang-19:
   image: docker.io/ubuntu:24.04
@@ -49,6 +53,7 @@ clang-19:
   variables:
     APCI_DEVICE_COMPILER : clang@19
     APCI_CMAKE: 3.28.3
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 clang-21:
   image: docker.io/ubuntu:24.04
@@ -56,6 +61,7 @@ clang-21:
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 clang-20-agc:
   image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
@@ -63,6 +69,7 @@ clang-20-agc:
   variables:
     APCI_DEVICE_COMPILER : clang@20
     APCI_CMAKE: 3.31.4
+    APCI_EXEC_CPU_SERIAL: "ON"
 
 hipcc-6.2-agc:
   image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu22.04-rocm6.2:4.0

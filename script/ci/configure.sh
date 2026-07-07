@@ -77,8 +77,6 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
 
         ap_deps['ONEAPI']=ON
 
-        CMAKE_ARGS+=(-Dalpaka_EXEC_CpuSerial=OFF)
-
         declare -A ap_sycl_targets=(
             ["alpaka_ONEAPI_Cpu"]=OFF
             ["alpaka_ONEAPI_IntelGpu"]=OFF
@@ -110,22 +108,13 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
     done
 
     # enable executor
-    if [[ ${ap_deps['OMP']} == "ON" || ${ap_deps['HWLOC']} == "ON" ]]; then
-        CMAKE_ARGS+=(
-            "-Dalpaka_EXEC_CpuSerial=ON"
-            "-Dalpaka_EXEC_CpuOmpBlocks=ON"
-        )
-    else
-        CMAKE_ARGS+=(
-            "-Dalpaka_EXEC_CpuSerial=OFF"
-            "-Dalpaka_EXEC_CpuOmpBlocks=OFF"
-        )
-    fi
     CMAKE_ARGS+=(
-        "-Dalpaka_EXEC_TbbBlocks=${ap_deps['TBB']}"
-        "-Dalpaka_EXEC_GpuCuda=${ap_deps['CUDA']}"
-        "-Dalpaka_EXEC_GpuHip=${ap_deps['HIP']}"
-        "-Dalpaka_EXEC_OneApi=${ap_deps['ONEAPI']}"
+        -Dalpaka_EXEC_CpuSerial="${APCI_EXEC_CPU_SERIAL}"
+        -Dalpaka_EXEC_CpuOmpBlocks=ON
+        -Dalpaka_EXEC_TbbBlocks=ON
+        -Dalpaka_EXEC_GpuCuda=ON
+        -Dalpaka_EXEC_GpuHip=ON
+        -Dalpaka_EXEC_OneApi=ON
     )
 
     echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \

@@ -49,6 +49,10 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
 
     export APCI_OS_NAME="$RUNNER_OS"
 
+    if [[ -z ${APCI_EXEC_CPU_SERIAL} ]]; then
+        export APCI_EXEC_CPU_SERIAL=OFF
+    fi
+
     # The Github Actions are handwritten, therefore set some undefined variables to default
     # variables. GitLab CI will not do it, because all jobs are generated and default
     # values for undefined variables are an error source.
