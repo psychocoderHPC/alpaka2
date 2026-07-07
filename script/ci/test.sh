@@ -14,7 +14,7 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 if [[ "$APCI_ONEAPI" != 0 ]]; then
     if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
-        export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/2025.1/lib/:${LD_LIBRARY_PATH}"
+        export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/${APCI_ONEAPI}/lib/:${LD_LIBRARY_PATH}"
     fi
 fi
 

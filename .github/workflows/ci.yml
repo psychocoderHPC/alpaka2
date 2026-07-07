@@ -105,18 +105,18 @@ jobs:
               env : {APCI_DEVICE_COMPILER : clang@22, APCI_CMAKE : 3.28.3, APCI_HIP: 7.2, APCI_RUN_CTEST: OFF} }
           # SYCL
           - { compiler: icpx, version: "2025.1", cuda: "no", hip: "no", container: "intel/oneapi-hpckit:2025.1.3-0-devel-ubuntu24.04",
-              env : {APCI_DEVICE_COMPILER : icpx@2025.1, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.1, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
+              env : { APCI_DEVICE_COMPILER : icpx@2025.1, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.1, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
           - { compiler: icpx, version: "2025.2", cuda: "no", hip: "no", container: "intel/oneapi-hpckit:2025.2.2-0-devel-ubuntu24.04",
-              env : {APCI_DEVICE_COMPILER : icpx@2025.2, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.2, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
+              env : { APCI_DEVICE_COMPILER : icpx@2025.2, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.2, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
           - { compiler: icpx, version: "2025.3", cuda: "no", hip: "no", container: "intel/oneapi-hpckit:2025.3.0-0-devel-ubuntu24.04",
-              env : {APCI_DEVICE_COMPILER : icpx@2025.3, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.3, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
+              env : { APCI_DEVICE_COMPILER : icpx@2025.3, APCI_CMAKE : 3.28.3, APCI_ONEAPI: 2025.3, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
           - { compiler: icpx, version: "2026.0", cuda: "no", hip: "no", container: "intel/oneapi:2026.0.0-devel-ubuntu24.04",
               env: { APCI_DEVICE_COMPILER: icpx@2026.0, APCI_CMAKE: 3.28.3, APCI_ONEAPI: 2026.0, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
           - { compiler: icpx, version: "2026.0", cuda: "no", hip: "no", container: "intel/oneapi:2026.0.0-devel-ubuntu24.04", simd: "EMULATION", hwloc: "no",
               env: { APCI_DEVICE_COMPILER: icpx@2026.0, APCI_CMAKE: 3.28.3, APCI_ONEAPI: 2026.0, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: OFF} }
           # Use/validate oneAPI-provided oneTBB package with the latest icpx toolchain
           - { compiler: icpx, version: "2026.0", cuda: "no", hip: "no", container: "intel/oneapi:2026.0.0-devel-ubuntu24.04", tbb: "on",
-              env: { APCI_DEVICE_COMPILER: icpx@2026.0, APCI_CMAKE: 3.28.3, APCI_RUN_CTEST: ON} }
+              env: { APCI_DEVICE_COMPILER: icpx@2026.0, APCI_CMAKE: 3.28.3, APCI_ONEAPI: 2026.0, APCI_ONEAPI_TARGET: cpu, APCI_RUN_CTEST: ON} }
           - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "asan",
               env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
           - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "asan" , simd: "EMULATION", hwloc: "no",

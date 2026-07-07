@@ -95,7 +95,7 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         fi
 
         if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
-            export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/2025.1/lib/:${APCI_ONEAPI}"
+            export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/${APCI_ONEAPI}/lib/:${APCI_ONEAPI}"
         fi
 
         for target in "${!ap_sycl_targets[@]}"; do
