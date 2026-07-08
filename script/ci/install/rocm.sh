@@ -81,18 +81,16 @@ if [[ "$APCI_HIP" != 0 ]]; then
     export APCI_C_COMPILER="${ROCM_PATH}/llvm/bin/clang"
     export APCI_CXX_COMPILER="${ROCM_PATH}/llvm/bin/clang++"
 
-    echo_green "${APCI_C_COMPILER} --version"
-    $APCI_C_COMPILER --version
-    echo_green "${APCI_CXX_COMPILER} --version"
-    $APCI_CXX_COMPILER --version
+    echo_run "${APCI_C_COMPILER}" --version
+    echo_run "${APCI_CXX_COMPILER}" --version
 
-    echo_green "hipconfig --platform"
-    "${ROCM_PATH}"/bin/hipconfig --platform
-    echo_green "\nhipconfig --v"
-    "${ROCM_PATH}"/bin/hipconfig -v
+    echo_run "${ROCM_PATH}"/bin/hipconfig --platform
+    echo_run "${ROCM_PATH}"/bin/hipconfig -v
     echo
 
     store_variable ROCM_PATH
     store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER
+else
+    echo_green "Skipped install ROCm because it is not required for the job."
 fi

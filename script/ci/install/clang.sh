@@ -41,14 +41,14 @@ if [[ "$compiler_name" == "clang" && "$APCI_HIP" == 0 ]]; then
     else
         install_msg "Clang $compiler_version"
 
-        retry_cmd wget https://apt.llvm.org/llvm-snapshot.gpg.key
-        mv ./llvm-snapshot.gpg.key /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        ci_wget https://apt.llvm.org/llvm-snapshot.gpg.key /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+
         case "${compiler_version}" in
         20)
-            add-apt-repository -y "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"
+            echo_run add-apt-repository -y "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main"
             ;;
         21)
-            add-apt-repository -y "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main"
+            echo_run add-apt-repository -y "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main"
             ;;
         esac
         DEBIAN_FRONTEND=noninteractive retry_cmd apt update
@@ -62,10 +62,8 @@ if [[ "$compiler_name" == "clang" && "$APCI_HIP" == 0 ]]; then
         export APCI_CXX_COMPILER="/usr/bin/clang++-${compiler_version}"
     fi
 
-    echo_green "${APCI_C_COMPILER} --version"
-    $APCI_C_COMPILER --version
-    echo_green "${APCI_CXX_COMPILER} --version"
-    $APCI_CXX_COMPILER --version
+    echo_run "$APCI_C_COMPILER" --version
+    echo_run "$APCI_CXX_COMPILER" --version
 
     store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER

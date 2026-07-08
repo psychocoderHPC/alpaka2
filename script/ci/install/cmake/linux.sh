@@ -30,10 +30,10 @@ else
 
         _cmake_tmp_dir=$(mktemp -d)
 
-        retry_cmd wget --no-verbose \
+        ci_wget \
             https://cmake.org/files/v"${_cmake_ver_major}"."${_cmake_ver_minor}"/"${_cmake_pkg_file_name}" \
-            -O "${_cmake_tmp_dir}/${_cmake_pkg_file_name}"
-        tar -xzf "${_cmake_tmp_dir}/${_cmake_pkg_file_name}" -C "${_cmake_tmp_dir}"
+            "${_cmake_tmp_dir}/${_cmake_pkg_file_name}"
+        echo_run tar -xzf "${_cmake_tmp_dir}/${_cmake_pkg_file_name}" -C "${_cmake_tmp_dir}"
 
         mkdir -p "${_cmake_install_path}"
         sudo mv "${_cmake_tmp_dir}/${_cmake_pkg_file_name_base}"/* "${_cmake_install_path}"

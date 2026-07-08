@@ -25,8 +25,19 @@ error_msg() {
     echo_red "[ERROR]: " "$@"
 }
 
+# display bash stack trace
+trace() {
+    echo "TRACE: "
+    for ((i = ${#FUNCNAME[@]} - 1; i; i--)); do
+        printf '%*s%s() %s:%s\n' "$((${#FUNCNAME[@]} - "$i"))" '' \
+            "${FUNCNAME[i]}" "${BASH_SOURCE[i]}" "${BASH_LINENO[i - 1]}"
+    done
+}
+
 exit_error() {
     error_msg "$1"
+    trace
+
     if [[ $# -lt 2 ]]; then
         exit 1
     else
@@ -74,6 +85,8 @@ retry_cmd() {
     if [[ $# -lt 1 ]]; then
         exit_error "retry_cmd requires at least one argument."
     fi
+
+    echo_green "$*"
     (
         set +euo pipefail
         local max_tries="${RETRY_CMD_MAX:-10}"
@@ -94,6 +107,12 @@ retry_cmd() {
         done
         exit_error "run '$*' failed" "$result"
     )
+}
+
+# display command and execute it
+echo_run() {
+    echo_green "$*"
+    "$@"
 }
 
 # Run a command suppress the output if the error code is 0.
@@ -180,6 +199,28 @@ apt_package_version() {
     fi
 
     echo "$1=$apt_ver"
+}
+
+# Run wget with different output options, depending if it is executed locally or in the CI.
+#
+# Args:
+#  - 1. Source URL
+#  - 2. Target file location
+ci_wget() {
+    if [[ $# -lt 1 ]]; then
+        exit_error "ci_wget(): 1. Argument is missing: No source is defined."
+    fi
+
+    if [[ $# -lt 2 ]]; then
+        exit_error "ci_wget(): 2. Argument is missing: No target is defined."
+    fi
+
+    if [[ -n ${CI+x} ]]; then
+        # be quite in the CI
+        retry_cmd wget --quiet "$1" -O "$2"
+    else
+        retry_cmd wget "$1" -O "$2"
+    fi
 }
 
 # print a variable in the format `name=value`, if the value is not empty

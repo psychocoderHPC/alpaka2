@@ -52,13 +52,10 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     APCI_C_COMPILER="$(which icx)"
     APCI_CXX_COMPILER="$(which icpx)"
 
-    echo_green "${APCI_C_COMPILER} --version"
-    $APCI_C_COMPILER --version
-    echo_green "${APCI_CXX_COMPILER} --version"
-    $APCI_CXX_COMPILER --version
+    echo_run "$APCI_C_COMPILER" --version
+    echo_run "$APCI_CXX_COMPILER" --version
 
-    echo_green "sycl-ls"
-    sycl-ls
+    echo_run sycl-ls
 
     export ONEAPI_PATH
     export APCI_C_COMPILER
@@ -66,4 +63,6 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     store_variable ONEAPI_PATH
     store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER
+else
+    echo_green "Skipped install OneAPI because it is not required for the job."
 fi

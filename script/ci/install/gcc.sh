@@ -40,8 +40,8 @@ if [[ "$compiler_name" == "gcc" ]]; then
             install_msg "GCC $compiler_version"
             # install requested GCC if it is not already available
             if ! command -v "gcc-${compiler_version}" >/dev/null 2>&1; then
-                sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-                sudo DEBIAN_FRONTEND=noninteractive apt update
+                echo_run sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+                retry_cmd sudo DEBIAN_FRONTEND=noninteractive apt update
                 quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y "gcc-${compiler_version}" "g++-${compiler_version}"
                 # select requested GCC as default
                 # TODO: Remove me, if APCI_CXX_COMPILER is used in production.
@@ -59,7 +59,7 @@ if [[ "$compiler_name" == "gcc" ]]; then
         for exe_name in gcc g++; do
             version_exe_name="${gcc_base_path}/${exe_name}-${compiler_version}"
             if [[ ! -f "${version_exe_name}" ]]; then
-                ln -s "${gcc_base_path}/${exe_name}" "${version_exe_name}"
+                echo_run ln -s "${gcc_base_path}/${exe_name}" "${version_exe_name}"
             fi
             unset version_exe_name
         done
@@ -68,10 +68,8 @@ if [[ "$compiler_name" == "gcc" ]]; then
         export APCI_CXX_COMPILER="${gcc_base_path}/g++-${compiler_version}"
     fi
 
-    echo_green "${APCI_C_COMPILER} --version"
-    $APCI_C_COMPILER --version
-    echo_green "${APCI_CXX_COMPILER} --version"
-    $APCI_CXX_COMPILER --version
+    echo_run "${APCI_C_COMPILER}" --version
+    echo_run "${APCI_CXX_COMPILER}" --version
 
     store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER

@@ -110,12 +110,11 @@ if [[ "$APCI_CUDA" != 0 ]]; then
                 echo_yellow "CUDA ${APCI_CUDA} is already installed via apt. Skip installation."
             else
                 tmp_dir=$(mktemp -d)
-                echo_green "wget --no-verbose -O ${tmp_dir}/${cuda_pkg_file_name} ${cuda_pkg_file_file_path}"
-                retry_cmd wget --no-verbose -O "${tmp_dir}"/"${cuda_pkg_file_name}" "${cuda_pkg_file_file_path}"
+                ci_wget "${cuda_pkg_file_file_path}" "${tmp_dir}"/"${cuda_pkg_file_name}"
                 sudo dpkg --install "${tmp_dir}"/"${cuda_pkg_file_name}"
 
                 sudo cp /var/"${cuda_pkg_deb_name}"/cuda-*-keyring.gpg /usr/share/keyrings
-                DEBIAN_FRONTEND=noninteractive retry_cmd apt update
+                retry_cmd sudo DEBIAN_FRONTEND=noninteractive apt update
 
                 # Install CUDA
                 # Currently we do not install CUDA fully: sudo apt-get --quiet -y install cuda
@@ -145,20 +144,19 @@ if [[ "$APCI_CUDA" != 0 ]]; then
         CMAKE_CUDA_COMPILER="${APCI_CUDA_PATH}/bin/nvcc"
         CMAKE_CUDA_HOST_COMPILER="${APCI_CXX_COMPILER}"
 
-        echo_green "${CMAKE_CUDA_COMPILER} --version"
-        ${CMAKE_CUDA_COMPILER} --version
-        echo_green "${CMAKE_CUDA_HOST_COMPILER} --version"
-        ${CMAKE_CUDA_HOST_COMPILER} --version
+        echo_run "${CMAKE_CUDA_COMPILER}" --version
+        echo_run "${CMAKE_CUDA_HOST_COMPILER}" --version
 
         store_variable CMAKE_CUDA_HOST_COMPILER
     elif [[ "${compiler_name}" == "clang" ]]; then
         CMAKE_CUDA_COMPILER="${APCI_CXX_COMPILER}"
 
-        echo_green "${CMAKE_CUDA_COMPILER} --version"
-        ${CMAKE_CUDA_COMPILER} --version
+        echo_run "${CMAKE_CUDA_COMPILER}" --version
     else
         exit_error "Device compiler is neither nvcc nor clang: ${compiler_name}"
     fi
 
     store_variable CMAKE_CUDA_COMPILER
+else
+    echo_green "Skipped install CUDA because it is not required for the job."
 fi
