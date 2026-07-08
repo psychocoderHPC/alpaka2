@@ -24,10 +24,6 @@ if [[ "$APCI_HIP" != 0 ]]; then
     else
         if [[ "${APCI_IMAGE_NAME}" =~ "rocm/dev-ubuntu-" ]]; then
             install_msg "ROCm ${APCI_HIP} in official ROCm container."
-
-            lazy_apt_update
-            # TODO: CHECK if rand library is still required
-            quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y hiprand-dev rocrand-dev
         else
             install_msg "ROCm ${APCI_HIP} in default Ubuntu container."
 
@@ -68,11 +64,6 @@ if [[ "$APCI_HIP" != 0 ]]; then
                 "rocm-device-libs${APCI_ROCM}" \
                 "rocm-core${APCI_ROCM}" \
                 "rocm-smi-lib${APCI_ROCM}"
-
-            if [ "$(version "${APCI_ROCM}")" -ge "$(version "6.0.0")" ]; then
-                quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y \
-                    "hiprand-dev${APCI_ROCM}"
-            fi
         fi
         export ROCM_PATH=/opt/rocm
     fi
