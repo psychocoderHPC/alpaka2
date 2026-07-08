@@ -66,7 +66,7 @@ namespace alpaka::onHost
                 {
                     if constexpr(T_DeviceKind{} == deviceKind::numaCpu)
                     {
-                        devCount = alpaka::onHost::internal::hwloc::getNumNumaDomains();
+                        devCount = alpaka::onHost::internal::hwloc::getNumCpuDomains();
                     }
                     else
                         devCount = 1;
@@ -101,12 +101,12 @@ namespace alpaka::onHost
                     return sharedPtr;
                 }
                 auto thisHandle = getSharedPtr();
-                uint32_t numaIdx = internal::hwloc::allNumaDomains;
+                uint32_t cpuGroupIdx = internal::hwloc::allDomains;
                 if constexpr(T_DeviceKind{} == deviceKind::numaCpu)
                 {
-                    numaIdx = idx;
+                    cpuGroupIdx = idx;
                 }
-                auto newDevice = std::make_shared<cpu::Device<Platform>>(std::move(thisHandle), idx, numaIdx);
+                auto newDevice = std::make_shared<cpu::Device<Platform>>(std::move(thisHandle), idx, cpuGroupIdx);
                 devices[idx] = newDevice;
                 return newDevice;
             }
@@ -143,13 +143,13 @@ namespace alpaka::onHost
                 auto prop = DeviceProperties{};
                 prop.name = getCpuName();
                 prop.warpSize = 1u;
-                prop.multiProcessorCount = hwloc::getNumCores(hwloc::allNumaDomains);
-                prop.globalMemCapacityBytes = hwloc::getMemCapacityBytes(hwloc::allNumaDomains);
+                prop.multiProcessorCount = hwloc::getNumCores(hwloc::allDomains);
+                prop.globalMemCapacityBytes = hwloc::getMemCapacityBytes(hwloc::allDomains);
                 prop.sharedMemPerBlockBytes = ALPAKA_BLOCK_SHARED_DYN_MEMBER_ALLOC_KIB * 1024u;
 
                 if constexpr(T_DeviceKind{} == deviceKind::numaCpu)
                 {
-                    // the deviceIdx is equal to the numa domain index
+                    // the deviceIdx is equal to the cpu group domain index
                     prop.multiProcessorCount = hwloc::getNumCores(deviceIdx);
                     prop.globalMemCapacityBytes = hwloc::getMemCapacityBytes(deviceIdx);
                 }

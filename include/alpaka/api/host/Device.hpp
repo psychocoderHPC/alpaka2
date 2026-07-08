@@ -32,10 +32,10 @@ namespace alpaka::onHost
         struct Device : std::enable_shared_from_this<Device<T_Platform>>
         {
         public:
-            Device(internal::concepts::PlatformHandle auto platform, uint32_t const idx, uint32_t numaIdx)
+            Device(internal::concepts::PlatformHandle auto platform, uint32_t const idx, uint32_t cpuGroupIdx)
                 : m_platform(std::move(platform))
                 , m_idx(idx)
-                , m_numaIdx(numaIdx)
+                , m_cpuGroupIdx(cpuGroupIdx)
                 , m_properties{internal::getDeviceProperties(*m_platform.get(), m_idx)}
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::device);
@@ -89,7 +89,7 @@ namespace alpaka::onHost
 
             Handle<T_Platform> m_platform;
             uint32_t m_idx = 0u;
-            uint32_t m_numaIdx = internal::hwloc::allNumaDomains;
+            uint32_t m_cpuGroupIdx = internal::hwloc::allDomains;
             DeviceProperties m_properties;
             std::vector<std::weak_ptr<cpu::Queue<Device>>> queues;
             std::vector<std::weak_ptr<cpu::Event<Device>>> events;
@@ -105,18 +105,18 @@ namespace alpaka::onHost
 
             void setThreadAffinity() const
             {
-                internal::hwloc::setThreadAffinity(m_numaIdx);
+                internal::hwloc::setThreadAffinity(m_cpuGroupIdx);
             }
 
             template<typename T>
             void pinPointer(T* const ptr, size_t bytes)
             {
-                internal::hwloc::pinPointer(ptr, bytes, m_numaIdx);
+                internal::hwloc::pinPointer(ptr, bytes, m_cpuGroupIdx);
             }
 
             bool isNumaAware() const
             {
-                return m_numaIdx != internal::hwloc::allNumaDomains;
+                return m_cpuGroupIdx != internal::hwloc::allDomains;
             }
 
             friend struct alpaka::internal::GetName;
@@ -148,7 +148,7 @@ namespace alpaka::onHost
                 auto newQueue = std::make_shared<cpu::Queue<Device>>(
                     std::move(thisHandle),
                     queues.size(),
-                    m_numaIdx,
+                    m_cpuGroupIdx,
                     isBlocking);
 
                 queues.emplace_back(newQueue);
@@ -179,7 +179,7 @@ namespace alpaka::onHost
             {
 #if ALPAKA_HAS_HWLOC
                 if(isNumaAware())
-                    return internal::hwloc::getFreeGlobalMemBytes(m_numaIdx);
+                    return internal::hwloc::getFreeGlobalMemBytes(m_cpuGroupIdx);
 #endif
                 return onHost::getFreeGlobalMemBytes();
             }

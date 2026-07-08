@@ -101,7 +101,7 @@ namespace alpaka::onHost
                         });
                 };
 
-                if(m_numaIdx != internal::hwloc::allNumaDomains && m_setThreadAffinity)
+                if(m_numaIdx != internal::hwloc::allDomains && m_setThreadAffinity)
                 {
                     oneapi::tbb::task_arena tbbArena;
 

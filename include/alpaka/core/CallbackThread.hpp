@@ -68,7 +68,7 @@ namespace alpaka::core
         };
 
     public:
-        CallbackThread(uint32_t numaIdx) : m_state(std::make_shared<State>()), m_numaIdx{numaIdx}
+        CallbackThread(uint32_t cpuGroupIdx) : m_state(std::make_shared<State>()), m_cpuGroupIdx{cpuGroupIdx}
         {
         }
 
@@ -136,15 +136,15 @@ namespace alpaka::core
         std::jthread m_thread;
         /** Hold data shared between this call and the thread processing the tasts. */
         std::shared_ptr<State> m_state;
-        uint32_t m_numaIdx = onHost::internal::hwloc::allNumaDomains;
+        uint32_t m_cpuGroupIdx = onHost::internal::hwloc::allDomains;
 
         auto startWorkerThread() -> void
         {
             m_thread = std::jthread(
-                [state = m_state, numaIdx = m_numaIdx](std::stop_token st)
+                [state = m_state, cpuGroupIdx = m_cpuGroupIdx](std::stop_token st)
                 {
-                    if(numaIdx != onHost::internal::hwloc::allNumaDomains)
-                        onHost::internal::hwloc::setThreadAffinity(numaIdx);
+                    if(cpuGroupIdx != onHost::internal::hwloc::allDomains)
+                        onHost::internal::hwloc::setThreadAffinity(cpuGroupIdx);
 
                     while(true)
                     {
