@@ -4,6 +4,7 @@
     APCI_RUN_CTEST: "ON"
     APCI_EXEC_CPU_SERIAL: "OFF"
     APCI_HIP : 0
+    APCI_CUDA : 0
     APCI_ONEAPI : 0
     APCI_ONEAPI_TARGET: none
   script:
@@ -22,6 +23,15 @@
   tags:
     - x86_64
     - rocm
+
+.cuda:
+  extends: .base
+  image: ubuntu:24.04
+  variables:
+    APCI_CMAKE: 3.28.3
+  tags:
+  - x86_64
+  - cuda
 
 gcc-13:
   image: docker.io/ubuntu:24.04
@@ -213,3 +223,87 @@ icpx-2026.0-gpu-intel-container:
     APCI_ONEAPI: 2026.0
     APCI_ONEAPI_TARGET: intel_gpu
     APCI_RUN_CTEST: "OFF"
+
+cuda-12.5-gcc-agc:
+  image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-cuda125:4.0
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@12.5
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 12.5
+
+cuda-12.6-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@12.6
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 12.6
+
+cuda-12.8-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@12.8
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 12.8
+
+cuda-12.9-gcc-nvidia-container:
+  image: nvidia/cuda:12.9.1-devel-ubuntu24.04
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@12.9
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 12.9
+
+cuda-13.0-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@13.0
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 13.0
+  tags:
+  - x86_64
+  - cuda
+  - a100
+
+cuda-13.1-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@13.1
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 13.1
+  tags:
+  - x86_64
+  - cuda
+  - a100
+
+cuda-13.2-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@13.2
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 13.2
+  tags:
+  - x86_64
+  - cuda
+  - a100
+
+cuda-13.3-gcc:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@13.3
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 13.3
+  tags:
+  - x86_64
+  - cuda
+  - a100
+
+clang-21-cuda-12.8:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: clang@21
+    APCI_CUDA: 12.8
+  tags:
+  - x86_64
+  - cuda
+  - a100

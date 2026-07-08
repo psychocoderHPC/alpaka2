@@ -26,7 +26,7 @@ fi
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 # TODO: remove me, if all install scripts are ported
 # HIP jobs will be tested
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
+if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "nvcc" || "$compiler_name" == "icpx" ]]; then
     if [[ "${APCI_RUN_CTEST}" == "ON" ]]; then
         load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 

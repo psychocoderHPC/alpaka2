@@ -66,14 +66,16 @@ if [[ -z ${APCI_BUILD_THREADS+x} ]]; then
     fi
 
     APCI_BUILD_THREADS=$(get_build_threads "${max_num_build_threads}" "${total_memory_bytes}")
+    echo_green "Set APCI_BUILD_THREADS to overwrite automatically calculated number of build threads."
+else
+    echo_yellow "Use number of build threads set via APCI_BUILD_THREADS=${APCI_BUILD_THREADS}."
 fi
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 # TODO: remove me, if all install scripts are ported
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "icpx" ]]; then
+if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "nvcc" || "$compiler_name" == "icpx" ]]; then
     load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
-    echo_green "Set APCI_BUILD_THREADS to overwrite automatically calculated number of build threads."
     echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \
         "${APCI_CMAKE_BIN_PATH}/cmake" \
         --build /build \

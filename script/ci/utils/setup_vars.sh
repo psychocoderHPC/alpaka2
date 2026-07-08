@@ -32,6 +32,13 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     APCI_AMD_GPU_ARCH=gfx90a
     export APCI_AMD_GPU_ARCH
 
+    if [[ ! "${APCI_DEVICE_COMPILER}" =~ "nvcc" ]] && [[ -z ${APCI_CUDA+x} ]]; then
+        export APCI_CUDA=0
+    fi
+
+    # GitHub actions has no free GPU runner, therefore choose simply a single SM level
+    export APCI_CUDA_SM_LEVEL=80
+
     if [[ ! "${APCI_DEVICE_COMPILER}" =~ "icpx" ]] && [[ -z ${APCI_ONEAPI+x} ]]; then
         export APCI_ONEAPI=0
     fi
@@ -79,4 +86,15 @@ if [[ -n ${GITLAB_CI+x} ]]; then
         fi
     fi
     export APCI_AMD_GPU_ARCH
+
+    if [[ "$APCI_CUDA" != 0 ]]; then
+        # on the GPU runner, the variable CI_GPU_ARCH is predefined
+        if [[ -n ${CI_GPU_ARCH} ]]; then
+            APCI_CUDA_SM_LEVEL="${CI_GPU_ARCH}"
+        else
+            # in compile only jobs, use simply this architecture
+            APCI_CUDA_SM_LEVEL=80
+        fi
+    fi
+    export APCI_CUDA_SM_LEVEL
 fi

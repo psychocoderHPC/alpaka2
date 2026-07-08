@@ -25,5 +25,7 @@ source "${APCI_ALPAKA_ROOT}/script/ci/install/gcc.sh"
 source "${APCI_ALPAKA_ROOT}/script/ci/install/clang.sh"
 # shellcheck source=script/ci/install/rocm.sh
 source "${APCI_ALPAKA_ROOT}/script/ci/install/rocm.sh"
+# shellcheck source=script/ci/install/cuda.sh
+source "${APCI_ALPAKA_ROOT}/script/ci/install/cuda.sh"
 # shellcheck source=script/ci/install/oneapi.sh
 source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi.sh"
