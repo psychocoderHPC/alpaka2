@@ -50,7 +50,8 @@ namespace alpaka::test
         }
 
         onHost::Device device = devSelector.makeDevice(0);
-        UNSCOPED_INFO("Device: " << device.getName());
+        UNSCOPED_INFO("Device: \n" << device.getDeviceProperties());
+        UNSCOPED_INFO("Free memory (bytes): " << device.getFreeGlobalMemBytes());
         return device;
     }
 
