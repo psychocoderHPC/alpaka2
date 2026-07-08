@@ -221,18 +221,16 @@ Kernel
 Executor
 --------
 
+The ``executor``, which describes how thread parallelism is mapped onto the device according to the device specification.
+
 .. _backend:
 
 Backend Spec
 ------------
 
-A ``BackendSpec`` (backend specification) provides three properties:
+A ``BackendSpec`` (backend specification) provides two properties:
+The :ref:`DeviceSpec <device_kind>` and the :ref:`executor`, it is typically returned by ``onHost::allBackends(...)``.
 
-The ``api`` and ``deviceKind``, which describe a ``DeviceSpec``.
-The ``executor``, which describes how thread parallelism is mapped onto the device according to the device specification.
-
-It is typically returned by ``onHost::allBackends(...)``.
-Use ``alpaka::getExecutor(backend)`` to query its executor, and ``alpaka::onHost::DeviceSpec{backend}`` to recover its device specification.
 .. _thread_spec:
 
 Thread Spec

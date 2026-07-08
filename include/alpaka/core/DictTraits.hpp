@@ -1,4 +1,4 @@
-/* Copyright 2024 René Widera, Tim Hanel
+/* Copyright 2026 René Widera, Tim Hanel
  * SPDX-License-Identifier: MPL-2.0
  */
 
