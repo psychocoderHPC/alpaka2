@@ -8,7 +8,7 @@
 
 #include <alpaka/alpaka.hpp>
 
-#if __has_include(<thrust/transform.h>)
+#if __has_include(<thrust/transform.h>) && ALPAKA_LANG_CUDA
 #    include <thrust/device_vector.h>
 #    include <thrust/transform.h>
 
