@@ -46,6 +46,10 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     if [[ "${APCI_ONEAPI}" == 0 ]] && [[ -z ${APCI_ONEAPI_TARGET+x} ]]; then
         export APCI_ONEAPI_TARGET=none
     fi
+
+    if [[ -z ${APCI_TBB+x} ]]; then
+        export APCI_TBB="OFF"
+    fi
 fi
 
 if [[ -n ${GITLAB_CI+x} ]]; then

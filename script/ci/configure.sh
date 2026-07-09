@@ -13,6 +13,7 @@ script_msg "Run CMake configure (configure.sh)"
 parse_compiler_version "$APCI_DEVICE_COMPILER"
 
 CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 # TODO: remove me, if all install scripts are ported
 if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "nvcc" || "$compiler_name" == "icpx" ]]; then
@@ -48,7 +49,7 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
     )
 
     # if no GPU SDK is used
-    if [[ ("$APCI_HIP" == 0) && ("$compiler_name" == "gcc" || "$compiler_name" == "clang") ]]; then
+    if [[ ("$APCI_HIP" == 0) && "$APCI_TBB" == OFF && ("$compiler_name" == "gcc" || "$compiler_name" == "clang") ]]; then
         ap_deps['OMP']=ON
     fi
 
@@ -118,6 +119,19 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         for target in "${!ap_sycl_targets[@]}"; do
             CMAKE_ARGS+=("-D${target}=${ap_sycl_targets[$target]}")
         done
+    fi
+
+    if [[ "$APCI_TBB" == "ON" ]]; then
+        ap_deps['TBB']=ON
+
+        parse_compiler_version "$APCI_DEVICE_COMPILER"
+        if [[ "$compiler_name" == "icpx" ]]; then
+            if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
+                load_variable_if_not_exist ONEAPI_PATH
+                # shellcheck source=script/ci/install/oneapi/setvars.sh
+                source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
+            fi
+        fi
     fi
 
     # enable dependencies

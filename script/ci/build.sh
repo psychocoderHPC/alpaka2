@@ -47,6 +47,17 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     fi
 fi
 
+if [[ "$APCI_TBB" == "ON" ]]; then
+    parse_compiler_version "$APCI_DEVICE_COMPILER"
+    if [[ "$compiler_name" == "icpx" ]]; then
+        if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
+            load_variable_if_not_exist ONEAPI_PATH
+            # shellcheck source=script/ci/install/oneapi/setvars.sh
+            source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi/setvars.sh"
+        fi
+    fi
+fi
+
 if [[ -z ${APCI_BUILD_THREADS+x} ]]; then
     # local container
     if [[ -z ${GITHUB_ACTIONS+x} ]] && [[ -z ${GITLAB_CI+x} ]]; then

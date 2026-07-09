@@ -7,6 +7,7 @@
     APCI_CUDA : 0
     APCI_ONEAPI : 0
     APCI_ONEAPI_TARGET: none
+    APCI_TBB : "OFF"
   script:
     - $APCI_ALPAKA_ROOT/script/ci/job_info.sh
     - $APCI_ALPAKA_ROOT/script/ci/install_dependencies.sh
@@ -307,3 +308,35 @@ clang-21-cuda-12.8:
   - x86_64
   - cuda
   - a100
+
+gcc-15-tbb:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@15
+    APCI_CMAKE: 3.28.3
+    APCI_TBB: "ON"
+
+clang-21-tbb:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@21
+    APCI_CMAKE: 3.28.3
+    APCI_TBB: "ON"
+
+icpx-21-tbb:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_TBB: "ON"
+
+icpx-21-tbb-intel-container:
+  image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : icpx@2026.0
+    APCI_CMAKE: 3.28.3
+    APCI_TBB: "ON"

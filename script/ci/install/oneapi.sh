@@ -18,14 +18,22 @@ fi
 
 script_msg "Install OneAPI"
 
-if [[ "$APCI_ONEAPI" != 0 ]]; then
+parse_compiler_version "$APCI_DEVICE_COMPILER"
 
-    if agc-manager -e "oneapi@${APCI_ONEAPI}"; then
-        echo_green "oneapi@${APCI_ONEAPI}"
-        ONEAPI_PATH=$(agc-manager -b "oneapi@${APCI_ONEAPI}")
+# if we want to compile alpaka with the icpx compiler and the tbb backend, the OneAPI SDK is also required
+if [[ "$APCI_ONEAPI" != 0 || "$compiler_name" == "icpx" ]]; then
+    if [[ "$APCI_ONEAPI" != 0 ]]; then
+        one_api_version="$APCI_ONEAPI"
+    else
+        one_api_version="$compiler_version"
+    fi
+
+    if agc-manager -e "oneapi@${one_api_version}"; then
+        echo_green "oneapi@${one_api_version}"
+        ONEAPI_PATH=$(agc-manager -b "oneapi@${one_api_version}")
     else
         if [[ "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
-            install_msg "OneAPI ${APCI_ONEAPI} in official APCI_ONEAPI container."
+            install_msg "use OneAPI ${one_api_version} from official OneAPI container."
             ONEAPI_PATH=/opt/intel/oneapi
         else
             wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB |
@@ -35,8 +43,8 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
             retry_cmd sudo DEBIAN_FRONTEND=noninteractive apt update
 
             quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y \
-                "$(apt_package_version intel-oneapi-runtime-opencl "${APCI_ONEAPI}")" \
-                intel-oneapi-compiler-dpcpp-cpp-"${APCI_ONEAPI}"
+                "$(apt_package_version intel-oneapi-runtime-opencl "${one_api_version}")" \
+                intel-oneapi-compiler-dpcpp-cpp-"${one_api_version}"
 
             ONEAPI_PATH=/opt/intel/oneapi
         fi
