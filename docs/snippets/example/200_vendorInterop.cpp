@@ -81,9 +81,13 @@ namespace vendorTutorial
          * propagated to the data.
          */
         auto outPtr = output.data();
-        // Enqueue the operation via a host function to ensure the order of executions within a non-blocking queue.
-        queue.enqueueHostFn(
-            [=]()
+        /* Enqueue the operation via enqueueNativeFn to ensure the order of executions within a non-blocking queue.
+         * The first argument of the function which is enqueued is the result of queue.getNativeHandle(), it will be
+         * applied by alpaka. For api::Host it is the alpaka internal queue id, for other APIs it is the stream/queue
+         * handle.
+         */
+        queue.enqueueNativeFn(
+            [=](auto /*queueId*/)
             {
                 std::transform(
                     input.data(),

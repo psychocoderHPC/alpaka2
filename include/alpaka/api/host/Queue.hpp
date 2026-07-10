@@ -217,6 +217,12 @@ namespace alpaka::onHost
                 m_workerThread.submit(task);
             }
 
+            void enqueueNativeFn(auto const& fn)
+            {
+                ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                submit([queueId = getNativeHandle(), fn]() { fn(queueId); });
+            }
+
             friend struct alpaka::internal::GetDeviceType;
 
             auto getDeviceKind() const

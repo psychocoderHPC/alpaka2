@@ -301,6 +301,15 @@ namespace alpaka::onHost
                 m_lastEvent = ev;
             }
 
+            void enqueueNativeFn(auto const& fn)
+            {
+                ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                sycl::event ev = fn(getNativeHandle());
+                setLastEvent(ev);
+                if(isBlocking())
+                    ev.wait_and_throw();
+            }
+
             friend struct alpaka::onHost::internal::Memset;
             friend struct alpaka::onHost::internal::Memcpy;
             friend struct alpaka::onHost::internal::MemcpyDeviceGlobal;

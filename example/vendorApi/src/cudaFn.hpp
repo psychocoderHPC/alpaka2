@@ -31,13 +31,19 @@ namespace vendorExample
         alpaka::concepts::IMdSpan auto&& input1)
     {
         std::cout << "call thrust::transform" << std::endl;
-        thrust::transform(
-            thrust::cuda::par.on(queue.getNativeHandle()),
-            input0.data(),
-            input0.data() + input0.getExtents().x(),
-            input1.data(),
-            output.data(),
-            binaryOp);
+        // ensure the pointer is non const, capturing the span results into const mdspan within the const lambda
+        auto outPtr = output.data();
+        queue.enqueueNativeFn(
+            [=](auto cudaStream)
+            {
+                thrust::transform(
+                    thrust::cuda::par.on(cudaStream),
+                    input0.data(),
+                    input0.data() + input0.getExtents().x(),
+                    input1.data(),
+                    outPtr,
+                    binaryOp);
+            });
     }
 
     /** @} */

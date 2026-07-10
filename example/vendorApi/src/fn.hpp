@@ -52,8 +52,8 @@ namespace vendorExample
         std::cout << "call std::transform" << std::endl;
         // ensure the pointer is non const, capturing the span results into const mdspan within the const lambda
         auto outPtr = output.data();
-        queue.enqueueHostFn(
-            [=]()
+        queue.enqueueNativeFn(
+            [=](auto /*queueId*/)
             {
                 std::transform(
                     input0.data(),

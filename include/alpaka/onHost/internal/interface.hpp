@@ -221,6 +221,15 @@ namespace alpaka::onHost
                 }
             };
 
+            template<typename T_Queue, typename T_Task>
+            struct NativeFn
+            {
+                void operator()(T_Queue& queue, T_Task const& fn) const
+                {
+                    queue.enqueueNativeFn(fn);
+                }
+            };
+
             template<typename T_Queue, typename T_Event>
             struct Event
             {

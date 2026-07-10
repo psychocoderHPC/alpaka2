@@ -174,6 +174,13 @@ namespace alpaka::onHost
                 return (ret == ApiInterface::success);
             }
 
+            void enqueueNativeFn(auto const& fn)
+            {
+                ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                fn(getNativeHandle());
+                conditionalWait();
+            }
+
             friend struct onHost::internal::GetDevice;
 
             friend struct alpaka::internal::GetApi;

@@ -176,6 +176,26 @@ namespace alpaka::onHost
                 task);
         }
 
+        /** Enqueue a native Api call.
+         *
+         * To keep the queue behavior e.g. blocking, non-blocking consistent in an application even if a native
+         * function is called it is required that alpaka knows about the function call and how to observe when the
+         * function is finished.
+         * By registering the native function API call alpaka can handle it.
+         * Typically, this method is used to call vendor functions, e.g. NVIDIA thrust.
+         *
+         * @attention fn should not capture arguments by reference because the execution can be deferred.
+         *
+         * @param fn A callable with the native queue handle for the corresponding API as only argument. The return
+         * value must be 'void' except for OneApi where a 'sycl::event' of the last function call must be returned.
+         * The native handle of the queue is passed to fn: HIP/CUDA get the stream, OneApi a sycl::queue and host gets
+         * the alpaka internal index of the queue.
+         */
+        void enqueueNativeFn(auto const& fn) const
+        {
+            internal::Enqueue::NativeFn<ALPAKA_TYPEOF(*m_queue.get()), ALPAKA_TYPEOF(fn)>{}(*m_queue.get(), fn);
+        }
+
         /** Enqueue an event
          *
          * The event will be signaled after all preceding operations in the queue are finished.
