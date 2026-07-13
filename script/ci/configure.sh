@@ -53,6 +53,11 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         ap_deps['OMP']=ON
     fi
 
+    if [[ "${APCI_HWLOC}" == "ON" ]]; then
+        ap_deps['HWLOC']=ON
+        CMAKE_ARGS+=(-Dalpaka_HOST_MemPinningCanFail=ON)
+    fi
+
     if [[ "$APCI_HIP" != 0 ]]; then
         load_variable_if_not_exist ROCM_PATH
 

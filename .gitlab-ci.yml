@@ -3,6 +3,7 @@
     APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
     APCI_RUN_CTEST: "ON"
     APCI_EXEC_CPU_SERIAL: "OFF"
+    APCI_HWLOC: "ON"
     APCI_HIP : 0
     APCI_CUDA : 0
     APCI_ONEAPI : 0
@@ -65,6 +66,15 @@ clang-19:
     APCI_DEVICE_COMPILER : clang@19
     APCI_CMAKE: 3.28.3
     APCI_EXEC_CPU_SERIAL: "ON"
+
+clang-20-hwloc-off:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@20
+    APCI_CMAKE: 3.28.3
+    APCI_EXEC_CPU_SERIAL: "ON"
+    APCI_HWLOC: "OFF"
 
 clang-21:
   image: docker.io/ubuntu:24.04

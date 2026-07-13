@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 
+set -eu
+
 # setup environment variables depending on os environment (on local system, GitLab CI, GitHub Action ...)
 
 # set the required memory per build thread in GB
@@ -17,8 +19,12 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
 
     export APCI_OS_NAME="$RUNNER_OS"
 
-    if [[ -z ${APCI_EXEC_CPU_SERIAL} ]]; then
+    if [[ -z ${APCI_EXEC_CPU_SERIAL+x} ]]; then
         export APCI_EXEC_CPU_SERIAL=OFF
+    fi
+
+    if [[ -z ${APCI_HWLOC+x} ]]; then
+        export APCI_HWLOC=ON
     fi
 
     # The Github Actions are handwritten, therefore set some undefined variables to default
