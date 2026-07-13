@@ -14,6 +14,8 @@
 
 ![alpaka](docs/logo/alpaka_401x135.png)
 
+I simply changed the README.md for demonstrations.
+
 The **alpaka** library is a header-only C++20 abstraction library for accelerator development.
 
 Its aim is to provide performance portability across accelerators by abstracting the underlying levels of parallelism.
