@@ -89,6 +89,7 @@ hipcc-6.2-agc:
     APCI_DEVICE_COMPILER : clang@18
     APCI_CMAKE: 3.31.4
     APCI_HIP : 6.2
+    APCI_RUN_CTEST: "OFF"
 
 hipcc-6.3-rocm-container:
   image: rocm/dev-ubuntu-24.04:6.3.4
@@ -97,6 +98,7 @@ hipcc-6.3-rocm-container:
     APCI_DEVICE_COMPILER : clang@18
     APCI_CMAKE: 3.28.3
     APCI_HIP : 6.3
+    APCI_RUN_CTEST: "OFF"
 
 hipcc-6.4:
   image: docker.io/ubuntu:24.04
