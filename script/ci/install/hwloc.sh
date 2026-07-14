@@ -20,6 +20,20 @@ if [[ "${APCI_HWLOC}" == "ON" ]]; then
 
     hwloc_package_list=(libhwloc-dev pkg-config)
 
+    if [[ "$APCI_HIP" != 0 ]]; then
+        case $(cat /etc/os-release) in
+        # Ubuntu 22.04 is fine. No special handling.
+        *"22.04"*) ;;
+        *"24.04"*)
+            # hwloc installs as dependency g++-13. The clang++ of the ROCm SDK detects g++-11 and
+            # g++-13 and tries to use the libstdc++ of g++-13, which is not installed. Therefore
+            # install the libstdc++-13 manually.
+            hwloc_package_list+=(libstdc++-13-dev)
+            ;;
+        *) exit_error "hwloc + ROCm is not supported on this operations system container." ;;
+        esac
+    fi
+
     if dpkg -s "${hwloc_package_list[@]}" >/dev/null 2>&1; then
         echo_yellow "hwloc is already installed via apt. Skip installation."
     else
