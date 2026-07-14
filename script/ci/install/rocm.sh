@@ -75,8 +75,7 @@ if [[ "$APCI_HIP" != 0 ]]; then
     echo_run "${APCI_C_COMPILER}" --version
     echo_run "${APCI_CXX_COMPILER}" --version
 
-    echo_run "${ROCM_PATH}"/bin/hipconfig --platform
-    echo_run "${ROCM_PATH}"/bin/hipconfig -v
+    echo_run "${ROCM_PATH}"/bin/hipconfig
     echo
 
     store_variable ROCM_PATH
