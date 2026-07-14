@@ -56,6 +56,19 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     if [[ -z ${APCI_TBB+x} ]]; then
         export APCI_TBB="OFF"
     fi
+
+    if [[ -z ${APCI_SANITIZER_ASAN+x} ]]; then
+        export APCI_SANITIZER_ASAN="OFF"
+    fi
+    if [[ -z ${APCI_SANITIZER_TSAN+x} ]]; then
+        export APCI_SANITIZER_TSAN="OFF"
+    fi
+    if [[ -z ${APCI_SANITIZER_LSAN+x} ]]; then
+        export APCI_SANITIZER_LSAN="OFF"
+    fi
+    if [[ -z ${APCI_SANITIZER_UBSAN+x} ]]; then
+        export APCI_SANITIZER_UBSAN="OFF"
+    fi
 fi
 
 if [[ -n ${GITLAB_CI+x} ]]; then

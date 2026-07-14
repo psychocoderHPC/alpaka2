@@ -139,6 +139,16 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         fi
     fi
 
+    for sanitizer in ASAN TSAN LSAN UBSAN; do
+        flag="APCI_SANITIZER_${sanitizer}"
+        opt="${sanitizer}_OPTIONS"
+
+        if [[ "${!flag}" == "ON" ]]; then
+            load_variable_if_not_exist "${opt}"
+            CMAKE_ARGS+=("-Dalpaka_${sanitizer}=ON")
+        fi
+    done
+
     # enable dependencies
     for dep in "${!ap_deps[@]}"; do
         CMAKE_ARGS+=("-Dalpaka_DEP_${dep}=${ap_deps[$dep]}")
@@ -154,7 +164,12 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         -Dalpaka_EXEC_OneApi=ON
     )
 
-    echo_green "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+    echo_green \
+        "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+        "$(echo_if_not_empty_and_set ASAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
         "${APCI_CMAKE_BIN_PATH}/cmake" \
         "${CMAKE_ARGS[*]}"
     if [[ -z ${GITHUB_ACTIONS+x} ]]; then

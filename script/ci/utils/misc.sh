@@ -235,3 +235,17 @@ echo_if_not_empty() {
         echo "${var_name}=${!var_name}"
     fi
 }
+
+# print a variable in the format `name=value`, if the value is not empty
+# ignores unbound variables
+# usage: echo_if_not_empty_and_set <variable_name>
+echo_if_not_empty_and_set() {
+    if [[ $# -lt 1 ]]; then
+        exit_error "echo_if_not_empty_and_set(): no variable name set."
+    fi
+
+    local var_name="$1"
+    if [[ -n "${!var_name+x}" && "${!var_name}" != "" ]]; then
+        echo "${var_name}=${!var_name}"
+    fi
+}

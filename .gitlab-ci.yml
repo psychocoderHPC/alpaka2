@@ -9,6 +9,10 @@
     APCI_ONEAPI : 0
     APCI_ONEAPI_TARGET: none
     APCI_TBB : "OFF"
+    APCI_SANITIZER_ASAN : "OFF"
+    APCI_SANITIZER_TSAN : "OFF"
+    APCI_SANITIZER_LSAN : "OFF"
+    APCI_SANITIZER_UBSAN : "OFF"
   script:
     - $APCI_ALPAKA_ROOT/script/ci/job_info.sh
     - $APCI_ALPAKA_ROOT/script/ci/install_dependencies.sh
@@ -352,3 +356,67 @@ icpx-21-tbb-intel-container:
     APCI_DEVICE_COMPILER : icpx@2026.0
     APCI_CMAKE: 3.28.3
     APCI_TBB: "ON"
+
+gcc-15-asan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@15
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_ASAN: "ON"
+
+gcc-15-tsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@15
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_TSAN: "ON"
+
+gcc-15-lsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@15
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_LSAN: "ON"
+
+gcc-15-ubsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@15
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_UBSAN: "ON"
+
+clang-21-asan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@21
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_ASAN: "ON"
+
+clang-21-tsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@21
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_TSAN: "ON"
+
+clang-21-lsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@21
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_LSAN: "ON"
+
+clang-21-ubsan:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : clang@21
+    APCI_CMAKE: 3.28.3
+    APCI_SANITIZER_UBSAN: "ON"

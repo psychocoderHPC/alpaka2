@@ -33,3 +33,5 @@ source "${APCI_ALPAKA_ROOT}/script/ci/install/cuda.sh"
 source "${APCI_ALPAKA_ROOT}/script/ci/install/oneapi.sh"
 # shellcheck source=script/ci/install/tbb.sh
 source "${APCI_ALPAKA_ROOT}/script/ci/install/tbb.sh"
+# shellcheck source=script/ci/install/sanitizer.sh
+source "${APCI_ALPAKA_ROOT}/script/ci/install/sanitizer.sh"

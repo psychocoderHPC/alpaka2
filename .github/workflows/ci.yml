@@ -172,6 +172,10 @@ jobs:
                 echo "APCI_BRANCH_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
             fi
             ${{ matrix.config.hwloc == 'no' }} && echo "APCI_HWLOC=OFF" >> $GITHUB_ENV || true
+            ${{ matrix.config.sanitizer == 'asan' }}  && echo 'APCI_SANITIZER_ASAN=ON'  >> $GITHUB_ENV || true
+            ${{ matrix.config.sanitizer == 'tsan' }}  && echo 'APCI_SANITIZER_TSAN=ON'  >> $GITHUB_ENV || true
+            ${{ matrix.config.sanitizer == 'lsan' }}  && echo 'APCI_SANITIZER_LSAN=ON'  >> $GITHUB_ENV || true
+            ${{ matrix.config.sanitizer == 'ubsan' }} && echo 'APCI_SANITIZER_UBSAN=ON' >> $GITHUB_ENV || true
       - name: job configuration environment variables
         run: "${APCI_ALPAKA_ROOT}/script/ci/job_info.sh"
       # Install base dependencies
@@ -221,6 +225,10 @@ jobs:
         if: matrix.config.hwloc != 'no'
         shell: bash
         run: "${APCI_ALPAKA_ROOT}/script/ci/install/hwloc.sh"
+
+      - name: Setup Sanitizer
+        if: matrix.config.sanitizer
+        run: "${APCI_ALPAKA_ROOT}/script/ci/install/sanitizer.sh"
 
       # Configure CMake with the selected compiler and options
       - name: Configure CMake
