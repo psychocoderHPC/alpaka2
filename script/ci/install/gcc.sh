@@ -46,8 +46,7 @@ if [[ "$compiler_name" == "gcc" ]]; then
             fi
         fi
 
-        # we assume gcc, g++, gcc-<version> and g++-<version> are in the same folder
-        gcc_base_path="$(dirname "$(which gcc)")"
+        gcc_base_path=/usr/bin/
 
         # workaround for gcc container
         # there is no g++-<version> executable

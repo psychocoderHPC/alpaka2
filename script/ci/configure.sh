@@ -70,6 +70,10 @@ if [[ "$APCI_HIP" != 0 ]]; then
         CMAKE_ARGS+=(
             -DCMAKE_HIP_ARCHITECTURES="${APCI_AMD_GPU_ARCH}"
             -DGPU_TARGETS="${APCI_AMD_GPU_ARCH}")
+        if [ "$(version "${APCI_HIP}")" -lt "$(version "6.4.0")" ]; then
+            # since ROCm 6.4 deprecated, use GPU_TARGETS instead
+            CMAKE_ARGS+=(-DAMDGPU_TARGETS="${APCI_AMD_GPU_ARCH}")
+        fi
     fi
 fi
 
