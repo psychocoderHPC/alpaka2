@@ -33,24 +33,20 @@ for sanitizer in ASAN TSAN LSAN UBSAN; do
 done
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"
-# TODO: remove me, if all install scripts are ported
-# HIP jobs will be tested
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "nvcc" || "$compiler_name" == "icpx" ]]; then
-    if [[ "${APCI_RUN_CTEST}" == "ON" ]]; then
-        load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
-        echo_green \
-            "$(echo_if_not_empty LD_LIBRARY_PATH)" \
-            "$(echo_if_not_empty_and_set ASAN_OPTIONS)" \
-            "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
-            "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
-            "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
-            "${APCI_CMAKE_BIN_PATH}/ctest" \
-            "--test-dir /build --output-on-failure"
-        if [[ -z ${GITHUB_ACTIONS+x} ]]; then
-            "${APCI_CMAKE_BIN_PATH}/ctest" --test-dir /build --output-on-failure
-        fi
-    else
-        echo_yellow "Skip running ctest"
-    fi
+if [[ "${APCI_RUN_CTEST}" == "ON" ]]; then
+    load_variable_if_not_exist APCI_CMAKE_BIN_PATH
+
+    echo_green \
+        "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+        "$(echo_if_not_empty_and_set ASAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
+        "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
+        "${APCI_CMAKE_BIN_PATH}/ctest" \
+        "--test-dir /build --output-on-failure"
+
+    "${APCI_CMAKE_BIN_PATH}/ctest" --test-dir /build --output-on-failure
+else
+    echo_yellow "Skip running ctest"
 fi

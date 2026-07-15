@@ -92,20 +92,16 @@ for sanitizer in ASAN TSAN LSAN UBSAN; do
 done
 
 parse_compiler_version "$APCI_DEVICE_COMPILER"
-# TODO: remove me, if all install scripts are ported
-if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_name" == "nvcc" || "$compiler_name" == "icpx" ]]; then
-    load_variable_if_not_exist APCI_CMAKE_BIN_PATH
+load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 
-    echo_green \
-        "$(echo_if_not_empty LD_LIBRARY_PATH)" \
-        "$(echo_if_not_empty_and_set ASAN_OPTIONS)" \
-        "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
-        "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
-        "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
-        "${APCI_CMAKE_BIN_PATH}/cmake" \
-        --build /build \
-        "-j${APCI_BUILD_THREADS}"
-    if [[ -z ${GITHUB_ACTIONS+x} ]]; then
-        "${APCI_CMAKE_BIN_PATH}/cmake" --build /build "-j${APCI_BUILD_THREADS}"
-    fi
-fi
+echo_green \
+    "$(echo_if_not_empty LD_LIBRARY_PATH)" \
+    "$(echo_if_not_empty_and_set ASAN_OPTIONS)" \
+    "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
+    "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
+    "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
+    "${APCI_CMAKE_BIN_PATH}/cmake" \
+    --build /build \
+    "-j${APCI_BUILD_THREADS}"
+
+"${APCI_CMAKE_BIN_PATH}/cmake" --build /build "-j${APCI_BUILD_THREADS}"
