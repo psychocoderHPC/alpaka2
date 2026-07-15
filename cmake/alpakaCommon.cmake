@@ -179,34 +179,10 @@ if((NOT alpaka_SUPPRESS_TARGET_WARNING) AND alpaka_COUNT_API_DEPS GREATER 1)
     message(
         WARNING
         "More than one dependency of alpaka_DEP_CUDA, alpaka_DEP_HIP, or alpaka_DEP_ONEAPI is activated. \
-     The cmake taget 'alpaka::alpaka' and 'alpaka' will therefore not linked against any of these. \
-     Please link your app against alpaka::cuda, alpaka::hip, or alpaka::oneapi directly. \
-     This warning can be suppressed by setting 'alpaka_SUPPRESS_TARGET_WARNING'."
+    The cmake taget 'alpaka::alpaka' and 'alpaka' will therefore not linked against any of these. \
+    Please link your app against alpaka::cuda, alpaka::hip, or alpaka::oneapi directly. \
+    This warning can be suppressed by setting 'alpaka_SUPPRESS_TARGET_WARNING'."
     )
-endif()
-
-# compute device backends
-# required to be included after the alpaka target is available and alpaka_COUNT_API_DEPS is set
-if(alpaka_DEP_CUDA)
-    include(${_alpaka_CMAKE_DIR}/alpakaCuda.cmake)
-endif()
-if(alpaka_DEP_HIP)
-    include(${_alpaka_CMAKE_DIR}/alpakaHip.cmake)
-endif()
-if(alpaka_DEP_ONEAPI)
-    include(${_alpaka_CMAKE_DIR}/alpakaOneApi.cmake)
-endif()
-
-## GCC compiler flag to show a longer stack for concept diagnostics
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    alpaka_set_compiler_options(HOST target alpaka_target_host "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-fconcepts-diagnostics-depth=${alpaka_GCC_CONCEPT_DEPTH}>")
-endif()
-
-# If we are in the top scope we can not export variables to the parent
-if(PROJECT_IS_TOP_LEVEL)
-    set(_alpaka_EXPORT_SCOPE)
-else()
-    set(_alpaka_EXPORT_SCOPE PARENT_SCOPE)
 endif()
 
 option(alpaka_COMPILE_PEDANTIC "Compile all code with strict compiler settings." OFF)
@@ -218,9 +194,23 @@ set(alpaka_SIMD
 )
 set_property(CACHE alpaka_SIMD PROPERTY STRINGS "DEFAULT;STDSIMD;EMULATION")
 
-# avoid that global alpaka targets get added the dependencies more than once e.g. if used in other projects
+# compute device backends
+if(alpaka_DEP_CUDA)
+    include(${_alpaka_CMAKE_DIR}/alpakaCuda.cmake)
+endif()
+if(alpaka_DEP_HIP)
+    include(${_alpaka_CMAKE_DIR}/alpakaHip.cmake)
+endif()
+if(alpaka_DEP_ONEAPI)
+    include(${_alpaka_CMAKE_DIR}/alpakaOneApi.cmake)
+endif()
+# Avoid extending global alpaka targets more than once in the complete configure tree.
+get_property(_alpaka_TARGETS_EXTENDED GLOBAL PROPERTY ALPAKA_TARGETS_EXTENDED)
 if(NOT _alpaka_TARGETS_EXTENDED)
-    set(_alpaka_TARGETS_EXTENDED ON ${_alpaka_EXPORT_SCOPE})
+    ## GCC compiler flag to show a longer stack for concept diagnostics
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        alpaka_set_compiler_options(HOST target alpaka_target_host "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-fconcepts-diagnostics-depth=${alpaka_GCC_CONCEPT_DEPTH}>")
+    endif()
 
     ## HWLOC
     include(${_alpaka_CMAKE_DIR}/alpakaHwloc.cmake)
@@ -305,130 +295,130 @@ if(NOT _alpaka_TARGETS_EXTENDED)
         message(STATUS "std::simd disabled, emulated SIMD is used")
         target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_DISABLE_STD_SIMD)
     endif()
-endif()
+    # These options are used in the alpaka_finalize call
+    option(alpaka_ASAN "Enable/Disable linking the address sanitizer for cpu targets" OFF)
+    option(alpaka_TSAN "Enable/Disable linking the thread sanitizer for cpu targets" OFF)
+    option(alpaka_LSAN "Enable/Disable linking the memory leak sanitizer for cpu targets" OFF)
+    option(alpaka_UBSAN "Enable/Disable linking the undefined behavior sanitizer for cpu targets" OFF)
+    option(alpaka_COVERAGE "Enable/Disable coverage instrumentation for cpu targets" OFF)
 
-# These options are used in the alpaka_finalize call
-option(alpaka_ASAN "Enable/Disable linking the address sanitizer for cpu targets" OFF)
-option(alpaka_TSAN "Enable/Disable linking the thread sanitizer for cpu targets" OFF)
-option(alpaka_LSAN "Enable/Disable linking the memory leak sanitizer for cpu targets" OFF)
-option(alpaka_UBSAN "Enable/Disable linking the undefined behavior sanitizer for cpu targets" OFF)
-option(alpaka_COVERAGE "Enable/Disable coverage instrumentation for cpu targets" OFF)
-
-if(alpaka_TSAN)
-    message(
-        WARNING
-        "Thread sanitizer enabled: You should reduce mmap rnd bits to avoid compile issues: call as root 'sysctl vm.mmap_rnd_bits=28'"
-    )
-endif()
-
-set(alpaka_LOG "OFF" CACHE STRING "Set how the logging should be compiled into alpaka")
-set_property(CACHE alpaka_LOG PROPERTY STRINGS "static;dynamic;OFF")
-
-if((${alpaka_LOG} STREQUAL "OFF"))
-    set(alpaka_LOG_ENABLED OFF)
-else()
-    set(alpaka_LOG_ENABLED ON)
-endif()
-if(alpaka_LOG_ENABLED)
-    if(${alpaka_LOG} STREQUAL "static")
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_STATIC)
-    endif()
-
-    if(${alpaka_LOG} STREQUAL "dynamic")
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DYNAMIC)
-    endif()
-
-    option(alpaka_LOG_INDENT "Enable/Disable call stack indention for logging" ON)
-    if(alpaka_LOG_INDENT)
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_INDENT)
-    endif()
-
-    set(alpaka_LOG_DETAIL "short" CACHE STRING "Set how the logging should be compiled into alpaka")
-    set_property(CACHE alpaka_LOG_DETAIL PROPERTY STRINGS "short;long")
-    if(${alpaka_LOG_DETAIL} STREQUAL "short")
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DETAIL_SHORT)
-    elseif(${alpaka_LOG_DETAIL} STREQUAL "long")
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DETAIL_LONG)
-    endif()
-
-    option(alpaka_LOG_FUNCTIONS "Enable/Disable logging of function entry and exit" ON)
-    if(alpaka_LOG_FUNCTIONS)
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_ENABLE_LOG_FUNCTIONS)
-    endif()
-
-    option(alpaka_LOG_INFO "Enable/Disable logging of additional information" ON)
-    if(alpaka_LOG_INFO)
-        target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_ENABLE_LOG_INFO)
-    endif()
-    if(${alpaka_LOG} STREQUAL "static")
-        # Set default options for each log level (Device, Event, Memory, Queue, Kernel)
-        option(alpaka_LOG_STATIC_Device "Enable Device logging" ON)
-        option(alpaka_LOG_STATIC_Event "Enable Event logging" ON)
-        option(alpaka_LOG_STATIC_Memory "Enable Memory logging" ON)
-        option(alpaka_LOG_STATIC_Queue "Enable Queue logging" ON)
-        option(alpaka_LOG_STATIC_Kernel "Enable Kernel logging" ON)
-
-        # Initialize bit mask to 0
-        set(alpaka_LOG_STATIC_LVL_MASK 0)
-
-        # Set bit mask based on user-selected options
-        if(alpaka_LOG_STATIC_Device)
-            math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 1")
-        endif()
-
-        if(alpaka_LOG_STATIC_Event)
-            math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 2")
-        endif()
-
-        if(alpaka_LOG_STATIC_Memory)
-            math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 4")
-        endif()
-
-        if(alpaka_LOG_STATIC_Queue)
-            math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 8")
-        endif()
-
-        if(alpaka_LOG_STATIC_Kernel)
-            math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 16")
-        endif()
-
-        # Convert bitmask string to a numeric value
-        math(EXPR alpaka_LOG_STATIC_LVL_MASK_VALUE "${alpaka_LOG_STATIC_LVL_MASK}")
-
-        # Pass the bit mask to the C++ code via target_compile_definitions
-        target_compile_definitions(
-            alpaka_target_host
-            INTERFACE ALPAKA_LOG_STATIC_LVL_MASK=${alpaka_LOG_STATIC_LVL_MASK_VALUE}
+    if(alpaka_TSAN)
+        message(
+            WARNING
+            "Thread sanitizer enabled: You should reduce mmap rnd bits to avoid compile issues: call as root 'sysctl vm.mmap_rnd_bits=28'"
         )
+    endif()
 
-        # Print the final bit mask value (for debugging purposes)
-        message(STATUS "define ALPAKA_LOG_STATIC_LVL_MASK is set to: ${alpaka_LOG_STATIC_LVL_MASK_VALUE}")
+    set(alpaka_LOG "OFF" CACHE STRING "Set how the logging should be compiled into alpaka")
+    set_property(CACHE alpaka_LOG PROPERTY STRINGS "static;dynamic;OFF")
+
+    if((${alpaka_LOG} STREQUAL "OFF"))
+        set(alpaka_LOG_ENABLED OFF)
+    else()
+        set(alpaka_LOG_ENABLED ON)
+    endif()
+    if(alpaka_LOG_ENABLED)
+        if(${alpaka_LOG} STREQUAL "static")
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_STATIC)
+        endif()
+
+        if(${alpaka_LOG} STREQUAL "dynamic")
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DYNAMIC)
+        endif()
+
+        option(alpaka_LOG_INDENT "Enable/Disable call stack indention for logging" ON)
+        if(alpaka_LOG_INDENT)
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_INDENT)
+        endif()
+
+        set(alpaka_LOG_DETAIL "short" CACHE STRING "Set how the logging should be compiled into alpaka")
+        set_property(CACHE alpaka_LOG_DETAIL PROPERTY STRINGS "short;long")
+        if(${alpaka_LOG_DETAIL} STREQUAL "short")
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DETAIL_SHORT)
+        elseif(${alpaka_LOG_DETAIL} STREQUAL "long")
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_LOG_DETAIL_LONG)
+        endif()
+
+        option(alpaka_LOG_FUNCTIONS "Enable/Disable logging of function entry and exit" ON)
+        if(alpaka_LOG_FUNCTIONS)
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_ENABLE_LOG_FUNCTIONS)
+        endif()
+
+        option(alpaka_LOG_INFO "Enable/Disable logging of additional information" ON)
+        if(alpaka_LOG_INFO)
+            target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_ENABLE_LOG_INFO)
+        endif()
+        if(${alpaka_LOG} STREQUAL "static")
+            # Set default options for each log level (Device, Event, Memory, Queue, Kernel)
+            option(alpaka_LOG_STATIC_Device "Enable Device logging" ON)
+            option(alpaka_LOG_STATIC_Event "Enable Event logging" ON)
+            option(alpaka_LOG_STATIC_Memory "Enable Memory logging" ON)
+            option(alpaka_LOG_STATIC_Queue "Enable Queue logging" ON)
+            option(alpaka_LOG_STATIC_Kernel "Enable Kernel logging" ON)
+
+            # Initialize bit mask to 0
+            set(alpaka_LOG_STATIC_LVL_MASK 0)
+
+            # Set bit mask based on user-selected options
+            if(alpaka_LOG_STATIC_Device)
+                math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 1")
+            endif()
+
+            if(alpaka_LOG_STATIC_Event)
+                math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 2")
+            endif()
+
+            if(alpaka_LOG_STATIC_Memory)
+                math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 4")
+            endif()
+
+            if(alpaka_LOG_STATIC_Queue)
+                math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 8")
+            endif()
+
+            if(alpaka_LOG_STATIC_Kernel)
+                math(EXPR alpaka_LOG_STATIC_LVL_MASK "${alpaka_LOG_STATIC_LVL_MASK} | 16")
+            endif()
+
+            # Convert bitmask string to a numeric value
+            math(EXPR alpaka_LOG_STATIC_LVL_MASK_VALUE "${alpaka_LOG_STATIC_LVL_MASK}")
+
+            # Pass the bit mask to the C++ code via target_compile_definitions
+            target_compile_definitions(
+                alpaka_target_host
+                INTERFACE ALPAKA_LOG_STATIC_LVL_MASK=${alpaka_LOG_STATIC_LVL_MASK_VALUE}
+            )
+
+            # Print the final bit mask value (for debugging purposes)
+            message(STATUS "define ALPAKA_LOG_STATIC_LVL_MASK is set to: ${alpaka_LOG_STATIC_LVL_MASK_VALUE}")
+        endif()
+    endif()
+
+    # CMake executor options for tests/benchmarks and examples
+    # The follwoing option influences the alpaka header target
+    option(alpaka_EXEC_CpuSerial "Enable/Disable serial executor in examples/benchmarks and tests" ON)
+    if(NOT alpaka_EXEC_CpuSerial)
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuSerial)
+    endif()
+    option(alpaka_EXEC_CpuOmpBlocks "Enable/Disable OpenMP blocks executor in examples/benchmarks and tests" ON)
+    if(NOT alpaka_EXEC_CpuOmpBlocks)
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuOmpBlocks)
+    endif()
+    option(alpaka_EXEC_TbbBlocks "Enable/Disable TBB blocks executor in examples/benchmarks and tests" ON)
+    if((NOT alpaka_EXEC_TbbBlocks) OR (NOT alpaka_DEP_TBB))
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuTbbBlocks)
+    endif()
+    option(alpaka_EXEC_GpuCuda "Enable/Disable CUDA executor in examples/benchmarks and tests" ON)
+    if(NOT alpaka_EXEC_GpuCuda)
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_GpuCuda)
+    endif()
+    option(alpaka_EXEC_GpuHip "Enable/Disable HIP executor in examples/benchmarks and tests" ON)
+    if(NOT alpaka_EXEC_GpuHip)
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_GpuHip)
+    endif()
+    option(alpaka_EXEC_OneApi "Enable/Disable Intel OneAPI SYCL executor in examples/benchmarks and tests" ON)
+    if(NOT alpaka_EXEC_OneApi)
+        target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_OneApi)
     endif()
 endif()
-
-# CMake executor options for tests/benchmarks and examples
-# The follwoing option influences the alpaka header target
-option(alpaka_EXEC_CpuSerial "Enable/Disable serial executor in examples/benchmarks and tests" ON)
-if(NOT alpaka_EXEC_CpuSerial)
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuSerial)
-endif()
-option(alpaka_EXEC_CpuOmpBlocks "Enable/Disable OpenMP blocks executor in examples/benchmarks and tests" ON)
-if(NOT alpaka_EXEC_CpuOmpBlocks)
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuOmpBlocks)
-endif()
-option(alpaka_EXEC_TbbBlocks "Enable/Disable TBB blocks executor in examples/benchmarks and tests" ON)
-if((NOT alpaka_EXEC_TbbBlocks) OR (NOT alpaka_DEP_TBB))
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_CpuTbbBlocks)
-endif()
-option(alpaka_EXEC_GpuCuda "Enable/Disable CUDA executor in examples/benchmarks and tests" ON)
-if(NOT alpaka_EXEC_GpuCuda)
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_GpuCuda)
-endif()
-option(alpaka_EXEC_GpuHip "Enable/Disable HIP executor in examples/benchmarks and tests" ON)
-if(NOT alpaka_EXEC_GpuHip)
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_GpuHip)
-endif()
-option(alpaka_EXEC_OneApi "Enable/Disable Intel OneAPI SYCL executor in examples/benchmarks and tests" ON)
-if(NOT alpaka_EXEC_OneApi)
-    target_compile_definitions(alpaka_target_headers INTERFACE ALPAKA_DISABLE_EXEC_OneApi)
-endif()
+set_property(GLOBAL PROPERTY ALPAKA_TARGETS_EXTENDED ON)

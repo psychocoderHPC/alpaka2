@@ -26,15 +26,22 @@ check_language(CUDA)
 
 if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
+endif()
+
+get_property(_alpaka_TARGETS_EXTENDED GLOBAL PROPERTY ALPAKA_TARGETS_EXTENDED)
+if(_alpaka_TARGETS_EXTENDED)
+    # returns control back to the calling include() scope - it does not stop the cmake configure
+    return()
+endif()
+
+if(CMAKE_CUDA_COMPILER)
     message(STATUS "CUDA language is available")
     checkcompilercxxsupport(CUDA ${alpaka_CXX_STANDARD})
 
-    if(NOT TARGET alpaka::cuda)
-        add_library(alpaka_target_cuda INTERFACE)
-        add_library(alpaka::cuda ALIAS alpaka_target_cuda)
-        target_link_libraries(alpaka_target_cuda INTERFACE alpaka::host)
-        set_property(TARGET alpaka_target_cuda PROPERTY CUDA_STANDARD ${alpaka_CXX_STANDARD})
-    endif()
+    add_library(alpaka_target_cuda INTERFACE)
+    add_library(alpaka::cuda ALIAS alpaka_target_cuda)
+    target_link_libraries(alpaka_target_cuda INTERFACE alpaka::host)
+    set_property(TARGET alpaka_target_cuda PROPERTY CUDA_STANDARD ${alpaka_CXX_STANDARD})
 
     alpaka_compiler_option(CUDA_SHOW_REGISTER "Show kernel registers and create device ASM" DEFAULT)
     alpaka_compiler_option(CUDA_KEEP_FILES "Keep all intermediate files that are generated during internal compilation steps 'CMakeFiles/<targetname>.dir'" DEFAULT)

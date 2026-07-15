@@ -17,12 +17,16 @@ if(NOT TARGET IntelSYCL::SYCL_CXX)
     find_package(IntelSYCL REQUIRED)
 endif()
 
-if(NOT TARGET alpaka::oneapi)
-    add_library(alpaka_target_oneapi INTERFACE)
-    add_library(alpaka::oneapi ALIAS alpaka_target_oneapi)
-    target_link_libraries(alpaka_target_oneapi INTERFACE alpaka::host)
-    target_link_libraries(alpaka_target_oneapi INTERFACE IntelSYCL::SYCL_CXX)
+get_property(_alpaka_TARGETS_EXTENDED GLOBAL PROPERTY ALPAKA_TARGETS_EXTENDED)
+if(_alpaka_TARGETS_EXTENDED)
+    # returns control back to the calling include() scope - it does not stop the cmake configure
+    return()
 endif()
+
+add_library(alpaka_target_oneapi INTERFACE)
+add_library(alpaka::oneapi ALIAS alpaka_target_oneapi)
+target_link_libraries(alpaka_target_oneapi INTERFACE alpaka::host)
+target_link_libraries(alpaka_target_oneapi INTERFACE IntelSYCL::SYCL_CXX)
 
 if(alpaka_RELOCATABLE_DEVICE_CODE STREQUAL ON)
     alpaka_set_compiler_options(DEVICE alpaka_target_oneapi alpaka "-fsycl-rdc")

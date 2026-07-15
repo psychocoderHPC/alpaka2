@@ -16,6 +16,15 @@ check_language(HIP)
 
 if(CMAKE_HIP_COMPILER)
     enable_language(HIP)
+endif()
+
+get_property(_alpaka_TARGETS_EXTENDED GLOBAL PROPERTY ALPAKA_TARGETS_EXTENDED)
+if(_alpaka_TARGETS_EXTENDED)
+    # returns control back to the calling include() scope - it does not stop the cmake configure
+    return()
+endif()
+
+if(CMAKE_HIP_COMPILER)
     message(STATUS "HIP language is available")
     find_package(hip REQUIRED)
 
@@ -40,11 +49,9 @@ if(CMAKE_HIP_COMPILER)
         )
     endif()
 
-    if(NOT TARGET alpaka::hip)
-        add_library(alpaka_target_hip INTERFACE)
-        target_link_libraries(alpaka_target_hip INTERFACE alpaka::host)
-        add_library(alpaka::hip ALIAS alpaka_target_hip)
-    endif()
+    add_library(alpaka_target_hip INTERFACE)
+    target_link_libraries(alpaka_target_hip INTERFACE alpaka::host)
+    add_library(alpaka::hip ALIAS alpaka_target_hip)
 
     # let the compiler find the HIP headers also when building host-only code
     target_include_directories(alpaka_target_hip SYSTEM INTERFACE ${hip_INCLUDE_DIR})
