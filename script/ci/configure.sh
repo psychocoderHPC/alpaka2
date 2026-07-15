@@ -37,6 +37,7 @@ if [[ "$compiler_name" == "gcc" || "$compiler_name" == "clang" || "$compiler_nam
         -Dalpaka_FAST_MATH=OFF
         "-DCMAKE_C_COMPILER=$APCI_C_COMPILER"
         "-DCMAKE_CXX_COMPILER=$APCI_CXX_COMPILER"
+        -Dalpaka_SIMD="${APCI_SIMD}"
     )
 
     declare -A ap_deps=(

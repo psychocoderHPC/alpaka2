@@ -176,6 +176,7 @@ jobs:
             ${{ matrix.config.sanitizer == 'tsan' }}  && echo 'APCI_SANITIZER_TSAN=ON'  >> $GITHUB_ENV || true
             ${{ matrix.config.sanitizer == 'lsan' }}  && echo 'APCI_SANITIZER_LSAN=ON'  >> $GITHUB_ENV || true
             ${{ matrix.config.sanitizer == 'ubsan' }} && echo 'APCI_SANITIZER_UBSAN=ON' >> $GITHUB_ENV || true
+            ${{ matrix.config.simd != '' }} && echo 'APCI_SIMD=${{matrix.config.simd}}'  >> $GITHUB_ENV || true
       - name: job configuration environment variables
         run: "${APCI_ALPAKA_ROOT}/script/ci/job_info.sh"
       # Install base dependencies

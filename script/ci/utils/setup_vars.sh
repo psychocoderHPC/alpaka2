@@ -69,6 +69,10 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     if [[ -z ${APCI_SANITIZER_UBSAN+x} ]]; then
         export APCI_SANITIZER_UBSAN="OFF"
     fi
+
+    if [[ -z ${APCI_SIMD+x} ]]; then
+        export APCI_SIMD=DEFAULT
+    fi
 fi
 
 if [[ -n ${GITLAB_CI+x} ]]; then

@@ -13,6 +13,7 @@
     APCI_SANITIZER_TSAN : "OFF"
     APCI_SANITIZER_LSAN : "OFF"
     APCI_SANITIZER_UBSAN : "OFF"
+    APCI_SIMD : "DEFAULT"
   script:
     - $APCI_ALPAKA_ROOT/script/ci/job_info.sh
     - $APCI_ALPAKA_ROOT/script/ci/install_dependencies.sh
@@ -46,6 +47,14 @@ gcc-13:
     APCI_DEVICE_COMPILER : gcc@13
     APCI_CMAKE: 3.28.3
     APCI_EXEC_CPU_SERIAL: "ON"
+
+gcc-14-simd-emulated:
+  image: docker.io/ubuntu:24.04
+  extends: .base
+  variables:
+    APCI_DEVICE_COMPILER : gcc@14
+    APCI_CMAKE: 3.28.3
+    APCI_SIMD: EMULATION
 
 gcc-15:
   image: docker.io/ubuntu:24.04
@@ -288,6 +297,18 @@ cuda-13.1-gcc:
     APCI_DEVICE_COMPILER: nvcc@13.1
     APCI_HOST_COMPILER: gcc@13
     APCI_CUDA: 13.1
+  tags:
+  - x86_64
+  - cuda
+  - a100
+
+cuda-13.1-gcc-simd-emulation:
+  extends: .cuda
+  variables:
+    APCI_DEVICE_COMPILER: nvcc@13.1
+    APCI_HOST_COMPILER: gcc@13
+    APCI_CUDA: 13.1
+    APCI_SIMD: EMULATION
   tags:
   - x86_64
   - cuda
