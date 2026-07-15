@@ -232,7 +232,7 @@ echo_if_not_empty() {
 
     local var_name="$1"
     if [[ "${!var_name}" != "" ]]; then
-        echo "${var_name}=${!var_name}"
+        echo -n "${var_name}=${!var_name}"
     fi
 }
 
@@ -246,6 +246,6 @@ echo_if_not_empty_and_set() {
 
     local var_name="$1"
     if [[ -n "${!var_name+x}" && "${!var_name}" != "" ]]; then
-        echo "${var_name}=${!var_name}"
+        echo -n "${var_name}=${!var_name}"
     fi
 }

@@ -28,17 +28,17 @@ if [[ "${APCI_SANITIZER_TSAN}" == "ON" ]]; then
     rnd_bits=$(sudo sysctl -n vm.mmap_rnd_bits)
     if [[ -z ${GITHUB_ACTIONS+x} ]] && [[ -z ${GITLAB_CI+x} ]]; then
         # local container
-        if [[ "${rnd_bits}" != 28 ]]; then
+        if [[ ${rnd_bits} -gt 28 ]]; then
             echo_yellow "[WARNING]: vm.mmap_rnd_bits is set to ${rnd_bits}. The TSAN may fail." \
                 "Run 'sudo sysctl vm.mmap_rnd_bits=28' on the host to fix the issue."
         fi
     else
-        if [[ "${rnd_bits}" == 28 ]]; then
-            echo_green "vm.mmap_rnd_bits=28 is set"
+        if [[ ${rnd_bits} -le 28 ]]; then
+            echo_green "vm.mmap_rnd_bits=${rnd_bits} is set"
         else
             echo_run sudo sysctl vm.mmap_rnd_bits=28
-            if [[ $(sudo sysctl -n vm.mmap_rnd_bits) != 28 ]]; then
-                exit_error "Cannot set vm.mmap_rnd_bits to 28"
+            if [[ $(sudo sysctl -n vm.mmap_rnd_bits) -ne 28 ]]; then
+                exit_error "Cannot set vm.mmap_rnd_bits from ${rnd_bits} to 28"
             fi
         fi
     fi
