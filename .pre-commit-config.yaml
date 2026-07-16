@@ -53,14 +53,14 @@ repos:
   hooks:
     - id: ascii-check
       name: ASCII check
-      entry: python3 script/gitPreCommit/checkForNonASCII.py
+      entry: python3 script/git_pre_commit/check_for_non_ascii.py
       language: system
       files: \.(c|cc|cpp|cxx|cu|h|hh|hpp|hxx|cuh)$
 - repo: local
   hooks:
     - id: pragma-once
       name: "Check #pragma once"
-      entry: script/gitPreCommit/checkPragmaOnce.sh
+      entry: script/git_pre_commit/check_pragma_once.sh
       language: system
       files: \.hpp$
 - repo: https://github.com/astral-sh/ruff-pre-commit

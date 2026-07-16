@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-#
-# Copyright 2026 René Widera
-# SPDX-License-Identifier: MPL-2.0
 
-from pathlib import Path
+"""Copyright 2026 René Widera
+SPDX-License-Identifier: MPL-2.0
+
+Script for pre-commit hook to check if a file does not contain non-ascii characters
+"""
+
 import re
 import sys
-
+from pathlib import Path
 
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
 
@@ -31,11 +33,20 @@ def find_header_end(text: str) -> int:
     return 0
 
 
-def check_file(filename: str) -> bool:
+def check_file(filename_path: str) -> bool:
+    """
+    Check if file contains non-ASCII characters.
+
+    Args:
+        filename_path (str): Path to the file.
+
+    Returns:
+        bool: True of no non-ASCII characters.
+    """
     try:
-        text = Path(filename).read_text(encoding="utf-8")
+        text = Path(filename_path).read_text(encoding="utf-8")
     except UnicodeDecodeError as e:
-        print(f"{filename}: invalid UTF-8: {e}")
+        print(f"{filename_path}: invalid UTF-8: {e}")
         return False
 
     allowed_end = find_header_end(text)
@@ -51,21 +62,22 @@ def check_file(filename: str) -> bool:
             ch = match.group(0)
             col_no = match.start() + 1
 
-            print(f"{filename}:{line_offset}:{col_no}: unsupported non-ASCII character U+{ord(ch):04X} ({ch!r})")
+            print(f"{filename_path}:{line_offset}:{col_no}: unsupported non-ASCII character U+{ord(ch):04X} ({ch!r})")
             found_non_ascii = True
 
     return not found_non_ascii
 
 
 def main() -> int:
+    """The main function."""
     if len(sys.argv) < 2:
         print(f"usage: {sys.argv[0]} <files...>", file=sys.stderr)
         return 1
 
     all_ok = True
 
-    for filename in sys.argv[1:]:
-        if not check_file(filename):
+    for filename_path in sys.argv[1:]:
+        if not check_file(filename_path):
             all_ok = False
 
     return 0 if all_ok else 1
