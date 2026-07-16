@@ -25,3 +25,21 @@ BUILD_TYPES_NAMES: dict[str, bashi.ValueVersion] = {
     "Debug": CMAKE_DEBUG_VER,
     "RelWithDebInfo": CMAKE_RELEASE_WITH_DEBUG_INFO_VER,
 }
+
+
+def get_version_aliases() -> dict[bashi.ValueName, dict[bashi.ValueVersion, str]]:
+    """Return a list of value-version aliases which can be set for print_row_nice()
+
+    Returns:
+        Dict[bashi.ValueName, Dict[bashi.ValueVersion, str]]: _description_
+    """
+    version_aliases = {}
+    for val_name, version_map in [
+        (BUILD_TYPE, BUILD_TYPES_NAMES),
+    ]:
+        version_map_parsed: dict[bashi.ValueVersion, str] = {}
+        for alias, ver in version_map.items():
+            version_map_parsed[ver] = alias
+        version_aliases[val_name] = version_map_parsed
+
+    return version_aliases

@@ -4,6 +4,38 @@ SPDX-License-Identifier: MPL-2.0
 alpaka_bashi package
 """
 
-from alpaka_bashi.versions import get_backends, get_software_versions_for_alpaka
+from alpaka_bashi.alpaka_filter import AlpakaFilter
+from alpaka_bashi.globals import (
+    BUILD_TYPE,
+    BUILD_TYPES,
+    BUILD_TYPES_NAMES,
+    CMAKE_DEBUG,
+    CMAKE_DEBUG_VER,
+    CMAKE_RELEASE,
+    CMAKE_RELEASE_VER,
+    CMAKE_RELEASE_WITH_DEBUG_INFO,
+    CMAKE_RELEASE_WITH_DEBUG_INFO_VER,
+    get_version_aliases,
+)
+from alpaka_bashi.versions import (
+    get_alpaka_version_relation,
+    get_backends,
+    get_software_versions_for_alpaka,
+)
 
-__all__ = ["get_backends", "get_software_versions_for_alpaka"]
+__all__ = [
+    "AlpakaFilter",
+    "BUILD_TYPE",
+    "BUILD_TYPES",
+    "BUILD_TYPES_NAMES",
+    "CMAKE_DEBUG",
+    "CMAKE_DEBUG_VER",
+    "CMAKE_RELEASE",
+    "CMAKE_RELEASE_VER",
+    "CMAKE_RELEASE_WITH_DEBUG_INFO",
+    "CMAKE_RELEASE_WITH_DEBUG_INFO_VER",
+    "get_version_aliases",
+    "get_alpaka_version_relation",
+    "get_backends",
+    "get_software_versions_for_alpaka",
+]

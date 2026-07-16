@@ -1,2 +1,6 @@
 [FORMAT]
 max-line-length=120
+
+[MESSAGES CONTROL]
+# Do not throw an error, if a TODO was found
+disable=fixme
