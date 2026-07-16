@@ -4,11 +4,41 @@ SPDX-License-Identifier: MPL-2.0
 Generates the GitLab CI jobs for alpaka.
 """
 
+import argparse
 import sys
 
 import bashi
 
 import alpaka_bashi
+
+
+def get_args() -> argparse.Namespace:
+    """Define and parse the commandline arguments.
+
+    Returns:
+        argparse.Namespace: The commandline arguments.
+    """
+    parser = argparse.ArgumentParser(description="Calculate job matrix and create GitLab CI .yml.")
+
+    parser.add_argument(
+        "--print-combinations",
+        action="store_true",
+        help="Display combination list.",
+    )
+
+    parser.add_argument(
+        "--debug-print",
+        type=bashi.FilterDebugMode,
+        choices=list(bashi.FilterDebugMode),
+        default="off",
+        help="Display Indicate which combinations passed through the filter chain and which did "
+        "not.Green text indicates that the combination passed through the filter chain; red text"
+        " indicates that it did not. Add the keyword `passed` if colored output is not available."
+        "Option `normal` is easy human readable output. If `args` is set, the output can be "
+        "directly passed to the validator",
+    )
+
+    return parser.parse_args()
 
 
 def setup_row_printer() -> None:
@@ -22,6 +52,7 @@ def setup_row_printer() -> None:
 
 def main() -> None:
     """The main entry point."""
+    args = get_args()
 
     setup_row_printer()
 
@@ -39,16 +70,14 @@ def main() -> None:
         runtime_infos=runtime_infos,
         custom_filter=alpaka_filter,
         version_relation=version_relation,
-        # TODO: implement argument
-        # debug_print=args.debug_print,
+        debug_print=args.debug_print,
     )
     print(f"number of combinations: {len(comb_list)}", file=sys.stderr)
 
-    # TODO: implement me
-    # if args.print_combinations:
-    for c in comb_list:
-        bashi.print_row_nice(c)
-    sys.exit(0)
+    if args.print_combinations:
+        for c in comb_list:
+            bashi.print_row_nice(c)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
