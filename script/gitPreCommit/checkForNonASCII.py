@@ -10,6 +10,7 @@ import sys
 
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
 
+
 def find_header_end(text: str) -> int:
     """Return the character offset after the initial license/author block."""
 
@@ -50,10 +51,7 @@ def check_file(filename: str) -> bool:
             ch = match.group(0)
             col_no = match.start() + 1
 
-            print(
-                f"{filename}:{line_offset}:{col_no}: "
-                f"unsupported non-ASCII character U+{ord(ch):04X} ({ch!r})"
-            )
+            print(f"{filename}:{line_offset}:{col_no}: unsupported non-ASCII character U+{ord(ch):04X} ({ch!r})")
             found_non_ascii = True
 
     return not found_non_ascii

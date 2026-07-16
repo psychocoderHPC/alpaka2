@@ -14,11 +14,13 @@ from sphinx_helper.utils import on_rtd
 from sphinx_helper.doxygen import generate_doxygen
 from sphinx_helper.math_function_families import generate_math_function_families
 
+
 def setup(app):
     # Doxygen XML must exist before Sphinx/Breathe reads the documents.
-    app.connect('builder-inited', generate_doxygen)
-    app.connect('builder-inited', generate_math_function_families)
-    app.connect('build-finished', generate_single_header)
+    app.connect("builder-inited", generate_doxygen)
+    app.connect("builder-inited", generate_math_function_families)
+    app.connect("build-finished", generate_single_header)
+
 
 # -- Project information -----------------------------------------------------
 
@@ -35,7 +37,7 @@ master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
 
-highlight_language = 'c++'
+highlight_language = "c++"
 
 show_authors = True
 
@@ -60,9 +62,10 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["Thumbs.db",
-                    ".DS_Store",
-                    ]
+exclude_patterns = [
+    "Thumbs.db",
+    ".DS_Store",
+]
 
 source_suffix = [".rst"]
 master_doc = "index"
@@ -191,5 +194,9 @@ else:
     from sphinx.util import logging
 
     logger = logging.getLogger(__name__)
-    logger.info("single header build can be force build or skipped with the environment variable 'ALPAKA_DOC_SINGLE_HEADER=0|OFF|1|ON'")
-    logger.info("doxygen build can be force build or skipped with the environment variable 'ALPAKA_DOC_DOXYGEN=0|OFF|1|ON'")
+    logger.info(
+        "single header build can be force build or skipped with the environment variable 'ALPAKA_DOC_SINGLE_HEADER=0|OFF|1|ON'"
+    )
+    logger.info(
+        "doxygen build can be force build or skipped with the environment variable 'ALPAKA_DOC_DOXYGEN=0|OFF|1|ON'"
+    )

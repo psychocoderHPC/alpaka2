@@ -22,9 +22,7 @@ def _load_function_data(xml_file_path: pathlib.Path) -> dict[str, tuple[str, int
     return function_data
 
 
-def _group_functions(
-        function_data: dict[str, tuple[str, int]]
-) -> dict[str, list[str]]:
+def _group_functions(function_data: dict[str, tuple[str, int]]) -> dict[str, list[str]]:
     grouped_functions: dict[str, list[str]] = {
         "Unary Functions": [],
         "Binary Functions": [],

@@ -41,16 +41,12 @@ def get_src_dest_paths(app) -> list[tuple[pathlib.Path, pathlib.Path]]:
     return [
         # USER documentation (docs/doxygen/html)
         (
-            (conf_dir / "../doxygen/html")
-            .resolve()
-            .absolute(),
+            (conf_dir / "../doxygen/html").resolve().absolute(),
             (output_dir / "doxygen").absolute(),
         ),
         # DEVELOPER documentation (docs/doxygen_dev/html)
         (
-            (conf_dir / "../doxygen_dev/html")
-            .resolve()
-            .absolute(),
+            (conf_dir / "../doxygen_dev/html").resolve().absolute(),
             (output_dir / "doxygen_dev").absolute(),
         ),
     ]
@@ -72,9 +68,7 @@ def is_generate_doxygen(app) -> bool:
         return True
 
     if not shutil.which("doxygen"):
-        logger.warning(
-            "Doxygen: could not find 'doxygen' executable. Skip building doxygen documentation."
-        )
+        logger.warning("Doxygen: could not find 'doxygen' executable. Skip building doxygen documentation.")
         return False
 
     for _, dest in get_src_dest_paths(app):
@@ -85,24 +79,16 @@ def is_generate_doxygen(app) -> bool:
     if "ALPAKA_DOC_DOXYGEN" in os.environ:
         env_value = os.environ["ALPAKA_DOC_DOXYGEN"]
         if env_value in ("1", "ON"):
-            logger.info(
-                f"Doxygen: force build via environment variable ALPAKA_DOC_DOXYGEN={env_value}"
-            )
+            logger.info(f"Doxygen: force build via environment variable ALPAKA_DOC_DOXYGEN={env_value}")
             return True
         if env_value in ("0", "OFF"):
-            logger.info(
-                f"Doxygen: disable build via environment variable ALPAKA_DOC_DOXYGEN={env_value}"
-            )
+            logger.info(f"Doxygen: disable build via environment variable ALPAKA_DOC_DOXYGEN={env_value}")
             return False
 
-        logger.error(
-            f"Doxygen: unknown value for environment variable ALPAKA_DOC_DOXYGEN={env_value}"
-        )
+        logger.error(f"Doxygen: unknown value for environment variable ALPAKA_DOC_DOXYGEN={env_value}")
         sys.exit(1)
 
-    if not get_modified_files(
-        os.path.join(app.builder.outdir, ".doxygen_cache.json"), "^include"
-    ):
+    if not get_modified_files(os.path.join(app.builder.outdir, ".doxygen_cache.json"), "^include"):
         logger.info("Doxygen: skip build because no file was changed")
         return False
 
@@ -121,9 +107,7 @@ def build_doxygen(app):
     logger = logging.getLogger(__name__)
     for cmd in (["doxygen"], ["doxygen", "Doxyfile_dev"]):
         logger.info(f"Run {' '.join(cmd)}")
-        doxygen_process = subprocess.run(
-            cmd, cwd=docs_dir, stdout=subprocess.PIPE, text=True, check=True
-        )
+        doxygen_process = subprocess.run(cmd, cwd=docs_dir, stdout=subprocess.PIPE, text=True, check=True)
         if doxygen_process.stderr:
             logger.warning(doxygen_process.stderr.strip())
         if doxygen_process.returncode != 0:

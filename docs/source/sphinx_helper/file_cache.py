@@ -7,9 +7,7 @@ import pathlib
 import subprocess
 
 
-def get_modified_files(
-    cache_file_path: str, path_filter_regex: str = ""
-) -> dict[str, str]:
+def get_modified_files(cache_file_path: str, path_filter_regex: str = "") -> dict[str, str]:
     """Return all files, which changed since last documentation build. If empty, nothing changed.
 
     Args:
@@ -81,9 +79,7 @@ def get_hashed_files(path_filter_regex: str = "") -> dict[str, str]:
     )
     project_root = pathlib.Path(show_git_toplevel.stdout.strip())
 
-    git_status = subprocess.run(
-        ["git", "status", "--porcelain"], stdout=subprocess.PIPE, text=True, check=True
-    )
+    git_status = subprocess.run(["git", "status", "--porcelain"], stdout=subprocess.PIPE, text=True, check=True)
 
     modified_files = []
     for line in git_status.stdout.strip().split("\n"):

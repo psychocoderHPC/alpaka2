@@ -33,24 +33,16 @@ def is_generate_single_header(app) -> bool:
     if "ALPAKA_DOC_SINGLE_HEADER" in os.environ:
         env_value = os.environ["ALPAKA_DOC_SINGLE_HEADER"]
         if env_value in ("1", "ON"):
-            logger.info(
-                f"Single Header: force build via environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}"
-            )
+            logger.info(f"Single Header: force build via environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}")
             return True
         if env_value in ("0", "OFF"):
-            logger.info(
-                f"Single Header: disable build via environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}"
-            )
+            logger.info(f"Single Header: disable build via environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}")
             return False
 
-        logger.error(
-            f"Single Header: unknown value for environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}"
-        )
+        logger.error(f"Single Header: unknown value for environment variable ALPAKA_DOC_SINGLE_HEADER={env_value}")
         sys.exit(1)
 
-    if not get_modified_files(
-        os.path.join(app.builder.outdir, ".single_header_cache.json"), "^include"
-    ):
+    if not get_modified_files(os.path.join(app.builder.outdir, ".single_header_cache.json"), "^include"):
         logger.info("Single Header: skip build because no file was changed")
         return False
 
@@ -71,9 +63,7 @@ def generate_single_header(app, exception):
     os.makedirs(single_header_path, exist_ok=True)
 
     # Path to your script
-    script_path = os.path.abspath(
-        os.path.join(app.srcdir, "..", "..", "script", "create-single-header.sh")
-    )
+    script_path = os.path.abspath(os.path.join(app.srcdir, "..", "..", "script", "create-single-header.sh"))
 
     logger = logging.getLogger(__name__)
 
