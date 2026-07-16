@@ -160,8 +160,17 @@ quiet_run() {
 # ATTENTION: If you add a new ppa no 'apt update' is performed. Instead call directly
 # `DEBIAN_FRONTEND=noninteractive apt update`.
 lazy_apt_update() {
-    if [[ -z "$(ls -A '/var/lib/apt/lists/')" ]]; then
+    if [[ -n ${TMPDIR+x} ]]; then
+        local laze_update_file="${TMPDIR}/lazy_apt_update"
+    elif [[ -n ${TMP+x} ]]; then
+        local laze_update_file="${TMP}/lazy_apt_update"
+    else
+        local laze_update_file=/tmp/lazy_apt_update
+    fi
+
+    if [[ ! -f "${laze_update_file}" ]]; then
         DEBIAN_FRONTEND=noninteractive retry_cmd apt update
+        touch ${laze_update_file}
     fi
 }
 
