@@ -46,8 +46,15 @@ if [[ "$compiler_name" == "gcc" ]]; then
             fi
         fi
 
-        gcc_base_path=/usr/bin/
-
+        # we use different base container (e.g. Ubuntu, Debian), therefore search for the g++
+        if command -v "g++-${compiler_version}"; then
+            gcc_base_path="$(dirname "$(which "g++-${compiler_version}")")"
+        elif command -v g++; then
+            gcc_base_path=$(dirname "$(which g++)")
+        else
+            # default path in Ubuntu container
+            gcc_base_path=/usr/bin/
+        fi
         # workaround for gcc container
         # there is no g++-<version> executable
         for exe_name in gcc g++; do

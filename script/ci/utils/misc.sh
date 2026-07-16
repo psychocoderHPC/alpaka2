@@ -170,7 +170,7 @@ lazy_apt_update() {
 
     if [[ ! -f "${laze_update_file}" ]]; then
         DEBIAN_FRONTEND=noninteractive retry_cmd apt update
-        touch ${laze_update_file}
+        touch "${laze_update_file}"
     fi
 }
 
