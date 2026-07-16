@@ -87,6 +87,11 @@ repos:
         [
           "-rn", # Only display messages
           "-sn", # Don't display the score
+          # for easy usage, pylint is automatically installed in a own environment
+          # therefore it cannot check the usage of third party libraries because they need to
+          # be in the same python environment
+          # setup a CI job to run pylint with third party library check
+          "--disable", "import-error"
         ]
       # source: https://github.com/pre-commit/pre-commit/issues/1470#issuecomment-634381955
       exclude: |
