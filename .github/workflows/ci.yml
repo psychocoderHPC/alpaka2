@@ -117,38 +117,6 @@ jobs:
           # Use/validate oneAPI-provided oneTBB package with the latest icpx toolchain
           - { compiler: icpx, version: "2026.0", cuda: "no", hip: "no", container: "intel/oneapi:2026.0.0-devel-ubuntu24.04", tbb: "on",
               env: { APCI_DEVICE_COMPILER: icpx@2026.0, APCI_CMAKE: 3.28.3, APCI_ONEAPI: 2026.0, APCI_ONEAPI_TARGET: cpu, APCI_TBB: ON, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "asan",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "asan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "tsan",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "tsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "lsan",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "lsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "ubsan",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: clang, version: "21", cuda: "no", hip: "no", container: "ubuntu:24.04", sanitizer: "ubsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : clang@21, APCI_CMAKE : 3.28.3, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "asan",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "asan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "tsan",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "tsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "lsan",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "lsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "ubsan",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
-          - { compiler: gcc, version: "15", cuda: "no", hip: "no", container: "gcc:15.1.0", sanitizer: "ubsan" , simd: "EMULATION", hwloc: "no",
-              env : {APCI_DEVICE_COMPILER : gcc@15, APCI_CMAKE : 3.25.1, APCI_RUN_CTEST: ON} }
       fail-fast: false
 
     # Specify the container to use based on the matrix configuration

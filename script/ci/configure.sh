@@ -121,7 +121,7 @@ if [[ "$APCI_ONEAPI" != 0 ]]; then
     fi
 
     if [[ ! "${APCI_IMAGE_NAME}" =~ "intel/oneapi" ]]; then
-        export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/${APCI_ONEAPI}/lib/:${APCI_ONEAPI}"
+        export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/${APCI_ONEAPI}/lib/:${LD_LIBRARY_PATH}"
     fi
 
     for target in "${!ap_sycl_targets[@]}"; do
