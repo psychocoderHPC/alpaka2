@@ -74,6 +74,10 @@ def main() -> None:
     )
     print(f"number of combinations: {len(comb_list)}", file=sys.stderr)
 
+    if not alpaka_bashi.verify(comb_list, param_matrix, version_relation, runtime_infos):
+        print("ERROR: Result is incorrect", file=sys.stderr)
+        sys.exit(1)
+
     if args.print_combinations:
         for c in comb_list:
             bashi.print_row_nice(c)

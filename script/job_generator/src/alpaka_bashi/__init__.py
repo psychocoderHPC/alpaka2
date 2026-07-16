@@ -17,6 +17,7 @@ from alpaka_bashi.globals import (
     CMAKE_RELEASE_WITH_DEBUG_INFO_VER,
     get_version_aliases,
 )
+from alpaka_bashi.verify import verify
 from alpaka_bashi.versions import (
     get_alpaka_version_relation,
     get_backends,
@@ -34,6 +35,7 @@ __all__ = [
     "CMAKE_RELEASE_VER",
     "CMAKE_RELEASE_WITH_DEBUG_INFO",
     "CMAKE_RELEASE_WITH_DEBUG_INFO_VER",
+    "verify",
     "get_version_aliases",
     "get_alpaka_version_relation",
     "get_backends",

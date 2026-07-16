@@ -447,3 +447,11 @@ clang-21-ubsan:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
     APCI_SANITIZER_UBSAN: "ON"
+
+generate:
+  # update alpine version to use newer python version
+  image: python:3.14-alpine
+  script:
+    - pip3 install script/job_generator
+    - job-generator
+  interruptible: true
