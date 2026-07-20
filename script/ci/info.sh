@@ -11,9 +11,9 @@
 source "${APCI_ALPAKA_ROOT}/script/ci/utils/default.sh"
 
 if [[ "$APCI_OS_NAME" == "Linux" ]]; then
-    # shellcheck source=script/ci/job_info/linux.sh
-    source "${APCI_ALPAKA_ROOT}/script/ci/job_info/linux.sh"
+    # shellcheck source=script/ci/info/linux.sh
+    source "${APCI_ALPAKA_ROOT}/script/ci/info/linux.sh"
 else
-    # shellcheck source=script/ci/job_info/windows_macos.sh
-    source "${APCI_ALPAKA_ROOT}/script/ci/job_info/windows_macos.sh"
+    # shellcheck source=script/ci/info/windows_macos.sh
+    source "${APCI_ALPAKA_ROOT}/script/ci/info/windows_macos.sh"
 fi

@@ -10,21 +10,6 @@
 # shellcheck source=script/ci/utils/color_echo.sh
 source "${APCI_ALPAKA_ROOT}/script/ci/utils/color_echo.sh"
 
-# display a install message in green
-install_msg() {
-    echo_green "[INSTALL]: " "$@"
-}
-
-# display a install message in green
-script_msg() {
-    echo_green "[SCRIPT]: " "$@"
-}
-
-# display a error message in red
-error_msg() {
-    echo_red "[ERROR]: " "$@"
-}
-
 # display bash stack trace
 trace() {
     echo "TRACE: "

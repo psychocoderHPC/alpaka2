@@ -147,12 +147,12 @@ jobs:
             ${{ matrix.config.simd != '' }} && echo 'APCI_SIMD=${{matrix.config.simd}}'  >> $GITHUB_ENV || true
 
       - name: job configuration environment variables
-        run: "${APCI_ALPAKA_ROOT}/script/ci/job_info.sh"
+        run: "${APCI_ALPAKA_ROOT}/script/ci/info.sh"
 
       # Install base dependencies
       - name: Install base dependencies
         run: |
-          "${APCI_ALPAKA_ROOT}/script/ci/utils/install_helper_apps.sh"
+          "${APCI_ALPAKA_ROOT}/script/ci/install/basic.sh"
 
       - name: Install CMake
         run: "${APCI_ALPAKA_ROOT}/script/ci/install/cmake.sh"

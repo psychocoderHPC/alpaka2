@@ -46,3 +46,18 @@ echo_red() {
         echo -e "$@"
     fi
 }
+
+# display a install message in green
+install_msg() {
+    echo_green "[INSTALL]: " "$@"
+}
+
+# display a install message in green
+script_msg() {
+    echo_green "[SCRIPT]: " "$@"
+}
+
+# display a error message in red
+error_msg() {
+    echo_red "[ERROR]: " "$@"
+}
