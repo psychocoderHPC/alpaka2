@@ -52,11 +52,13 @@ if [[ "$compiler_name" == "clang" && "$APCI_HIP" == 0 ]]; then
             ;;
         esac
         DEBIAN_FRONTEND=noninteractive retry_cmd apt update
-        # TODO: set --no-install-recommends
-        # If clang is used as nvcc host compiler, the cmake configure fails because something is missing,
-        # which is automatically installed as recommend package. At the moment this is hard to debug, because
-        # local nvcc builds does not work yet. Fix, if local nvcc builds are possible.
-        quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install -y "clang-${compiler_version}" "libomp-${compiler_version}-dev"
+        # clang-tools is required, that CMake can setup clang as CUDA compiler
+        # libclang-rt is required for the sanitizer
+        quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y \
+            "clang-${compiler_version}" \
+            "libomp-${compiler_version}-dev" \
+            "clang-tools-${compiler_version}" \
+            "libclang-rt-${compiler_version}-dev"
 
         export APCI_C_COMPILER="/usr/bin/clang-${compiler_version}"
         export APCI_CXX_COMPILER="/usr/bin/clang++-${compiler_version}"
