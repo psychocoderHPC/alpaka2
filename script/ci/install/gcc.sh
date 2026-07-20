@@ -29,10 +29,8 @@ if [[ "$compiler_name" == "gcc" ]]; then
         echo_green "use preinstalled gcc@${compiler_version}"
 
         # TODO: because of a bug in agc-manager the gcc/g++ base path is wrong. Search for gcc/g++ instead.
-        # `APCI_C_COMPILER="$(agc-manager -b gcc@${compiler_version})/gcc-${compiler_version}"`
-        APCI_C_COMPILER=$(which "gcc-${compiler_version}")
+        # `APCI_CXX_COMPILER="$(agc-manager -b gcc@${compiler_version})/gcc-${compiler_version}"`
         APCI_CXX_COMPILER=$(which "g++-${compiler_version}")
-        export APCI_C_COMPILER
         export APCI_CXX_COMPILER
     else
         # install gcc only if not already available, pre installed gcc can not be called with the version number as postfix
@@ -65,14 +63,11 @@ if [[ "$compiler_name" == "gcc" ]]; then
             unset version_exe_name
         done
 
-        export APCI_C_COMPILER="${gcc_base_path}/gcc-${compiler_version}"
         export APCI_CXX_COMPILER="${gcc_base_path}/g++-${compiler_version}"
     fi
 
-    echo_run "${APCI_C_COMPILER}" --version
     echo_run "${APCI_CXX_COMPILER}" --version
 
-    store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER
 
     unset gcc_base_path

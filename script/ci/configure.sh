@@ -16,7 +16,6 @@ CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 
 load_variable_if_not_exist APCI_CMAKE_BIN_PATH
-load_variable_if_not_exist APCI_C_COMPILER
 load_variable_if_not_exist APCI_CXX_COMPILER
 
 CMAKE_ARGS=(
@@ -33,7 +32,6 @@ CMAKE_ARGS=(
     -Dalpaka_HEADERCHECKS=ON
     -Dalpaka_LOG=dynamic
     -Dalpaka_FAST_MATH=OFF
-    "-DCMAKE_C_COMPILER=$APCI_C_COMPILER"
     "-DCMAKE_CXX_COMPILER=$APCI_CXX_COMPILER"
     -Dalpaka_SIMD="${APCI_SIMD}"
 )

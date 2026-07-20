@@ -9,7 +9,7 @@
 #
 
 cmake_minimum_required(VERSION 3.25)
-project(Alpaka2HeaderTest)
+project(Alpaka2HeaderTest LANGUAGES NONE)
 
 # Add common functions from alpaka.
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/buildDependencies.cmake)

@@ -58,14 +58,11 @@ if [[ "$compiler_name" == "clang" && "$APCI_HIP" == 0 ]]; then
         # local nvcc builds does not work yet. Fix, if local nvcc builds are possible.
         quiet_run sudo DEBIAN_FRONTEND=noninteractive apt install -y "clang-${compiler_version}" "libomp-${compiler_version}-dev"
 
-        export APCI_C_COMPILER="/usr/bin/clang-${compiler_version}"
         export APCI_CXX_COMPILER="/usr/bin/clang++-${compiler_version}"
     fi
 
-    echo_run "$APCI_C_COMPILER" --version
     echo_run "$APCI_CXX_COMPILER" --version
 
-    store_variable APCI_C_COMPILER
     store_variable APCI_CXX_COMPILER
 else
     echo_green "Skipped install Clang because it is not required for the job."
