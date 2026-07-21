@@ -58,7 +58,7 @@ def main() -> None:
 
     software_versions = alpaka_bashi.get_software_versions_for_alpaka()
     param_matrix: bashi.ParameterValueMatrix = bashi.get_parameter_value_matrix(
-        software_versions=software_versions, backends=alpaka_bashi.get_backends()
+        software_versions=software_versions, backends=alpaka_bashi.get_used_backends()
     )
 
     version_relation = alpaka_bashi.get_alpaka_version_relation()

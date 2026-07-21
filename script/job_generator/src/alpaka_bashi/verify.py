@@ -8,6 +8,8 @@ from typing import Callable
 
 import bashi
 
+from alpaka_bashi.versions import get_allowed_backend_combinations, get_used_backends, get_used_compiler_versions
+
 
 def verify(
     combination_list: bashi.CombinationList,
@@ -28,6 +30,20 @@ def verify(
 
     expected_param_val_tuple, unexpected_param_val_tuple = bashi.get_expected_bashi_parameter_value_pairs(
         param_value_matrix, version_relation, run_infos
+    )
+
+    bashi.remove_unsupported_compiler_backend_combinations(
+        expected_param_val_tuple,
+        unexpected_param_val_tuple,
+        list(get_used_compiler_versions().keys()),
+        get_used_backends(),
+        get_allowed_backend_combinations(),
+    )
+    bashi.remove_unsupported_backend_combinations(
+        expected_param_val_tuple,
+        unexpected_param_val_tuple,
+        get_used_backends(),
+        get_allowed_backend_combinations(),
     )
 
     expected_param_val_okay = bashi.check_parameter_value_pair_in_combination_list(
