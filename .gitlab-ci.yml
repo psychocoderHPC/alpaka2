@@ -3,6 +3,7 @@
     APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
     APCI_RUN_CTEST: "ON"
     APCI_EXEC_CPU_SERIAL: "OFF"
+    APCI_OMP: "OFF"
     APCI_HWLOC: "ON"
     APCI_HIP : 0
     APCI_CUDA : 0
@@ -25,6 +26,11 @@
   - x86_64
   - cpuonly
 
+.cpu:
+  extends: .base
+  variables:
+      APCI_OMP: "ON"
+
 .hip:
   extends: .base
   tags:
@@ -42,7 +48,7 @@
 
 gcc-13:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@13
     APCI_CMAKE: 3.28.3
@@ -50,7 +56,7 @@ gcc-13:
 
 gcc-14-simd-emulated:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@14
     APCI_CMAKE: 3.28.3
@@ -58,7 +64,7 @@ gcc-14-simd-emulated:
 
 gcc-15:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
@@ -66,7 +72,7 @@ gcc-15:
 
 gcc-12-agc:
   image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@12
     APCI_CMAKE: 3.31.4
@@ -74,7 +80,7 @@ gcc-12-agc:
 
 clang-19:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@19
     APCI_CMAKE: 3.28.3
@@ -82,7 +88,7 @@ clang-19:
 
 clang-20-hwloc-off:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@20
     APCI_CMAKE: 3.28.3
@@ -91,7 +97,7 @@ clang-20-hwloc-off:
 
 clang-21:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
@@ -99,7 +105,7 @@ clang-21:
 
 clang-20-agc:
   image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@20
     APCI_CMAKE: 3.31.4
@@ -380,7 +386,7 @@ icpx-21-tbb-intel-container:
 
 gcc-15-asan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
@@ -388,7 +394,7 @@ gcc-15-asan:
 
 gcc-15-tsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
@@ -396,7 +402,7 @@ gcc-15-tsan:
 
 gcc-15-lsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
@@ -404,7 +410,7 @@ gcc-15-lsan:
 
 gcc-15-ubsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : gcc@15
     APCI_CMAKE: 3.28.3
@@ -412,7 +418,7 @@ gcc-15-ubsan:
 
 clang-21-asan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
@@ -420,7 +426,7 @@ clang-21-asan:
 
 clang-21-tsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
@@ -428,7 +434,7 @@ clang-21-tsan:
 
 clang-21-lsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3
@@ -436,7 +442,7 @@ clang-21-lsan:
 
 clang-21-ubsan:
   image: docker.io/ubuntu:24.04
-  extends: .base
+  extends: .cpu
   variables:
     APCI_DEVICE_COMPILER : clang@21
     APCI_CMAKE: 3.28.3

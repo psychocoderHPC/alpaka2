@@ -45,8 +45,7 @@ declare -A ap_deps=(
     ["ONEAPI"]=OFF
 )
 
-# if no GPU SDK is used
-if [[ ("$APCI_HIP" == 0) && "$APCI_TBB" == OFF && ("$compiler_name" == "gcc" || "$compiler_name" == "clang") ]]; then
+if [[ "$APCI_OMP" == "ON" ]]; then
     ap_deps['OMP']=ON
 fi
 

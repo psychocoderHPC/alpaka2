@@ -73,6 +73,16 @@ if [[ -n ${GITHUB_ACTIONS+x} ]]; then
     if [[ -z ${APCI_SIMD+x} ]]; then
         export APCI_SIMD=DEFAULT
     fi
+
+    if [[ -z ${APCI_OMP+x} ]]; then
+        # if no other backend is enabled, use OpenMP
+        if [[ "$APCI_HIP" == 0 && "$APCI_ONEAPI" == 0 && "$APCI_CUDA" == 0 && "$APCI_TBB" == "OFF" ]]; then
+            APCI_OMP="ON"
+        else
+            APCI_OMP="OFF"
+        fi
+    fi
+    export APCI_OMP
 fi
 
 if [[ -n ${GITLAB_CI+x} ]]; then
