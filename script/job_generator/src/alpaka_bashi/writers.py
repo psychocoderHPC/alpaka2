@@ -12,6 +12,7 @@ import bashi
 import yaml
 from typeguard import typechecked
 
+from alpaka_bashi.globals import CI_PIPELINE_NAME, get_version_aliases
 from alpaka_bashi.jobs import get_dummy_job_yaml, get_job_configuration
 
 
@@ -57,3 +58,36 @@ def write_single_file_job_configuration(
         jobs = get_dummy_job_yaml()
 
     write_job_yaml(jobs, output_stream)
+
+
+def write_multiple_file_job_configuration(
+    pipelines: dict[bashi.ValueVersion, bashi.CombinationList],
+    wave_sizes: dict[bashi.ValueVersion, int],
+    args: argparse.Namespace,
+):
+    """Write generated GitLab CI yaml code to different files.
+
+    Args:
+        pipelines (dict[bashi.ValueVersion, bashi.CombinationList]): All CI pipelines and their
+        jobs.
+        wave_sizes (dict[bashi.ValueVersion, int]): Size of each wave.
+        args (argparse.Namespace): Application arguments.
+    """
+
+    for pipeline_ver, combinations in pipelines.items():
+        pipeline_name = get_version_aliases()[CI_PIPELINE_NAME][pipeline_ver]
+        output_path = getattr(args, f"pipeline-out-{pipeline_name}".replace("-", "_"))
+
+        jobs = get_job_configuration(
+            combination_list=combinations,
+            container_version=str(args.version),
+            image_check=args.no_image_check,
+            stages=True,
+            wave_sizes=wave_sizes,
+        )
+
+        if len(jobs) == 0:
+            jobs = get_dummy_job_yaml(pipeline_name)
+
+        with open(output_path, "w", encoding="utf-8") as output_file:
+            write_job_yaml(jobs, output_file)

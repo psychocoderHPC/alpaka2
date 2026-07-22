@@ -26,7 +26,7 @@ from alpaka_bashi.versions import (
     get_software_versions_for_alpaka,
     get_used_backends,
 )
-from alpaka_bashi.writers import write_single_file_job_configuration
+from alpaka_bashi.writers import write_multiple_file_job_configuration, write_single_file_job_configuration
 
 __all__ = [
     "AlpakaFilter",
@@ -47,5 +47,6 @@ __all__ = [
     "get_alpaka_version_relation",
     "get_used_backends",
     "get_software_versions_for_alpaka",
+    "write_multiple_file_job_configuration",
     "write_single_file_job_configuration",
 ]

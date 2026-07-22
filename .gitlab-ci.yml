@@ -460,4 +460,20 @@ generate:
   script:
     - pip3 install script/job_generator
     - job-generator ${ALPAKA_GITLAB_CI_GENERATOR_CONTAINER_VERSION}
+      --split-pipeline
+      --pipeline-out-compile_only compile_only.yml
+      --pipeline-out-runtime_job_cpu runtime_cpu.yml
+      --pipeline-out-runtime_job_gpu runtime_gpu.yml
+      --pipeline-out-special_job special.yml
+    - cat compile_only.yml
+    - cat runtime_cpu.yml
+    - cat runtime_gpu.yml
+    - cat special.yml
+  artifacts:
+    paths:
+      - compile_only.yml
+      - runtime_cpu.yml
+      - runtime_gpu.yml
+      - special.yml
+    expire_in: 1 week
   interruptible: true

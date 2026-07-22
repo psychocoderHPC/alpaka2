@@ -11,6 +11,7 @@ import sys
 import bashi
 
 import alpaka_bashi
+from alpaka_bashi.globals import CI_PIPELINE_COMPILE_ONLY_VER, CI_PIPELINE_NAME_MAPPING, CI_PIPELINE_RUNTIME_CPU_VER
 
 
 def get_args() -> argparse.Namespace:
@@ -33,6 +34,21 @@ def get_args() -> argparse.Namespace:
         action="store_false",
         help="Disable registry check for existing Docker image.",
     )
+
+    parser.add_argument(
+        "--split-pipeline",
+        action="store_true",
+        help="Write job pipelines in separate output files.",
+    )
+
+    for wave_name in CI_PIPELINE_NAME_MAPPING:
+        parser.add_argument(
+            f"--pipeline-out-{wave_name}",
+            type=str,
+            required="--split-pipeline" in sys.argv,
+            # add `all` and remove `JOB_UNKNOWN` from the choices
+            help=f"Output path of the job yaml for the pipeline {wave_name}",
+        )
 
     parser.add_argument(
         "--debug-print",
@@ -100,7 +116,22 @@ def main() -> None:
 
     pipelines = alpaka_bashi.distribute_to_pipelines(comb_list)
 
-    alpaka_bashi.write_single_file_job_configuration(pipelines, args, sys.stdout)
+    # If the pipelines are not split and therefore written to different files, write everything
+    # to stdout.
+    # We split up the pipelines and merge again, because in the meantime reorder operations can be
+    # applied on the different pipelines.
+    # By the way, it also automatically sort the jobs by pipeline.
+    if not args.split_pipeline:
+        alpaka_bashi.write_single_file_job_configuration(pipelines, args, sys.stdout)
+    else:
+        wave_sizes = {
+            CI_PIPELINE_COMPILE_ONLY_VER: 30,
+            CI_PIPELINE_RUNTIME_CPU_VER: 30,
+        }
+
+        alpaka_bashi.write_multiple_file_job_configuration(pipelines, wave_sizes, args)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
