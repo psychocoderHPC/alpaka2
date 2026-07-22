@@ -115,7 +115,7 @@ if [[ -n ${GITLAB_CI+x} ]]; then
 
     if [[ "$APCI_HIP" != 0 ]]; then
         # on the GPU runner, the variable CI_GPU_ARCH is predefined
-        if [[ -n ${CI_GPU_ARCH} ]]; then
+        if [[ -n ${CI_GPU_ARCH+x} ]]; then
             APCI_AMD_GPU_ARCH=$CI_GPU_ARCH
         else
             # in compile only jobs, use simply this architecture
@@ -126,7 +126,7 @@ if [[ -n ${GITLAB_CI+x} ]]; then
 
     if [[ "$APCI_CUDA" != 0 ]]; then
         # on the GPU runner, the variable CI_GPU_ARCH is predefined
-        if [[ -n ${CI_GPU_ARCH} ]]; then
+        if [[ -n ${CI_GPU_ARCH+x} ]]; then
             APCI_CUDA_SM_LEVEL="${CI_GPU_ARCH}"
         else
             # in compile only jobs, use simply this architecture
