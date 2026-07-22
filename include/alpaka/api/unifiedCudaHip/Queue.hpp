@@ -66,6 +66,9 @@ namespace alpaka::onHost
                 onHost::internal::wait(*this);
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
                     ApiInterface,
+                    ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                    ApiInterface,
                     ApiInterface::streamDestroy(getNativeHandle()));
             }
 
@@ -107,7 +110,9 @@ namespace alpaka::onHost
             void conditionalWait() const noexcept
             {
                 if(m_isBlocking)
+                {
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::streamSynchronize(getNativeHandle()));
+                }
             }
 
             friend struct alpaka::internal::GetName;
@@ -177,6 +182,9 @@ namespace alpaka::onHost
             void enqueueNativeFn(auto const& fn)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    ApiInterface,
+                    ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
                 fn(getNativeHandle());
                 conditionalWait();
             }
@@ -648,6 +656,10 @@ namespace alpaka::onHost
                     ALPAKA_TYPEOF(extentMd)::dim() == ALPAKA_TYPEOF(destPitchesOriginal)::dim()
                     && ALPAKA_TYPEOF(extentMd)::dim() == ALPAKA_TYPEOF(srcPitchesOriginal)::dim());
 
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    T_ApiInterface,
+                    T_ApiInterface::setDevice(onHost::getNativeHandle(queue.m_device)));
+
                 meta::ndLoopIncIdx(
                     repetitions,
                     [&](auto const& idx)
@@ -695,6 +707,10 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::queue);
 
                 using ApiInterface = typename unifiedCudaHip::Queue<T_Device>::ApiInterface;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    ApiInterface,
+                    ApiInterface::setDevice(onHost::getNativeHandle(queue.m_device)));
+
                 auto queueApi = alpaka::internal::getApi(queue);
                 auto copyKind = unifiedCudaHip::
                     MemcpyKind<ApiInterface, ALPAKA_TYPEOF(queueApi), ALPAKA_TYPEOF(api::host)>::kind;
@@ -731,6 +747,10 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::queue);
 
                 using ApiInterface = typename unifiedCudaHip::Queue<T_Device>::ApiInterface;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    ApiInterface,
+                    ApiInterface::setDevice(onHost::getNativeHandle(queue.m_device)));
+
                 auto queueApi = alpaka::internal::getApi(queue);
                 auto copyKind = unifiedCudaHip::
                     MemcpyKind<ApiInterface, ALPAKA_TYPEOF(api::host), ALPAKA_TYPEOF(queueApi)>::kind;
@@ -896,6 +916,10 @@ namespace alpaka::onHost
                 static_assert(ALPAKA_TYPEOF(repetitions)::dim() == ALPAKA_TYPEOF(destPitchJump)::dim());
                 static_assert(ALPAKA_TYPEOF(extentMd)::dim() == ALPAKA_TYPEOF(destPitchesOriginal)::dim());
 
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    T_ApiInterface,
+                    T_ApiInterface::setDevice(onHost::getNativeHandle(queue.m_device)));
+
                 meta::ndLoopIncIdx(
                     repetitions,
                     [&](auto const& idx)
@@ -956,6 +980,10 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::queue);
                 using ApiInterface = typename T_Device::ApiInterface;
 
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    ApiInterface,
+                    ApiInterface::setDevice(onHost::getNativeHandle(queue.m_device)));
+
                 /** Each CUDA/HIP allocation is aligned to at least 128 byte but typically to 256byte
                  *
                  * @todo check if this value can be derived from the device properties
@@ -977,6 +1005,9 @@ namespace alpaka::onHost
 
                 auto deleter = [ptr, queueDependency]()
                 {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                        ApiInterface,
+                        ApiInterface::setDevice(onHost::getNativeHandle(queueDependency->m_device)));
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
                         ApiInterface,
                         ApiInterface::freeAsync(toVoidPtr(ptr), queueDependency->getNativeHandle()));

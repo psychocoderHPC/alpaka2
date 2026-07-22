@@ -149,6 +149,7 @@ namespace alpaka::onHost
             {
                 std::size_t freeGlobalMemBytes(0u);
                 std::size_t globalMemCapacityBytes(0u);
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::setDevice(getNativeHandle()));
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
                     ApiInterface::memGetInfo(&freeGlobalMemBytes, &globalMemCapacityBytes));
@@ -191,6 +192,9 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::device);
                 using ApiInterface = typename T_Platform::ApiInterface;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                    ApiInterface,
+                    ApiInterface::setDevice(device.getNativeHandle()));
 
                 T_Type* ptr = nullptr;
                 auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
@@ -234,8 +238,11 @@ namespace alpaka::onHost
 
                 auto deviceDependency = onHost::Device{device.getSharedPtr()};
 
-                auto deleter = [ptr, deviceDependency]()
-                { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::free(toVoidPtr(ptr))); };
+                auto deleter = [ptr, deviceIdx = device.getNativeHandle(), deviceDependency]()
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::setDevice(deviceIdx));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::free(toVoidPtr(ptr)));
+                };
 
                 /** Each CUDA/HIP allocation is aligned to at least 128 byte but typically to 256byte
                  *
@@ -262,6 +269,9 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::device);
                 using ApiInterface = typename T_Platform::ApiInterface;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                    ApiInterface,
+                    ApiInterface::setDevice(device.getNativeHandle()));
 
                 /** Each CUDA/HIP allocation is aligned to at least 128 byte but typically to 256byte
                  *
@@ -284,8 +294,11 @@ namespace alpaka::onHost
                         ApiInterface::mallocManaged((void**) &ptr, memSizeInByte));
                 }
 
-                auto deleter = [ptr, deviceDependency]()
-                { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::free(toVoidPtr(ptr))); };
+                auto deleter = [ptr, deviceIdx = device.getNativeHandle(), deviceDependency]()
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::setDevice(deviceIdx));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::free(toVoidPtr(ptr)));
+                };
 
                 auto sharedBuffer = onHost::SharedBuffer{
                     deviceDependency,
@@ -305,6 +318,9 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::device);
                 using ApiInterface = typename T_Platform::ApiInterface;
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                    ApiInterface,
+                    ApiInterface::setDevice(device.getNativeHandle()));
 
                 /** Each CUDA/HIP allocation is aligned to at least 128 byte but typically to 256byte
                  *
@@ -324,8 +340,11 @@ namespace alpaka::onHost
                         memSizeInByte,
                         ApiInterface::hostMallocMapped | ApiInterface::hostMallocPortable));
 
-                auto deleter = [ptr, deviceDependency]()
-                { ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::hostFree(toVoidPtr(ptr))); };
+                auto deleter = [ptr, deviceIdx = device.getNativeHandle(), deviceDependency]()
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::setDevice(deviceIdx));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::hostFree(toVoidPtr(ptr)));
+                };
 
                 auto sharedBuffer = onHost::SharedBuffer{
                     deviceDependency,
@@ -346,6 +365,7 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::device);
                 using ApiInterface = typename T_Platform::ApiInterface;
                 typename ApiInterface::PointerAttr_t ptrAttributes;
+
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
                     ApiInterface::pointerGetAttributes(&ptrAttributes, onHost::data(view)));
