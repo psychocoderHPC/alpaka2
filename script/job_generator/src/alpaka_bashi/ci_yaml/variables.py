@@ -14,6 +14,7 @@ from bashi.globals import (
     ALPAKA_ACC_GPU_HIP_ENABLE,
     ALPAKA_ACC_ONEAPI_CPU_ENABLE,
     ALPAKA_ACC_ONEAPI_GPU_ENABLE,
+    CLANG_CUDA,
     CMAKE,
     DEVICE_COMPILER,
     HOST_COMPILER,
@@ -86,9 +87,13 @@ def set_generic_variables(variables: dict[str, Any], combination: bashi.Combinat
     for var in gpu_dependencies:
         variables[var] = 0
 
-    variables["APCI_DEVICE_COMPILER"] = (
-        f"{combination[DEVICE_COMPILER].name}@{str(combination[DEVICE_COMPILER].version)}"
-    )
+    if combination[DEVICE_COMPILER].name != CLANG_CUDA:
+        variables["APCI_DEVICE_COMPILER"] = (
+            f"{combination[DEVICE_COMPILER].name}@{str(combination[DEVICE_COMPILER].version)}"
+        )
+    else:
+        variables["APCI_DEVICE_COMPILER"] = f"clang@{str(combination[DEVICE_COMPILER].version)}"
+
     variables["APCI_CMAKE"] = str(combination[CMAKE].version)
     variables["APCI_HWLOC"] = bashi.on_off_ver_to_str(combination[HWLOC].version)
     variables["APCI_RUN_CTEST"] = (
