@@ -21,6 +21,7 @@ from alpaka_bashi.globals import (
     get_version_aliases,
 )
 from alpaka_bashi.pipeline import distribute_to_pipelines
+from alpaka_bashi.utils import get_filter_name
 from alpaka_bashi.verify import verify
 from alpaka_bashi.versions import (
     get_alpaka_version_relation,
@@ -44,6 +45,7 @@ __all__ = [
     "CMAKE_RELEASE_WITH_DEBUG_INFO_VER",
     "HWLOC",
     "distribute_to_pipelines",
+    "get_filter_name",
     "verify",
     "get_version_aliases",
     "get_alpaka_version_relation",

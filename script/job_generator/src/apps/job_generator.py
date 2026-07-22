@@ -5,7 +5,6 @@ Generates the GitLab CI jobs for alpaka.
 """
 
 import argparse
-import os
 import random
 import sys
 
@@ -73,32 +72,6 @@ def get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def get_filter_name(args: argparse.Namespace) -> str:
-    """Return filter string CI jobs. All jobs, which does not match the filter regex, will be
-    removed.
-
-    Ether the filter is set via command line argument --filter or via Git commit message with the
-    prefix `CI_FILTER:`.
-
-    Args:
-        args (argparse.Namespace): Command line arguments.
-
-    Returns:
-        str: The filter regex. Return empty string, if no filter was set.
-    """
-    commit_message_filter_prefix = "CI_FILTER:"
-    if os.getenv("CI_COMMIT_MESSAGE"):
-        for line in os.getenv("CI_COMMIT_MESSAGE", "").split("\n"):
-            striped_line = line.strip()
-            if striped_line.strip().startswith(commit_message_filter_prefix):
-                return striped_line[len(commit_message_filter_prefix) :].strip()
-
-    if args.filter:
-        return args.filter
-
-    return ""
-
-
 def setup_row_printer() -> None:
     """Set extra configurations for the bashi.print_row_nice() function"""
     bashi.add_print_row_nice_parameter_alias(alpaka_bashi.BUILD_TYPE, "buildType")
@@ -140,7 +113,7 @@ def main() -> None:
 
     print("Result is correct", file=sys.stderr)
 
-    job_filter_name = get_filter_name(args)
+    job_filter_name = alpaka_bashi.get_filter_name(args)
     if job_filter_name:
         comb_list = alpaka_bashi.filter_combinations(comb_list, job_filter_name)
         print(f"number of filtered combinations: {len(comb_list)}", file=sys.stderr)

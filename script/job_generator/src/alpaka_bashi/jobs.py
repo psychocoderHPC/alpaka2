@@ -4,49 +4,20 @@ SPDX-License-Identifier: MPL-2.0
 Generate GitLab CI jobs for a given combination
 """
 
+import re
 from typing import Any
 
 import bashi
+import packaging.version
+from bashi.globals import CLANG, GCC
 from typeguard import typechecked
 
-from alpaka_bashi.ci_yaml.images import set_image
-from alpaka_bashi.ci_yaml.misc import get_dummy_job, set_misc_job_properties
+from alpaka_bashi.ci_yaml.misc import get_dummy_job
 from alpaka_bashi.ci_yaml.names import get_job_name
-from alpaka_bashi.ci_yaml.scripts import set_script
-from alpaka_bashi.ci_yaml.tags import set_tags
-from alpaka_bashi.ci_yaml.variables import set_variables
 from alpaka_bashi.globals import CI_PIPELINE_NAME, get_version_aliases
-
-
-@typechecked
-def construct_job_yaml(
-    combination: bashi.Combination,
-    stage: str,
-    container_version: str,
-    image_check: bool,
-) -> dict[str, Any]:
-    """Construct a GitLab CI test job body yaml from the given combination.
-
-    Args:
-        combination (bashi.Combination): combination
-        stage (str): Name of the pipeline stage. If empty, do not create stages.
-        container_version (str): Alpaka CI container tag.
-        image_check (bool): If true, check if alpaka CI image exist (requires internet connection).
-
-    Returns:
-        Dict[str, Any]: GitLab CI job body
-    """
-    job_body = {}
-
-    if stage:
-        job_body["stage"] = stage
-    set_image(job_body, combination, container_version, image_check)
-    set_variables(job_body, combination)
-    set_script(job_body)
-    set_tags(job_body, combination)
-    set_misc_job_properties(job_body)
-
-    return job_body
+from alpaka_bashi.jobs_builder.default import construct_job_yaml
+from alpaka_bashi.jobs_builder.santizer import SanitizerType, get_sanitizer_job
+from alpaka_bashi.versions import get_used_compiler_versions
 
 
 @typechecked
@@ -102,6 +73,51 @@ def get_job_configuration(
         jobs[job_name] = construct_job_yaml(comb, stage_name, container_version, image_check)
 
     return jobs
+
+
+@typechecked
+def get_special_jobs(
+    container_version: str,
+    image_check: bool,
+    stage_name: str,
+    job_filter: str,
+) -> dict[str, Any]:
+    """Return Dict of special CI jobs.
+
+    Args:
+        container_version (str): Container version.
+        image_check (bool): Check if configured image exist. If not, use fallback.
+        stage_name (str): Stage name. If empty, do not create stage property.
+        job_filter (str): Filter jobs by job name. If empty, do not filter.
+
+    Returns:
+        Dict[str, Any]: Dict of CI jobs.
+    """
+    special_jobs: dict[str, Any] = {}
+
+    if stage_name:
+        special_jobs["stages"] = [stage_name]
+
+    for compiler in (GCC, CLANG):
+        for sanitzer in SanitizerType:
+            special_jobs |= get_sanitizer_job(
+                compiler_name=compiler,
+                compiler_version=packaging.version.parse(str(max(get_used_compiler_versions()[compiler]))),
+                sanitizer_type=sanitzer,
+                container_version=container_version,
+                stage_name=stage_name,
+                image_check=image_check,
+            )
+
+    if job_filter:
+        compiled_regex = re.compile(job_filter)
+        special_jobs = {
+            job_name: job_body
+            for job_name, job_body in special_jobs.items()
+            if compiled_regex.match(job_name) or job_name == "stages"
+        }
+
+    return special_jobs
 
 
 @typechecked
