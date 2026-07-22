@@ -23,7 +23,7 @@ namespace alpaka::onAcc::unifiedCudaHip::internal
 #        if defined(__GFX9__)
             // GCN 5.0 and CDNA GPUs have a wavefront size of 64
             return std::integral_constant<uint32_t, 64u>{};
-#        elif defined(__GFX10__) or defined(__GFX11__) or defined(__GFX12__)
+#        elif defined(__GFX10__) or defined(__GFX11__) or defined(__GFX12__) or defined(__GFX13__)
             // RDNA GPUs have a wavefront size of 32
             return std::integral_constant<uint32_t, 32u>{};
 #        else

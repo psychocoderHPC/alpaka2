@@ -25,7 +25,14 @@
  * https://llvm.org/docs/AMDGPUUsage.html#processors
  */
 
-#        if defined(__gfx1251__)
+#        if defined(__gfx1310__)
+/* RDNA 5 dGPU */
+#            define ALPAKA_AMDGPU_ARCH ALPAKA_VRRPP_TO_VERSION(130100)
+#        elif defined(__gfx13_generic__)
+/* RDNA 5 generic target */
+#            define ALPAKA_AMDGPU_ARCH ALPAKA_VRRPP_TO_VERSION(130000)
+
+#        elif defined(__gfx1251__)
 /* RDNA 4 APU variant */
 #            define ALPAKA_AMDGPU_ARCH ALPAKA_VRRPP_TO_VERSION(120501)
 #        elif defined(__gfx1250__)

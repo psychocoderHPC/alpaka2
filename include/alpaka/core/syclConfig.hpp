@@ -128,7 +128,9 @@
             || /* NVIDIA Future architecture (compute capability 12.1) */                                             \
             (defined(__SYCL_TARGET_NVIDIA_GPU_SM_121__) && __SYCL_TARGET_NVIDIA_GPU_SM_121__)                         \
             || /* NVIDIA Future architecture variant (compute capability 12.1a) */                                    \
-            (defined(__SYCL_TARGET_NVIDIA_GPU_SM_121a__) && __SYCL_TARGET_NVIDIA_GPU_SM_121a__)
+            (defined(__SYCL_TARGET_NVIDIA_GPU_SM_121a__) && __SYCL_TARGET_NVIDIA_GPU_SM_121a__)                       \
+            || /* NVIDIA Future architecture family-specific variant (compute capability 12.1f) */                    \
+            (defined(__SYCL_TARGET_NVIDIA_GPU_SM_121f__) && __SYCL_TARGET_NVIDIA_GPU_SM_121f__)
 
 #            define ALPAKA_SYCL_SUBGROUP_SIZE (32) /* CUDA supports warp size 32 */
 
@@ -228,7 +230,11 @@
             || /* AMD RDNA 4.5 derivative architecture (gfx 12.5) */                                                  \
             (defined(__SYCL_TARGET_AMD_GPU_GFX1250__) && __SYCL_TARGET_AMD_GPU_GFX1250__)                             \
             || /* AMD RDNA 4.5 derivative architecture (gfx 12.5) */                                                  \
-            (defined(__SYCL_TARGET_AMD_GPU_GFX1251__) && __SYCL_TARGET_AMD_GPU_GFX1251__)
+            (defined(__SYCL_TARGET_AMD_GPU_GFX1251__) && __SYCL_TARGET_AMD_GPU_GFX1251__)                             \
+            || /* AMD RDNA 5.0 generic architecture (gfx 13.x) */                                                     \
+            (defined(__SYCL_TARGET_AMD_GPU_GFX13_GENERIC__) && __SYCL_TARGET_AMD_GPU_GFX13_GENERIC__)                 \
+            || /* AMD RDNA 5.0 derivative architecture (gfx 13.1) */                                                  \
+            (defined(__SYCL_TARGET_AMD_GPU_GFX1310__) && __SYCL_TARGET_AMD_GPU_GFX1310__)
 
 #            define ALPAKA_SYCL_SUBGROUP_SIZE (32) /* starting from gfx10, HIP supports wavefront size 32 */
 
