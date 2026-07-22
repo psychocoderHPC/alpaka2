@@ -1,460 +1,25 @@
+# SPDX-License-Identifier: MPL-2.0
+
+# stage description
+# generate
+#  creates the actual test jobs via python script
+# run-tests
+#  execute the generated test jobs
+#  the ordering is mainly random
+#  the python generator can schedule some jobs on specific positions
+
+stages:
+  - generator
+  - run-test-jobs
+
 variables:
   # container version of the generated jobs
   # should be merged with ALPAKA_GITLAB_CI_CONTAINER_VERSION
   # see: script/job_generator/generate_job_yaml.py
   ALPAKA_GITLAB_CI_GENERATOR_CONTAINER_VERSION: "4.0"
 
-.base:
-  variables:
-    APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
-    APCI_RUN_CTEST: "ON"
-    APCI_EXEC_CPU_SERIAL: "OFF"
-    APCI_OMP: "OFF"
-    APCI_HWLOC: "ON"
-    APCI_HIP : 0
-    APCI_CUDA : 0
-    APCI_ONEAPI : 0
-    APCI_ONEAPI_TARGET: none
-    APCI_TBB : "OFF"
-    APCI_SANITIZER_ASAN : "OFF"
-    APCI_SANITIZER_TSAN : "OFF"
-    APCI_SANITIZER_LSAN : "OFF"
-    APCI_SANITIZER_UBSAN : "OFF"
-    APCI_SIMD : "DEFAULT"
-  script:
-    - $APCI_ALPAKA_ROOT/script/ci/info.sh
-    - $APCI_ALPAKA_ROOT/script/ci/install.sh
-    - $APCI_ALPAKA_ROOT/script/ci/configure.sh
-    - $APCI_ALPAKA_ROOT/script/ci/build.sh
-    - $APCI_ALPAKA_ROOT/script/ci/test.sh
-  interruptible: true
-  tags:
-  - x86_64
-  - cpuonly
-
-.cpu:
-  extends: .base
-  variables:
-      APCI_OMP: "ON"
-
-.hip:
-  extends: .base
-  tags:
-    - x86_64
-    - rocm
-
-.cuda:
-  extends: .base
-  image: ubuntu:24.04
-  variables:
-    APCI_CMAKE: 3.28.3
-  tags:
-  - x86_64
-  - cuda
-
-gcc-13:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@13
-    APCI_CMAKE: 3.28.3
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-gcc-14-simd-emulated:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@14
-    APCI_CMAKE: 3.28.3
-    APCI_SIMD: EMULATION
-
-gcc-15:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-gcc-12-agc:
-  image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@12
-    APCI_CMAKE: 3.31.4
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-clang-19:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@19
-    APCI_CMAKE: 3.28.3
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-clang-20-hwloc-off:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@20
-    APCI_CMAKE: 3.28.3
-    APCI_EXEC_CPU_SERIAL: "ON"
-    APCI_HWLOC: "OFF"
-
-clang-21:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-clang-20-agc:
-  image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-gcc:4.0
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@20
-    APCI_CMAKE: 3.31.4
-    APCI_EXEC_CPU_SERIAL: "ON"
-
-hipcc-6.2-agc:
-  image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu22.04-rocm6.2:4.0
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@18
-    APCI_CMAKE: 3.31.4
-    APCI_HIP : 6.2
-    APCI_RUN_CTEST: "OFF"
-
-hipcc-6.3-rocm-container:
-  image: rocm/dev-ubuntu-24.04:6.3.4
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@18
-    APCI_CMAKE: 3.28.3
-    APCI_HIP : 6.3
-    APCI_RUN_CTEST: "OFF"
-
-hipcc-6.4:
-  image: docker.io/ubuntu:24.04
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_HIP : 6.4.2
-
-hipcc-7.0:
-  image: ubuntu:24.04
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@20
-    APCI_CMAKE: 3.31.4
-    APCI_HIP : 7.0
-
-hipcc-7.1:
-  image: docker.io/ubuntu:24.04
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@20
-    APCI_CMAKE: 3.28.3
-    APCI_HIP : 7.1
-
-hipcc-7.2-rocm-container:
-  image: rocm/dev-ubuntu-24.04:7.2
-  extends: .hip
-  variables:
-    APCI_DEVICE_COMPILER : clang@22
-    APCI_CMAKE: 3.28.3
-    APCI_HIP : 7.2
-
-icpx-2025.1-cpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.1
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.1
-    APCI_ONEAPI_TARGET: cpu
-
-icpx-2025.1-gpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.1
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.1
-    APCI_ONEAPI_TARGET: intel_gpu
-    APCI_RUN_CTEST: "OFF"
-
-icpx-2025.2-cpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.2
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.2
-    APCI_ONEAPI_TARGET: cpu
-
-icpx-2025.2-gpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.2
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.2
-    APCI_ONEAPI_TARGET: intel_gpu
-    APCI_RUN_CTEST: "OFF"
-
-icpx-2025.3-cpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.3
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.3
-    APCI_ONEAPI_TARGET: cpu
-
-icpx-2025.3-gpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2025.3
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2025.3
-    APCI_ONEAPI_TARGET: intel_gpu
-    APCI_RUN_CTEST: "OFF"
-
-icpx-2026.0-cpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2026.0
-    APCI_ONEAPI_TARGET: cpu
-
-icpx-2026.0-gpu:
-   image: docker.io/ubuntu:24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2026.0
-    APCI_ONEAPI_TARGET: intel_gpu
-    APCI_RUN_CTEST: "OFF"
-
-icpx-2026.0-cpu-intel-container:
-   image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2026.0
-    APCI_ONEAPI_TARGET: cpu
-
-icpx-2026.0-gpu-intel-container:
-   image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
-   extends: .base
-   variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_ONEAPI: 2026.0
-    APCI_ONEAPI_TARGET: intel_gpu
-    APCI_RUN_CTEST: "OFF"
-
-cuda-12.5-gcc-agc:
-  image: registry.hzdr.de/crp/alpaka-group-container/alpaka-ci-ubuntu24.04-cuda125:4.0
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@12.5
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 12.5
-
-cuda-12.6-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@12.6
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 12.6
-
-cuda-12.8-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@12.8
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 12.8
-
-cuda-12.9-gcc-nvidia-container:
-  image: nvidia/cuda:12.9.1-devel-ubuntu24.04
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@12.9
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 12.9
-
-cuda-13.0-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@13.0
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 13.0
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-cuda-13.1-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@13.1
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 13.1
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-cuda-13.1-gcc-simd-emulation:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@13.1
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 13.1
-    APCI_SIMD: EMULATION
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-cuda-13.2-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@13.2
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 13.2
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-cuda-13.3-gcc:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: nvcc@13.3
-    APCI_HOST_COMPILER: gcc@13
-    APCI_CUDA: 13.3
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-clang-21-cuda-12.8:
-  extends: .cuda
-  variables:
-    APCI_DEVICE_COMPILER: clang@21
-    APCI_CUDA: 12.8
-  tags:
-  - x86_64
-  - cuda
-  - a100
-
-gcc-15-tbb:
-  image: docker.io/ubuntu:24.04
-  extends: .base
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_TBB: "ON"
-
-clang-21-tbb:
-  image: docker.io/ubuntu:24.04
-  extends: .base
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_TBB: "ON"
-
-icpx-21-tbb:
-  image: docker.io/ubuntu:24.04
-  extends: .base
-  variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_TBB: "ON"
-
-icpx-21-tbb-intel-container:
-  image: docker.io/intel/oneapi:2026.0.0-devel-ubuntu24.04
-  extends: .base
-  variables:
-    APCI_DEVICE_COMPILER : icpx@2026.0
-    APCI_CMAKE: 3.28.3
-    APCI_TBB: "ON"
-
-gcc-15-asan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_ASAN: "ON"
-
-gcc-15-tsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_TSAN: "ON"
-
-gcc-15-lsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_LSAN: "ON"
-
-gcc-15-ubsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : gcc@15
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_UBSAN: "ON"
-
-clang-21-asan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_ASAN: "ON"
-
-clang-21-tsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_TSAN: "ON"
-
-clang-21-lsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_LSAN: "ON"
-
-clang-21-ubsan:
-  image: docker.io/ubuntu:24.04
-  extends: .cpu
-  variables:
-    APCI_DEVICE_COMPILER : clang@21
-    APCI_CMAKE: 3.28.3
-    APCI_SANITIZER_UBSAN: "ON"
-
 generate:
+  stage: generator
   # update alpine version to use newer python version
   image: python:3.14-alpine
   script:
@@ -477,3 +42,35 @@ generate:
       - special.yml
     expire_in: 1 week
   interruptible: true
+
+run-compile-only-test:
+  stage: run-test-jobs
+  trigger:
+    include:
+      - artifact: compile_only.yml
+        job: generate
+    strategy: depend
+
+run-runtime-cpu-test:
+  stage: run-test-jobs
+  trigger:
+    include:
+      - artifact: runtime_cpu.yml
+        job: generate
+    strategy: depend
+
+run-runtime-gpu-test:
+  stage: run-test-jobs
+  trigger:
+    include:
+      - artifact: runtime_gpu.yml
+        job: generate
+    strategy: depend
+
+run-special-test:
+  stage: run-test-jobs
+  trigger:
+    include:
+      - artifact: special.yml
+        job: generate
+    strategy: depend
