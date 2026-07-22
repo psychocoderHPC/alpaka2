@@ -121,6 +121,7 @@ def get_allowed_backend_combinations() -> list[bashi.CompilerBackendCombination]
         bashi.CompilerBackendCombination(HIPCC, HIPCC, [ALPAKA_ACC_GPU_HIP_ENABLE]),
         bashi.CompilerBackendCombination(ICPX, ICPX, [ALPAKA_ACC_ONEAPI_CPU_ENABLE]),
         bashi.CompilerBackendCombination(ICPX, ICPX, [ALPAKA_ACC_ONEAPI_GPU_ENABLE]),
+        bashi.CompilerBackendCombination(ICPX, ICPX, [ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE]),
     ]
 
 

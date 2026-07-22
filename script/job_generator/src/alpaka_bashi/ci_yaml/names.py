@@ -6,6 +6,8 @@ Generate CI job names depending on the value-versions of a combination.
 
 import bashi
 from bashi.globals import (
+    ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+    ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
     ALPAKA_ACC_GPU_CUDA_ENABLE,
     ALPAKA_ACC_ONEAPI_CPU_ENABLE,
     ALPAKA_ACC_ONEAPI_GPU_ENABLE,
@@ -41,7 +43,25 @@ def get_job_suffix(combination: bashi.Combination) -> str:
         str: name suffix.
     """
     version_str = ""
-    for software in [CMAKE, UBUNTU, CXX_STANDARD, HWLOC, BUILD_TYPE]:
+    enabled_software = {
+        HWLOC: "_hwloc",
+        ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE: "_omp",
+        ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE: "_tbb",
+        ALPAKA_ACC_ONEAPI_CPU_ENABLE: "_oneapi_cpu",
+        ALPAKA_ACC_ONEAPI_GPU_ENABLE: "_oneapi_gpu",
+    }
+
+    for software in [
+        CMAKE,
+        UBUNTU,
+        CXX_STANDARD,
+        HWLOC,
+        BUILD_TYPE,
+        ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+        ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
+        ALPAKA_ACC_ONEAPI_CPU_ENABLE,
+        ALPAKA_ACC_ONEAPI_GPU_ENABLE,
+    ]:
         if software in combination:
             if combination[software].name == CXX_STANDARD:
                 version_str += f"_cxx{str(combination[software].version)}"
@@ -51,9 +71,9 @@ def get_job_suffix(combination: bashi.Combination) -> str:
                 )
             elif combination[software].name == BUILD_TYPE:
                 continue
-            elif combination[software].name == HWLOC:
+            elif combination[software].name in enabled_software:
                 if combination[software].version == ON_VER:
-                    version_str += "_hwloc"
+                    version_str += enabled_software[combination[software].name]
             else:
                 version_str += f"_{combination[software].name}{str(combination[software].version)}"
 
@@ -84,14 +104,6 @@ def get_job_name(comb: bashi.Combination) -> str:
     # if Clang-CUDA is the device compiler, add also the CUDA SDK version to the name
     if comb[DEVICE_COMPILER].name == CLANG_CUDA:
         job_name = job_name + f"-cuda{str(comb[ALPAKA_ACC_GPU_CUDA_ENABLE].version)}"
-
-    # if the OneAPI backend is used, specify for which device type.
-    for oneapi_backend, oneapi_suffix in (
-        (ALPAKA_ACC_ONEAPI_CPU_ENABLE, "-cpu"),
-        (ALPAKA_ACC_ONEAPI_GPU_ENABLE, "-gpu"),
-    ):
-        if comb[oneapi_backend].version == ON_VER:
-            job_name += oneapi_suffix
 
     if comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_COMPILE_ONLY_VER:
         job_name += "_compile_only"

@@ -9,6 +9,7 @@ from copy import deepcopy
 import bashi
 import packaging.version
 from bashi.globals import (
+    ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
     ALPAKA_ACC_GPU_CUDA_ENABLE,
     ALPAKA_ACC_ONEAPI_CPU_ENABLE,
     ALPAKA_ACC_ONEAPI_GPU_ENABLE,
@@ -88,6 +89,8 @@ def execution_type_icpx(combination_list: bashi.CombinationList) -> bashi.Combin
                 comb[JOB_EXECUTION_TYPE] = bashi.ParameterValue(JOB_EXECUTION_TYPE, JOB_EXECUTION_RUNTIME_VER)
             if comb[ALPAKA_ACC_ONEAPI_GPU_ENABLE].version == ON_VER:
                 comb[JOB_EXECUTION_TYPE] = bashi.ParameterValue(JOB_EXECUTION_TYPE, JOB_EXECUTION_COMPILE_ONLY_VER)
+            if comb[ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE].version == ON_VER:
+                comb[JOB_EXECUTION_TYPE] = bashi.ParameterValue(JOB_EXECUTION_TYPE, JOB_EXECUTION_RUNTIME_VER)
 
     return combination_list_copy
 
