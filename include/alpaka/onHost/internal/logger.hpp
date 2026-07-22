@@ -14,6 +14,7 @@
 #include <iostream>
 #include <ostream>
 #include <source_location>
+#include <sstream>
 #include <string>
 #include <string_view>
 
