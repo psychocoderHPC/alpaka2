@@ -38,9 +38,9 @@ namespace alpaka::onHost
         public:
             Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, uint32_t numIdx, bool isBlocking)
                 : m_device(std::move(device))
+                , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>(numIdx)}
                 , m_idx(idx)
                 , m_numaIdx(numIdx)
-                , m_workerThread(numIdx)
                 , m_isBlocking(isBlocking)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
@@ -49,7 +49,6 @@ namespace alpaka::onHost
             ~Queue()
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                internal::wait(*this);
             }
 
             Queue(Queue const&) = delete;
@@ -75,10 +74,11 @@ namespace alpaka::onHost
             }
 
             Handle<T_Device> m_device;
+            std::shared_ptr<core::CallbackThread> m_sharedCallbackThread;
             uint32_t m_idx = 0u;
             uint32_t m_numaIdx = 0u;
-            core::CallbackThread m_workerThread;
             bool m_isBlocking{false};
+
             /** Flag to show if a blocking tasks is executed
              *
              * This variable is only used if m_isBlocking == true.
@@ -128,7 +128,7 @@ namespace alpaka::onHost
                     return f;
                 }
                 // enqueue the task into the worker thread, callers can wait/chain later.
-                return m_workerThread.submit(std::forward<T_Fn>(fn));
+                return m_sharedCallbackThread->submit(std::forward<T_Fn>(fn));
             }
 
             friend struct alpaka::internal::GetName;
@@ -208,13 +208,13 @@ namespace alpaka::onHost
             void enqueueHostFn(auto const& task)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                submit([task]() { task(); });
+                submit(task);
             }
 
             void enqueueHostFnDeferred(auto const& task)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                m_workerThread.submit(task);
+                m_sharedCallbackThread->submit(task);
             }
 
             void enqueueNativeFn(auto const& fn)
@@ -260,7 +260,7 @@ namespace alpaka::onHost
                 }
                 else
                 {
-                    return m_workerThread.isEmpty();
+                    return m_sharedCallbackThread->isEmpty();
                 }
             }
 

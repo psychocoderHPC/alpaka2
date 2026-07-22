@@ -48,28 +48,22 @@ namespace alpaka::onHost
         public:
             Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, bool isBlocking)
                 : m_device(std::move(device))
+                , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>()}
+                , m_SharedStream{std::make_shared<Stream>(m_device)}
                 , m_idx(idx)
                 , m_isBlocking(isBlocking)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
-                    ApiInterface,
-                    ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
-                    ApiInterface,
-                    ApiInterface::streamCreateWithFlags(&m_UniformCudaHipQueue, ApiInterface::streamNonBlocking));
             }
 
             ~Queue()
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                onHost::internal::wait(*this);
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
-                    ApiInterface,
-                    ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
-                    ApiInterface,
-                    ApiInterface::streamDestroy(getNativeHandle()));
+                /* Ensure that the callback thread is destroyed before the stream to flush already enqueued tasked
+                 * which could submit to the stream.
+                 */
+                m_sharedCallbackThread.reset();
+                m_SharedStream.reset();
             }
 
             Queue(Queue const&) = delete;
@@ -94,10 +88,53 @@ namespace alpaka::onHost
                 static_assert(internal::concepts::Queue<Queue>);
             }
 
+            /** RAII CUDA/HIP stream
+             *
+             * Use this implementation via shared pointer to manage the lifetime independent of the queue and
+             * callback thread.
+             */
+            struct Stream
+            {
+                Stream(Handle<T_Device> device) : m_device{std::move(device)}
+                {
+                    ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                        ApiInterface,
+                        ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                        ApiInterface,
+                        ApiInterface::streamCreateWithFlags(&m_stream, ApiInterface::streamNonBlocking));
+                }
+
+                ~Stream()
+                {
+                    ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                        ApiInterface,
+                        ApiInterface::setDevice(onHost::getNativeHandle(m_device)));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::streamSynchronize(m_stream));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::streamDestroy(m_stream));
+                }
+
+                using Stream_t = typename ApiInterface::Stream_t;
+
+                Stream_t getStream() const
+                {
+                    return m_stream;
+                }
+
+                // hold the device to avoid that the device is fully reset before the queue is destroyed
+                Handle<T_Device> m_device;
+                Stream_t m_stream;
+            };
+
             Handle<T_Device> m_device;
+            /* The callback thread must outlive the stream. Stream destruction synchronizes the native stream and may
+             * execute pending host callbacks which submit work to this callback thread.
+             */
+            std::shared_ptr<core::CallbackThread> m_sharedCallbackThread;
+            std::shared_ptr<Stream> m_SharedStream;
             uint32_t m_idx = 0u;
-            typename ApiInterface::Stream_t m_UniformCudaHipQueue;
-            core::CallbackThread m_callBackThread;
             bool m_isBlocking{false};
 
             /** Waits until all operations are finished depending on whether the queue is blocking or non-blocking.
@@ -126,7 +163,7 @@ namespace alpaka::onHost
 
             [[nodiscard]] auto getNativeHandle() const noexcept
             {
-                return m_UniformCudaHipQueue;
+                return m_SharedStream->getStream();
             }
 
             friend struct onHost::internal::Enqueue;
@@ -348,21 +385,18 @@ namespace alpaka::onHost
         {
             struct HostFuncData
             {
-                // We don't need to keep the queue alive, because in its dtor it will synchronize with the CUDA/HIP
-                // stream and wait until all host functions and the CallbackThread are done. It's actually an error to
-                // copy the queue into the host function. Destroying it here would call CUDA/HIP APIs from the host
-                // function. Passing it further to the Callback thread, would make the Callback thread hold a task
-                // containing the queue with the CallbackThread itself. Destroying the task if no other queue instance
-                // exists will make the CallbackThread join itself and crash.
-                unifiedCudaHip::Queue<T_Device>& q;
+                std::shared_ptr<core::CallbackThread> sharedCallbackThread;
                 T_Task t;
             };
 
             static void uniformCudaHipRtHostFunc(void* arg)
             {
+                // take care data is deleted after the usage
                 auto data = std::unique_ptr<HostFuncData>(reinterpret_cast<HostFuncData*>(arg));
-                auto& queue = data->q;
-                auto f = queue.m_callBackThread.submit([d = std::move(data)] { d->t(); });
+                auto sharedCallbackThread = std::move(data->sharedCallbackThread);
+                auto task = std::move(data->t);
+                data.reset();
+                auto f = sharedCallbackThread->submit([task = std::move(task)]() mutable { task(); });
                 f.wait();
             }
 
@@ -376,7 +410,7 @@ namespace alpaka::onHost
                     ApiInterface::launchHostFunc(
                         queue.getNativeHandle(),
                         uniformCudaHipRtHostFunc,
-                        new HostFuncData{queue, task}));
+                        new HostFuncData{queue.m_sharedCallbackThread, task}));
 
                 queue.conditionalWait();
             }
@@ -388,16 +422,18 @@ namespace alpaka::onHost
             // same as for Enqueue::HostTask, but not waiting for the task to finish
             struct HostFuncData
             {
-                unifiedCudaHip::Queue<T_Device>& q;
+                std::shared_ptr<core::CallbackThread> sharedCallbackThread;
                 T_Task t;
             };
 
             static void uniformCudaHipRtHostFuncAsync(void* arg)
             {
+                // take care data is deleted after the usage
                 auto data = std::unique_ptr<HostFuncData>(reinterpret_cast<HostFuncData*>(arg));
-                auto& queue = data->q;
-                auto queueDependency = queue.getSharedPtr();
-                queue.m_callBackThread.submit([d = std::move(data), queueDependency] { d->t(); });
+                auto sharedCallbackThread = std::move(data->sharedCallbackThread);
+                auto task = std::move(data->t);
+                data.reset();
+                auto f = sharedCallbackThread->submit([task = std::move(task)]() mutable { task(); });
                 // don't wait, we're async
             }
 
@@ -411,7 +447,7 @@ namespace alpaka::onHost
                     ApiInterface::launchHostFunc(
                         queue.getNativeHandle(),
                         uniformCudaHipRtHostFuncAsync,
-                        new HostFuncData{queue, task}));
+                        new HostFuncData{queue.m_sharedCallbackThread, task}));
 
                 queue.conditionalWait();
             }
@@ -1000,17 +1036,14 @@ namespace alpaka::onHost
                 queue.conditionalWait();
 
                 auto deviceDependency = onHost::Device{queue.getDevice()->getSharedPtr()};
-                // it is the shared pointer to the internal queue, NOT onHost::Queue
-                auto queueDependency = queue.getSharedPtr();
 
-                auto deleter = [ptr, queueDependency]()
+                auto deleter
+                    = [ptr, sharedStream = queue.m_SharedStream, devIdx = onHost::getNativeHandle(deviceDependency)]()
                 {
-                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::setDevice(devIdx));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                         ApiInterface,
-                        ApiInterface::setDevice(onHost::getNativeHandle(queueDependency->m_device)));
-                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
-                        ApiInterface,
-                        ApiInterface::freeAsync(toVoidPtr(ptr), queueDependency->getNativeHandle()));
+                        ApiInterface::freeAsync(toVoidPtr(ptr), sharedStream->getStream()));
                 };
 
                 auto sharedBuffer = onHost::SharedBuffer{

@@ -177,11 +177,11 @@ namespace alpaka::onHost
         public:
             Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, bool isBlocking)
                 : m_device(std::move(device))
+                , m_SharedNativeQueue{std::make_shared<NativeQueue>(
+                      onHost::getNativeHandle(m_device).first,
+                      onHost::getNativeHandle(m_device).second)}
+                , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>()}
                 , m_idx(idx)
-                , m_queue(
-                      m_device->getNativeHandle().second,
-                      m_device->getNativeHandle().first,
-                      {sycl::property::queue::in_order{}})
                 , m_isBlocking(isBlocking)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
@@ -201,20 +201,6 @@ namespace alpaka::onHost
             ~Queue()
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                try
-                {
-                    m_queue.wait_and_throw();
-                }
-                catch(sycl::exception const& err)
-                {
-                    std::cerr << "Caught SYCL exception while destructing a SYCL queue: " << err.what() << " ("
-                              << err.code() << ')' << std::endl;
-                }
-                catch(std::exception const& err)
-                {
-                    std::cerr << "The following runtime error(s) occurred while destructing a SYCL queue:"
-                              << err.what() << std::endl;
-                }
             }
 
             std::shared_ptr<Queue> getSharedPtr()
@@ -224,12 +210,12 @@ namespace alpaka::onHost
 
             [[nodiscard]] auto getNativeHandle() const noexcept
             {
-                return m_queue;
+                return m_SharedNativeQueue->getQueue();
             }
 
             void wait()
             {
-                m_queue.wait_and_throw();
+                getNativeHandle().wait_and_throw();
             }
 
             std::string getName() const
@@ -263,10 +249,9 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event + onHost::logger::queue);
                 sycl::event sycl_event = event.getNativeHandle();
-                sycl::event ev = m_queue.submit([sycl_event](sycl::handler& cgh) { cgh.depends_on(sycl_event); });
+                sycl::event ev
+                    = getNativeHandle().submit([sycl_event](sycl::handler& cgh) { cgh.depends_on(sycl_event); });
                 setLastEvent(ev);
-                if(isBlocking())
-                    ev.wait_and_throw();
             }
 
             friend struct internal::IsQueueEmpty;
@@ -287,18 +272,19 @@ namespace alpaka::onHost
             //! Thread safe getter for the last sycl event.
             sycl::event getLastEvent() const
             {
-                std::shared_lock<std::shared_mutex> lock{m_eventGuard};
-                return m_lastEvent;
+                return m_SharedNativeQueue->getLastEvent();
             }
 
             /** Thread safe setter for the last sycl event
              *
              * To track dependencies this method must be called with any event returned by native sycl calls.
+             * The operation is blocking the caller in case the queue is a blocking queue.
              */
-            void setLastEvent(sycl::event const& ev) const
+            void setLastEvent(sycl::event& ev) const
             {
-                std::unique_lock<std::shared_mutex> lock{m_eventGuard};
-                m_lastEvent = ev;
+                m_SharedNativeQueue->setLastEvent(ev);
+                if(isBlocking())
+                    ev.wait_and_throw();
             }
 
             void enqueueNativeFn(auto const& fn)
@@ -306,8 +292,6 @@ namespace alpaka::onHost
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 sycl::event ev = fn(getNativeHandle());
                 setLastEvent(ev);
-                if(isBlocking())
-                    ev.wait_and_throw();
             }
 
             friend struct alpaka::onHost::internal::Memset;
@@ -318,20 +302,81 @@ namespace alpaka::onHost
             friend struct alpaka::onHost::internal::AllocMapped;
             friend struct alpaka::onHost::internal::Fill;
 
-            Handle<T_Device> m_device;
-            uint32_t m_idx = 0u;
-            sycl::queue m_queue;
-            // secure that two threads can change the event at the same time
-            mutable std::shared_mutex m_eventGuard;
-            /** Event which is representing the last enqueued task/action by alpaka
+            /** RAII Sycl queue
              *
-             * @attention You should not use the event directly, use always getLastEvent() or setLastEvent().
-             * Tasks enqueued via the native handle outside of alpaka, will not be tracked by this event, therefore it
-             * can be possible that the queue is not empty but the event is already marked as complete. If you need to
-             * track also tasks enqueued outside of alpaka you should use onHost::wait(auto&&).
+             * Use this implementation via shared pointer to manage the lifetime independent of the queue and
+             * callback thread.
              */
-            mutable sycl::event m_lastEvent;
-            core::CallbackThread m_callBackThread;
+            struct NativeQueue
+            {
+                NativeQueue(sycl::device device, sycl::context context)
+                    : m_queue(context, device, {sycl::property::queue::in_order{}})
+                {
+                    ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                }
+
+                ~NativeQueue()
+                {
+                    ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                    try
+                    {
+                        m_queue.wait_and_throw();
+                    }
+                    catch(sycl::exception const& err)
+                    {
+                        std::cerr << "Caught SYCL exception while destructing a SYCL queue: " << err.what() << " ("
+                                  << err.code() << ')' << std::endl;
+                    }
+                    catch(std::exception const& err)
+                    {
+                        std::cerr << "The following runtime error(s) occurred while destructing a SYCL queue:"
+                                  << err.what() << std::endl;
+                    }
+                }
+
+                sycl::queue getQueue() const
+                {
+                    return m_queue;
+                }
+
+                //! Thread safe getter for the last sycl event.
+                sycl::event getLastEvent() const
+                {
+                    std::shared_lock<std::shared_mutex> lock{m_eventGuard};
+                    return m_lastEvent;
+                }
+
+                /** Thread safe setter for the last sycl event
+                 *
+                 * To track dependencies this method must be called with any event returned by native sycl calls.
+                 */
+                void setLastEvent(sycl::event const& ev) const
+                {
+                    std::unique_lock<std::shared_mutex> lock{m_eventGuard};
+                    m_lastEvent = ev;
+                }
+
+                sycl::queue m_queue;
+
+            private:
+                /** Event which is representing the last enqueued task/action by alpaka
+                 *
+                 * @attention You should not use the event directly, use always getLastEvent() or setLastEvent().
+                 * Tasks enqueued via the native handle outside of alpaka, will not be tracked by this event, therefore
+                 * it can be possible that the queue is not empty but the event is already marked as complete. If you
+                 * need to track also tasks enqueued outside of alpaka you should use onHost::wait(auto&&).
+                 */
+                mutable sycl::event m_lastEvent;
+                // secure that two threads can change the event at the same time
+                mutable std::shared_mutex m_eventGuard;
+            };
+
+            Handle<T_Device> m_device;
+
+            std::shared_ptr<NativeQueue> m_SharedNativeQueue;
+            std::shared_ptr<core::CallbackThread> m_sharedCallbackThread;
+
+            uint32_t m_idx = 0u;
             bool m_isBlocking{false};
         };
 
@@ -343,25 +388,17 @@ namespace alpaka::onHost
         void operator()(syclGeneric::Queue<T_Device>& queue, T_Task const& task) const
         {
             ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-            /* Using the queue by reference is fine here, because if the queue is destroyed during the native sycl host
-             * task is executed the sycl queue is still valid, in the destructure of the alpaka queue we wait until all
-             * native sycl queue tasks are processed. Accessing the callback thread is still allowed att his point in
-             * time. Capturing the queue as handle (shared pointer) will result into a deadlock because the native sycl
-             * host task is not allowed to destruct the alpaka3, we call in the destructor of the queue 'wait for the
-             * native sycl queue' which is than producing the deadlock.*/
-            sycl::event ev = queue.m_queue.submit(
-                [&queue, task](sycl::handler& cgh)
+            sycl::event ev = queue.getNativeHandle().submit(
+                [task, sharedCallbackThread = queue.m_sharedCallbackThread](sycl::handler& cgh)
                 {
                     cgh.host_task(
-                        [&queue, task]
+                        [sharedCallbackThread = std::move(sharedCallbackThread), task]
                         {
-                            auto f = queue.m_callBackThread.submit([t = std::move(task)] { t(); });
+                            auto f = sharedCallbackThread->submit([t = std::move(task)] { t(); });
                             f.wait();
                         });
                 });
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -372,20 +409,13 @@ namespace alpaka::onHost
         void operator()(syclGeneric::Queue<T_Device>& queue, T_Task const& task) const
         {
             ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-            /* Using the queue by reference is fine here, because if the queue is destroyed during the native sycl host
-             * task is executed the sycl queue is still valid, in the destructure of the alpaka queue we wait until all
-             * native sycl queue tasks are processed. Accessing the callback thread is still allowed att his point in
-             * time. Capturing the queue as handle (shared pointer) will result into a deadlock because the native sycl
-             * host task is not allowed to destruct the alpaka3, we call in the destructor of the queue 'wait for the
-             * native sycl queue' which is than producing the deadlock.*/
-            sycl::event ev = queue.m_queue.submit(
-                [&queue, task](sycl::handler& cgh)
+            sycl::event ev = queue.getNativeHandle().submit(
+                [task, sharedCallbackThread = queue.m_sharedCallbackThread](sycl::handler& cgh)
                 {
-                    cgh.host_task([&queue, task]() { queue.m_callBackThread.submit([t = std::move(task)] { t(); }); });
+                    cgh.host_task([sharedCallbackThread = std::move(sharedCallbackThread), task]
+                                  { sharedCallbackThread->submit([t = std::move(task)] { t(); }); });
                 });
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -398,10 +428,12 @@ namespace alpaka::onHost
 
             /* We do not use the last event of the queue itself because creating an emulated event allows to see newly
              * submitted tasks add to the native sycl queue outside alpaka. */
-            sycl::event emulatedEvent = queue.m_queue.submit([](sycl::handler& cgh) { cgh.single_task([]() {}); });
+            sycl::event emulatedEvent
+                = queue.getNativeHandle().submit([](sycl::handler& cgh) { cgh.single_task([]() {}); });
+            // update event
             event.setEvent(emulatedEvent);
-            if(queue.isBlocking())
-                emulatedEvent.wait_and_throw();
+            // set last event in the queue
+            queue.setLastEvent(emulatedEvent);
         }
     };
 
@@ -420,8 +452,6 @@ namespace alpaka::onHost
                 byteValue,
                 extents.x() * sizeof(alpaka::trait::GetValueType_t<T_Dest>));
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -443,8 +473,6 @@ namespace alpaka::onHost
                 toVoidPtr(internal::Data::data(source)),
                 extents.x() * sizeof(alpaka::trait::GetValueType_t<T_Dest>));
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -464,8 +492,6 @@ namespace alpaka::onHost
             sycl::queue sycl_queue = queue.getNativeHandle();
             sycl::event ev = sycl_queue.fill(internal::Data::data(dest), elementValue, extents.x());
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -495,9 +521,10 @@ namespace alpaka::onHost
             if(queue.isBlocking())
                 sycl_queue.wait_and_throw();
 
-            auto deleter = [queueDep = std::move(queueDependency), ptr]()
+            auto deleter = [ptr,
+                            sharedCallbackThread = queue.m_sharedCallbackThread,
+                            sharedNativeQueue = queue.m_SharedNativeQueue]()
             {
-                sycl::queue sycl_queue = queueDep->getNativeHandle();
                 /* in cases where the deleter lifetime is extended e.g. by using keepAlive() on a buffer it can be that
                  * the queue callback thread is holding the last instance of the deleter. keepAlive() is executed
                  * within a sycl host tasks, it is forbidden to create another host task in a host task, result will be
@@ -507,11 +534,15 @@ namespace alpaka::onHost
                  * memory will be freed a little bit later than it could in cases other threads enqueue now kernel,
                  * tasks into the sycl queue while the callback thread is creating the host tasks.
                  */
-                queueDep->m_callBackThread.submit(
-                    [sycl_queue, ptr]() mutable
+                sharedCallbackThread->submit(
+                    [ptr, sharedNativeQueue]()
                     {
-                        sycl_queue.submit([&](sycl::handler& cgh)
-                                          { cgh.host_task([=]() { sycl::free(toVoidPtr(ptr), sycl_queue); }); });
+                        sharedNativeQueue->getQueue().submit(
+                            [&](sycl::handler& cgh)
+                            {
+                                cgh.host_task([ptr, syclQueue = sharedNativeQueue->getQueue()]()
+                                              { sycl::free(toVoidPtr(ptr), syclQueue); });
+                            });
                     });
             };
 

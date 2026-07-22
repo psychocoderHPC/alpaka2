@@ -106,8 +106,6 @@ namespace alpaka::onHost::internal
             }
 
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
 
         /** Memset which calls multiple times the memset2D.
@@ -266,8 +264,6 @@ namespace alpaka::onHost::internal
             }
 
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
 
         /** Memcopy which calls multiple times the 2D memcpy.
@@ -358,8 +354,6 @@ namespace alpaka::onHost::internal
                 srcPtr = toVoidPtr(alpaka::onHost::data(source));
             sycl::event ev = sycl_queue.memcpy(dest.getHandle(alpaka::api::oneApi), srcPtr);
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -382,8 +376,6 @@ namespace alpaka::onHost::internal
                 destPtr = toVoidPtr(alpaka::onHost::data(dest));
             sycl::event ev = sycl_queue.memcpy(destPtr, source.getHandle(alpaka::api::oneApi));
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -574,7 +566,7 @@ namespace alpaka::onHost::internal
                         ALPAKA_TYPEOF(warpSize)::value>,
                     ALPAKA_TYPEOF(warpSize)>
                 {
-                    return queue.m_queue.submit(
+                    return queue.getNativeHandle().submit(
                         [warpSize, threadSpec, kernelBundle, blockDynSharedMemBytes](sycl::handler& cgh)
                         {
                             using ApiType = decltype(getApi(queue));
@@ -607,8 +599,6 @@ namespace alpaka::onHost::internal
                 });
 
             queue.setLastEvent(ev);
-            if(queue.isBlocking())
-                ev.wait_and_throw();
         }
     };
 
@@ -651,7 +641,7 @@ namespace alpaka::onHost::internal
                         ALPAKA_TYPEOF(warpSize)::value>,
                     ALPAKA_TYPEOF(warpSize)>
                 {
-                    return queue.m_queue.submit(
+                    return queue.getNativeHandle().submit(
                         [warpSize, threadBlocking, kernelBundle, blockDynSharedMemBytes](sycl::handler& cgh)
                         {
                             using ApiType = decltype(getApi(queue));
@@ -681,8 +671,7 @@ namespace alpaka::onHost::internal
                                 DictEntry(object::warpSize, warpSize));
                         });
                 });
-            if(queue.isBlocking())
-                ev.wait_and_throw();
+            queue.setLastEvent(ev);
         }
     };
 

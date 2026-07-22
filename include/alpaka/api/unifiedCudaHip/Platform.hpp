@@ -127,17 +127,11 @@ namespace alpaka::onHost
                 typename ApiInterface::DeviceProp_t devProp;
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::getDeviceProperties(&devProp, deviceIdx));
 
-                std::size_t freeGlobalMemBytes(0u);
-                std::size_t globalMemCapacityBytes(0u);
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
-                    ApiInterface,
-                    ApiInterface::memGetInfo(&freeGlobalMemBytes, &globalMemCapacityBytes));
-
                 auto prop = DeviceProperties{};
                 prop.name = devProp.name;
                 prop.warpSize = devProp.warpSize;
                 prop.multiProcessorCount = devProp.multiProcessorCount;
-                prop.globalMemCapacityBytes = globalMemCapacityBytes;
+                prop.globalMemCapacityBytes = devProp.totalGlobalMem;
                 prop.sharedMemPerBlockBytes = devProp.sharedMemPerBlock;
 
                 prop.maxThreadsPerBlock = devProp.maxThreadsPerBlock;

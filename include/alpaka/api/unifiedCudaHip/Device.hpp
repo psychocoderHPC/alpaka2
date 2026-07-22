@@ -192,9 +192,7 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::memory + onHost::logger::device);
                 using ApiInterface = typename T_Platform::ApiInterface;
-                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
-                    ApiInterface,
-                    ApiInterface::setDevice(device.getNativeHandle()));
+                ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::setDevice(device.getNativeHandle()));
 
                 T_Type* ptr = nullptr;
                 auto pitches = typename T_Extents::UniVec{sizeof(T_Type)};
