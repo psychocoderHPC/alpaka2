@@ -9,7 +9,13 @@ from typing import Any
 from typeguard import typechecked
 
 
-# pylint: disable=unused-argument
 @typechecked
 def set_script(job_body: dict[str, Any]):
     """Set the job section of a job. Overwrite an existing job section."""
+    job_body["script"] = [
+        "$APCI_ALPAKA_ROOT/script/ci/job_info.sh",
+        "$APCI_ALPAKA_ROOT/script/ci/install_dependencies.sh",
+        "$APCI_ALPAKA_ROOT/script/ci/configure.sh",
+        "$APCI_ALPAKA_ROOT/script/ci/build.sh",
+        "$APCI_ALPAKA_ROOT/script/ci/test.sh",
+    ]

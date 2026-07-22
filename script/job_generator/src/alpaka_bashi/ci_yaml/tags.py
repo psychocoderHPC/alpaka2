@@ -7,10 +7,17 @@ Set the tags of the GitLab CI test job yaml.
 from typing import Any
 
 import bashi
+import packaging.version
+from bashi.globals import ALPAKA_ACC_GPU_CUDA_ENABLE, ALPAKA_ACC_GPU_HIP_ENABLE, OFF_VER
 from typeguard import typechecked
 
+from alpaka_bashi.globals import (
+    JOB_EXECUTION_COMPILE_ONLY_VER,
+    JOB_EXECUTION_RUNTIME_VER,
+    JOB_EXECUTION_TYPE,
+)
 
-# pylint: disable=unused-argument
+
 @typechecked
 def set_tags(job_body: dict[str, Any], combination: bashi.Combination):
     """Set the tags of the GitLab CI test job yaml depending on the combination.
@@ -21,3 +28,26 @@ def set_tags(job_body: dict[str, Any], combination: bashi.Combination):
         job_body (Dict[str, Any]): GitLab CI test job body yaml
         combination (bashi.Combination): combination
     """
+    if combination[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_COMPILE_ONLY_VER:
+        job_body["tags"] = ["x86_64", "cpuonly"]
+        return
+
+    if combination[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_RUNTIME_VER:
+        if combination[ALPAKA_ACC_GPU_CUDA_ENABLE].version != OFF_VER:
+            if combination[ALPAKA_ACC_GPU_CUDA_ENABLE].version < packaging.version.parse("13.0"):
+                job_body["tags"] = ["x86_64", "cuda"]
+                return
+            # with CUDA 13.0 we have to use the Nvidia A100, because the Nvidia Quadro P5000 is not
+            # supported anymore
+            job_body["tags"] = ["x86_64", "cuda", "a100"]
+            return
+        if combination[ALPAKA_ACC_GPU_HIP_ENABLE].version != OFF_VER:
+            job_body["tags"] = ["x86_64", "rocm"]
+            return
+
+        # cpu runtime jobs
+        job_body["tags"] = ["x86_64", "cpuonly"]
+        return
+
+    # fallback
+    job_body["tags"] = ["x86_64", "cpuonly"]
