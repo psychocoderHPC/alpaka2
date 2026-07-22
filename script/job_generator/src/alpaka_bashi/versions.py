@@ -24,22 +24,25 @@ from bashi.globals import (
     HIPCC,
     ICPX,
     NVCC,
+    OFF,
+    ON,
     UBUNTU,
 )
 from bashi.version.dependencies.clang_cuda import CLANG_CUDA_MAX_CUDA_VERSION, ClangCudaSDKSupport
 
-from alpaka_bashi.globals import BUILD_TYPE, BUILD_TYPES
+from alpaka_bashi.globals import BUILD_TYPE, BUILD_TYPES, HWLOC
 
 ALPAKA_VERSIONS: dict[str, list[str | int | float]] = {
     GCC: [12, 13, 14, 15],
     CLANG: [17, 18, 19, 20, 21],
     NVCC: [12.0, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.8, 12.9, 13.0, 13.1, 13.2, 13.3],
-    HIPCC: [6.2, 6.3, 6.4, 7.0, 7.1, 7.2],
+    HIPCC: [6.3, 6.4, 7.0, 7.1, 7.2],
     ICPX: ["2025.1", "2025.2", "2025.3", "2026.0"],
     UBUNTU: ["22.04", "24.04"],
     CMAKE: ["3.25.3", "3.26.4", "3.27.9", "3.28.6", "3.29.8", "3.30.3"],
     CXX_STANDARD: ["20"],
     BUILD_TYPE: BUILD_TYPES,
+    HWLOC: [ON, OFF],
 }
 
 

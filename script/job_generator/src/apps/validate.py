@@ -9,6 +9,7 @@ import sys
 import bashi
 import bashiValidate
 import termcolor
+from bashi.globals import OFF, ON
 
 import alpaka_bashi
 
@@ -26,6 +27,10 @@ def main():
         alpaka_bashi.BUILD_TYPE, "CMake build type.", alpaka_bashi.BUILD_TYPES_NAMES, "buildType"
     )
     validator.add_known_version(alpaka_bashi.BUILD_TYPE, [str(option) for option in alpaka_bashi.BUILD_TYPES])
+    validator.add_software_version_parameter(
+        alpaka_bashi.HWLOC, "Enable hwloc and therefore Numa support.", choices=["ON", "OFF"]
+    )
+    validator.add_known_version(alpaka_bashi.HWLOC, [OFF, ON])
 
     arg = validator.parser.parse_args()
     if arg.missing_parameters:

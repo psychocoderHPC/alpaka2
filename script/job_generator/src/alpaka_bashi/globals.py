@@ -26,6 +26,8 @@ BUILD_TYPES_NAMES: dict[str, bashi.ValueVersion] = {
     "RelWithDebInfo": CMAKE_RELEASE_WITH_DEBUG_INFO_VER,
 }
 
+HWLOC: bashi.Parameter = "hwloc"
+
 
 def get_version_aliases() -> dict[bashi.ValueName, dict[bashi.ValueVersion, str]]:
     """Return a list of value-version aliases which can be set for print_row_nice()
