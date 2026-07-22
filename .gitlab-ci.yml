@@ -42,6 +42,9 @@ generate:
       - special.yml
     expire_in: 1 week
   interruptible: true
+  tags:
+  - x86_64
+  - cpuonly
 
 run-compile-only-test:
   stage: run-test-jobs
