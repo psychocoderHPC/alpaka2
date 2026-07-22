@@ -5,6 +5,7 @@ Generates the GitLab CI jobs for alpaka.
 """
 
 import argparse
+import random
 import sys
 
 import bashi
@@ -20,10 +21,17 @@ def get_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description="Calculate job matrix and create GitLab CI .yml.")
 
+    parser.add_argument("version", type=float, help="Version number of the used CI container.")
     parser.add_argument(
         "--print-combinations",
         action="store_true",
         help="Display combination list.",
+    )
+
+    parser.add_argument(
+        "--no-image-check",
+        action="store_false",
+        help="Disable registry check for existing Docker image.",
     )
 
     parser.add_argument(
@@ -86,6 +94,13 @@ def main() -> None:
         for c in comb_list:
             bashi.print_row_nice(c)
         sys.exit(0)
+
+    # shuffle jobs to increase the chance to run different compiler in the first wave
+    random.Random(42).shuffle(comb_list)
+
+    pipelines = alpaka_bashi.distribute_to_pipelines(comb_list)
+
+    alpaka_bashi.write_single_file_job_configuration(pipelines, args, sys.stdout)
 
 
 if __name__ == "__main__":

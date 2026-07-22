@@ -1,3 +1,9 @@
+variables:
+  # container version of the generated jobs
+  # should be merged with ALPAKA_GITLAB_CI_CONTAINER_VERSION
+  # see: script/job_generator/generate_job_yaml.py
+  ALPAKA_GITLAB_CI_GENERATOR_CONTAINER_VERSION: "4.0"
+
 .base:
   variables:
     APCI_ALPAKA_ROOT: "$CI_PROJECT_DIR"
@@ -453,5 +459,5 @@ generate:
   image: python:3.14-alpine
   script:
     - pip3 install script/job_generator
-    - job-generator
+    - job-generator ${ALPAKA_GITLAB_CI_GENERATOR_CONTAINER_VERSION}
   interruptible: true

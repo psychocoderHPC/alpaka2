@@ -19,12 +19,14 @@ from alpaka_bashi.globals import (
     HWLOC,
     get_version_aliases,
 )
+from alpaka_bashi.pipeline import distribute_to_pipelines
 from alpaka_bashi.verify import verify
 from alpaka_bashi.versions import (
     get_alpaka_version_relation,
     get_software_versions_for_alpaka,
     get_used_backends,
 )
+from alpaka_bashi.writers import write_single_file_job_configuration
 
 __all__ = [
     "AlpakaFilter",
@@ -39,9 +41,11 @@ __all__ = [
     "CMAKE_RELEASE_WITH_DEBUG_INFO",
     "CMAKE_RELEASE_WITH_DEBUG_INFO_VER",
     "HWLOC",
+    "distribute_to_pipelines",
     "verify",
     "get_version_aliases",
     "get_alpaka_version_relation",
     "get_used_backends",
     "get_software_versions_for_alpaka",
+    "write_single_file_job_configuration",
 ]
