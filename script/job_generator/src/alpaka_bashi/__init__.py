@@ -6,6 +6,7 @@ alpaka_bashi package
 
 from alpaka_bashi.alpaka_filter import AlpakaFilter
 from alpaka_bashi.combination import add_combinations_parameters
+from alpaka_bashi.combination_modifier.job_filter import filter_combinations
 from alpaka_bashi.globals import (
     BUILD_TYPE,
     BUILD_TYPES,
@@ -31,6 +32,7 @@ from alpaka_bashi.writers import write_multiple_file_job_configuration, write_si
 __all__ = [
     "AlpakaFilter",
     "add_combinations_parameters",
+    "filter_combinations",
     "BUILD_TYPE",
     "BUILD_TYPES",
     "BUILD_TYPES_NAMES",
