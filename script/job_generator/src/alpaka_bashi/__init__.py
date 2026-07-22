@@ -5,6 +5,7 @@ alpaka_bashi package
 """
 
 from alpaka_bashi.alpaka_filter import AlpakaFilter
+from alpaka_bashi.combination import add_combinations_parameters
 from alpaka_bashi.globals import (
     BUILD_TYPE,
     BUILD_TYPES,
@@ -27,6 +28,7 @@ from alpaka_bashi.versions import (
 
 __all__ = [
     "AlpakaFilter",
+    "add_combinations_parameters",
     "BUILD_TYPE",
     "BUILD_TYPES",
     "BUILD_TYPES_NAMES",

@@ -28,6 +28,39 @@ BUILD_TYPES_NAMES: dict[str, bashi.ValueVersion] = {
 
 HWLOC: bashi.Parameter = "hwloc"
 
+# possible values of TEST_TYPE
+JOB_EXECUTION_TYPE: bashi.Parameter = "job_execution_type"
+JOB_EXECUTION_COMPILE_ONLY: int = 0
+JOB_EXECUTION_RUNTIME: int = 1
+JOB_EXECUTION_COMPILE_ONLY_VER: bashi.ValueVersion = packaging.version.parse(str(JOB_EXECUTION_COMPILE_ONLY))
+JOB_EXECUTION_RUNTIME_VER: bashi.ValueVersion = packaging.version.parse(str(JOB_EXECUTION_RUNTIME))
+JOB_EXECUTION_TYPES: list[str | int | float] = [
+    JOB_EXECUTION_COMPILE_ONLY,
+    JOB_EXECUTION_RUNTIME,
+]
+JOB_EXECUTION_TYPES_NAMES: dict[str, bashi.ValueVersion] = {
+    "compile_only": JOB_EXECUTION_COMPILE_ONLY_VER,
+    "runtime": JOB_EXECUTION_RUNTIME_VER,
+}
+
+# CI pipeline
+CI_PIPELINE_NAME: str = "stage_name"
+CI_PIPELINE_COMPILE_ONLY: str = "compile_only"
+CI_PIPELINE_COMPILE_ONLY_VER: bashi.ValueVersion = packaging.version.parse("0")
+CI_PIPELINE_RUNTIME_CPU: str = "runtime_job_cpu"
+CI_PIPELINE_RUNTIME_CPU_VER: bashi.ValueVersion = packaging.version.parse("1")
+CI_PIPELINE_RUNTIME_GPU: str = "runtime_job_gpu"
+CI_PIPELINE_RUNTIME_GPU_VER: bashi.ValueVersion = packaging.version.parse("2")
+CI_PIPELINE_SPECIAL: str = "special_job"
+CI_PIPELINE_SPECIAL_VER: bashi.ValueVersion = packaging.version.parse("3")
+
+CI_PIPELINE_NAME_MAPPING: dict[str, bashi.ValueVersion] = {
+    CI_PIPELINE_COMPILE_ONLY: CI_PIPELINE_COMPILE_ONLY_VER,
+    CI_PIPELINE_RUNTIME_CPU: CI_PIPELINE_RUNTIME_CPU_VER,
+    CI_PIPELINE_RUNTIME_GPU: CI_PIPELINE_RUNTIME_GPU_VER,
+    CI_PIPELINE_SPECIAL: CI_PIPELINE_SPECIAL_VER,
+}
+
 
 def get_version_aliases() -> dict[bashi.ValueName, dict[bashi.ValueVersion, str]]:
     """Return a list of value-version aliases which can be set for print_row_nice()
@@ -38,6 +71,8 @@ def get_version_aliases() -> dict[bashi.ValueName, dict[bashi.ValueVersion, str]
     version_aliases = {}
     for val_name, version_map in [
         (BUILD_TYPE, BUILD_TYPES_NAMES),
+        (JOB_EXECUTION_TYPE, JOB_EXECUTION_TYPES_NAMES),
+        (CI_PIPELINE_NAME, CI_PIPELINE_NAME_MAPPING),
     ]:
         version_map_parsed: dict[bashi.ValueVersion, str] = {}
         for alias, ver in version_map.items():
