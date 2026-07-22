@@ -35,7 +35,7 @@ from alpaka_bashi.globals import BUILD_TYPE, BUILD_TYPES, HWLOC
 ALPAKA_VERSIONS: dict[str, list[str | int | float]] = {
     GCC: [12, 13, 14, 15],
     CLANG: [17, 18, 19, 20, 21],
-    NVCC: [12.0, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.8, 12.9, 13.0, 13.1, 13.2, 13.3],
+    NVCC: [12.5, 12.6, 12.8, 12.9, 13.0, 13.1, 13.2, 13.3],
     HIPCC: [6.3, 6.4, 7.0, 7.1, 7.2],
     ICPX: ["2025.1", "2025.2", "2025.3", "2026.0"],
     UBUNTU: ["22.04", "24.04"],
@@ -56,7 +56,7 @@ def _get_clang_cuda_versions() -> list[str | int | float]:
     """
     min_cuda_version = packaging.version.parse(str(min(ALPAKA_VERSIONS[NVCC])))
     min_clang_cuda_version = packaging.version.parse("0")
-    for clang_cuda_sdk in sorted(CLANG_CUDA_MAX_CUDA_VERSION):
+    for clang_cuda_sdk in sorted(get_alpaka_version_relation().get_clang_cuda_max_cuda_version()):
         if min_cuda_version <= clang_cuda_sdk.cuda:
             min_clang_cuda_version = clang_cuda_sdk.clang_cuda
             break
@@ -144,7 +144,8 @@ def get_alpaka_version_relation() -> bashi.VersionRelation:
     # bashi.VersionRelation(clang_cuda_max_cuda_version=clang_cuda_max_cuda_version)
 
     clang_cuda_max_cuda_version = CLANG_CUDA_MAX_CUDA_VERSION + [
-        ClangCudaSDKSupport("18", "12.3"),
+        # Clang 20 + CUDA 12.8 is not official supported but alpaka 3.x is working with it
+        ClangCudaSDKSupport("20", "12.8"),
         ClangCudaSDKSupport("22", "13.0"),
     ]
 
