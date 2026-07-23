@@ -167,6 +167,10 @@ namespace alpaka::onHost
          * subsequent tasks in the queue. Because this task is asynchronous, it may contain vendor library functions,
          * which may not be valid in an `enqueueHostFn` task.
          *
+         * @attention Deferred tasks are not synchronized by `wait()`.
+         * A subsequent `wait()` on the queue does not guarantee that enqueued
+         * deferred host tasks have completed their execution.
+         *
          * @param task Task to be executed asynchronously on the host side.
          */
         void enqueueHostFnDeferred(auto const& task) const
