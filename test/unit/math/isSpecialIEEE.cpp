@@ -8,6 +8,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <limits>
+#include <tuple>
 
 template<typename T>
 static void verifyIsSpecial()
@@ -39,24 +40,10 @@ static void verifyIsSpecial()
     CHECK_FALSE(generic_math::isfinite(quietNaN));
 }
 
-/* TODO: remove me, if ICPX 2025.1 is not supported anymore.
- *
- * CATCH 3.15 use a Clang specific pragma to suppress the warning "-Wvariadic-macro-arguments-omitted".
- * The warning was introduced in Clang 20.1. ICPX 2025.1 based on Clang 20.0 (dev version).
- * Therefore, the detection if the warning is available does not work correctly, and we need to disable the warning
- * of unknown warnings temporary.
- */
-#if ALPAKA_COMP_ICPX && ALPAKA_COMP_ICPX < ALPAKA_VERSION_NUMBER(2025, 2, 0)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunknown-warning-option"
-#endif
+using TestValueTypes = std::tuple<float, double>;
 
 // Regression guard to ensure ieee helper stays stable for each floating type.
-TEMPLATE_TEST_CASE("generic ieee helpers detect special values", "[math][generic][ieee]", float, double)
+TEMPLATE_LIST_TEST_CASE("generic ieee helpers detect special values", "[math][generic][ieee]", TestValueTypes)
 {
     verifyIsSpecial<TestType>();
 }
-
-#if ALPAKA_COMP_ICPX && ALPAKA_COMP_ICPX < ALPAKA_VERSION_NUMBER(2025, 2, 0)
-#    pragma clang diagnostic pop
-#endif
