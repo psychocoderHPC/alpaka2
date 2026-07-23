@@ -49,7 +49,14 @@ namespace alpaka::onAcc::internalCompute
     requires alpaka::concepts::UnifiedCudaHipExecutor<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec])>
     struct SharedMemory::Dynamic<T, T_Acc>
     {
-        __device__ decltype(auto) operator()(auto const& acc) const
+        /** Get dynamic shared memory as pointer.
+         *
+         * @tparam T_Defer is deferring the evaluation to avoid CUDA compile errors e.g. for CUDA 12.9 with clang 19 as
+         * host compiler: error #20093-D: address of a __shared__ variable "shMem" cannot be directly taken in a host
+         * function
+         */
+        template<typename T_Defer = T>
+        __device__ auto operator()(auto const& acc) const -> T*
         {
             alpaka::unused(acc);
             // Because unaligned access to variables is not allowed in device code,
@@ -67,6 +74,13 @@ namespace alpaka::onAcc::internalCompute
     requires alpaka::concepts::UnifiedCudaHipExecutor<ALPAKA_TYPEOF(std::declval<T_Acc>()[object::exec])>
     struct SharedMemory::Static<T, T_uniqueId, T_Acc>
     {
+        /** Get a static shared memory object as reference.
+         *
+         * @tparam T_Defer is deferring the evaluation to avoid CUDA compile errors e.g. for CUDA 12.9 with clang 19 as
+         * host compiler: error #20093-D: address of a __shared__ variable "shMem" cannot be directly taken in a host
+         * function
+         */
+        template<typename T_Defer = T>
         __device__ decltype(auto) operator()(auto const& acc) const
         {
             alpaka::unused(acc);

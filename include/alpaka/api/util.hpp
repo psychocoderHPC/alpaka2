@@ -23,7 +23,7 @@ namespace alpaka::api::util
             std::integral auto T_limit,
             std::integral auto T_index,
             std::integral auto T_increment,
-            std::integral auto... T_idx>
+            size_t... T_idx>
         consteval auto adjustToLimit(concepts::CVector auto const input, std::index_sequence<T_idx...>)
         {
             if constexpr(input.product() <= static_cast<typename ALPAKA_TYPEOF(input)::type>(T_limit))
@@ -63,7 +63,9 @@ namespace alpaka::api::util
     template<std::integral auto T_limit, std::integral auto T_index, std::integral auto T_increment>
     consteval auto adjustToLimit(concepts::CVector auto const input)
     {
-        return detail::adjustToLimit<T_limit, 0u, 1u>(input, std::make_index_sequence<input.dim()>{});
+        return detail::adjustToLimit<T_limit, T_index, T_increment>(
+            input,
+            std::make_index_sequence<ALPAKA_TYPEOF(input)::dim()>{});
     }
 
     /** adjust the input vector to a given limit by halving the largest dimension until the product of all components

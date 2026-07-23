@@ -39,7 +39,7 @@ namespace alpaka::onAcc
         static constexpr uint32_t dim = T_IdxRange::dim();
         using IdxVecType = Vec<IdxType, dim>;
 
-        ALPAKA_FN_ACC inline FlatIdxContainer(
+        ALPAKA_FN_ACC constexpr FlatIdxContainer(
             T_IdxRange const& idxRange,
             T_ThreadSpace const& threadSpace,
             T_IdxMapperFn idxMapping,
@@ -71,7 +71,7 @@ namespace alpaka::onAcc
                 static_assert(std::input_iterator<const_iterator_end>);
             }
 
-            ALPAKA_FN_ACC inline const_iterator_end(IdxType const& end) : m_extentSlowDim{end}
+            ALPAKA_FN_ACC constexpr const_iterator_end(IdxType const& end) : m_extentSlowDim{end}
             {
             }
 
@@ -149,14 +149,14 @@ namespace alpaka::onAcc
             }
 
             // pre-increment the iterator
-            ALPAKA_FN_ACC inline const_iterator& operator++()
+            ALPAKA_FN_ACC constexpr const_iterator& operator++()
             {
                 m_current += m_stride;
                 return *this;
             }
 
             // post-increment the iterator
-            ALPAKA_FN_ACC inline const_iterator operator++(int)
+            ALPAKA_FN_ACC constexpr const_iterator operator++(int)
             {
                 const_iterator old = *this;
                 ++(*this);
@@ -194,7 +194,7 @@ namespace alpaka::onAcc
             IterIdxVecType m_strideMD;
         };
 
-        ALPAKA_FN_ACC inline const_iterator begin() const
+        ALPAKA_FN_ACC constexpr const_iterator begin() const
         {
             constexpr auto selectedDims = T_CSelect{};
             auto [threadIdx, numThreads] = m_threadSpace.mapTo(selectedDims);
@@ -250,7 +250,7 @@ namespace alpaka::onAcc
             }
         }
 
-        ALPAKA_FN_ACC inline const_iterator_end end() const
+        ALPAKA_FN_ACC constexpr const_iterator_end end() const
         {
             constexpr auto selectedDims = T_CSelect{};
             auto [threadIdx, numThreads] = m_threadSpace.mapTo(selectedDims);
