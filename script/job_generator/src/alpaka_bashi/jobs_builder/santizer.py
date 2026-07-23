@@ -10,6 +10,7 @@ from typing import Any
 import bashi
 from bashi.globals import (
     ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+    ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
     ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
     ALPAKA_ACC_GPU_CUDA_ENABLE,
     ALPAKA_ACC_GPU_HIP_ENABLE,
@@ -80,6 +81,7 @@ def get_sanitizer_job(
                 (BUILD_TYPE, CMAKE_DEBUG),
                 (JOB_EXECUTION_TYPE, JOB_EXECUTION_RUNTIME),
                 (CI_PIPELINE_NAME, CI_PIPELINE_SPECIAL_VER),
+                (ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE, OFF),
                 (ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE, OFF),
                 (ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE, ON),
                 (ALPAKA_ACC_GPU_CUDA_ENABLE, OFF),

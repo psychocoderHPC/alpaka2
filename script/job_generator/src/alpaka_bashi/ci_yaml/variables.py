@@ -9,6 +9,7 @@ from typing import Any
 import bashi
 from bashi.globals import (
     ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+    ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
     ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
     ALPAKA_ACC_GPU_CUDA_ENABLE,
     ALPAKA_ACC_GPU_HIP_ENABLE,
@@ -73,7 +74,6 @@ def set_generic_variables(variables: dict[str, Any], combination: bashi.Combinat
         combination (bashi.Combination): combination
     """
     variables["APCI_ALPAKA_ROOT"] = "$CI_PROJECT_DIR"
-    variables["APCI_EXEC_CPU_SERIAL"] = "OFF"
     variables["APCI_ONEAPI_TARGET"] = "none"
     variables["APCI_SIMD"] = "DEFAULT"
 
@@ -94,6 +94,7 @@ def set_generic_variables(variables: dict[str, Any], combination: bashi.Combinat
     else:
         variables["APCI_DEVICE_COMPILER"] = f"clang@{str(combination[DEVICE_COMPILER].version)}"
 
+    variables["APCI_EXEC_CPU_SERIAL"] = bashi.on_off_ver_to_str(combination[ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE].version)
     variables["APCI_CMAKE"] = str(combination[CMAKE].version)
     variables["APCI_HWLOC"] = bashi.on_off_ver_to_str(combination[HWLOC].version)
     variables["APCI_RUN_CTEST"] = (

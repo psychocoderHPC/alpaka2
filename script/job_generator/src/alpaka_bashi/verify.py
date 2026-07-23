@@ -7,8 +7,49 @@ Verify generated combinations.
 from typing import Callable
 
 import bashi
+from bashi.globals import (
+    ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+    ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
+    CLANG,
+    DEVICE_COMPILER,
+    GCC,
+    OFF,
+    ON,
+)
 
 from alpaka_bashi.versions import get_allowed_backend_combinations, get_used_backends, get_used_compiler_versions
+
+
+def remove_disabled_serial_backend_for_gcc_and_clang(
+    parameter_value_pairs: list[bashi.ParameterValuePair],
+    removed_parameter_value_pairs: list[bashi.ParameterValuePair],
+):
+    """GCC and Clang as device compiler uses the serial backend all the time."""
+    for compiler_name in (GCC, CLANG):
+        bashi.remove_parameter_value_pairs(
+            parameter_value_pairs,
+            removed_parameter_value_pairs,
+            parameter1=DEVICE_COMPILER,
+            value_name1=compiler_name,
+            parameter2=ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
+            value_version2=OFF,
+        )
+
+
+def remove_disabled_serial_and_openmp_backend(
+    parameter_value_pairs: list[bashi.ParameterValuePair],
+    removed_parameter_value_pairs: list[bashi.ParameterValuePair],
+):
+    """The serial backend is tested with the openmp backend all the time."""
+
+    bashi.remove_parameter_value_pairs(
+        parameter_value_pairs,
+        removed_parameter_value_pairs,
+        parameter1=ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
+        value_version1=OFF,
+        parameter2=ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+        value_version2=ON,
+    )
 
 
 def verify(
@@ -45,6 +86,9 @@ def verify(
         get_used_backends(),
         get_allowed_backend_combinations(),
     )
+
+    remove_disabled_serial_backend_for_gcc_and_clang(expected_param_val_tuple, unexpected_param_val_tuple)
+    remove_disabled_serial_and_openmp_backend(expected_param_val_tuple, unexpected_param_val_tuple)
 
     expected_param_val_okay = bashi.check_parameter_value_pair_in_combination_list(
         combination_list, expected_param_val_tuple

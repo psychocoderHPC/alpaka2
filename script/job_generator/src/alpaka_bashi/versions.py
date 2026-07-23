@@ -10,6 +10,7 @@ import bashi
 import packaging.version
 from bashi.globals import (
     ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
+    ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
     ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
     ALPAKA_ACC_GPU_CUDA_ENABLE,
     ALPAKA_ACC_GPU_HIP_ENABLE,
@@ -99,6 +100,7 @@ def get_software_versions_for_alpaka() -> dict[str, list[str | int | float]]:
 def get_used_backends() -> list[str]:
     """Return the list of backends, used by alpaka."""
     return [
+        ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
         ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE,
         ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
         ALPAKA_ACC_ONEAPI_CPU_ENABLE,
@@ -111,10 +113,18 @@ def get_used_backends() -> list[str]:
 def get_allowed_backend_combinations() -> list[bashi.CompilerBackendCombination]:
     """Return list of enabled backends for different host and device compiler combinations."""
     return [
-        bashi.CompilerBackendCombination(GCC, GCC, [ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE]),
-        bashi.CompilerBackendCombination(GCC, GCC, [ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE]),
-        bashi.CompilerBackendCombination(CLANG, CLANG, [ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE]),
-        bashi.CompilerBackendCombination(CLANG, CLANG, [ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE]),
+        bashi.CompilerBackendCombination(
+            GCC, GCC, [ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE, ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE]
+        ),
+        bashi.CompilerBackendCombination(
+            GCC, GCC, [ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE, ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE]
+        ),
+        bashi.CompilerBackendCombination(
+            CLANG, CLANG, [ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE, ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE]
+        ),
+        bashi.CompilerBackendCombination(
+            CLANG, CLANG, [ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE, ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE]
+        ),
         bashi.CompilerBackendCombination(GCC, NVCC, [ALPAKA_ACC_GPU_CUDA_ENABLE]),
         bashi.CompilerBackendCombination(CLANG, NVCC, [ALPAKA_ACC_GPU_CUDA_ENABLE]),
         bashi.CompilerBackendCombination(CLANG_CUDA, CLANG_CUDA, [ALPAKA_ACC_GPU_CUDA_ENABLE]),
