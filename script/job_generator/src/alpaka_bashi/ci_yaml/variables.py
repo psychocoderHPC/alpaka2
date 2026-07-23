@@ -62,7 +62,7 @@ def set_variables(job_body: dict[str, Any], combination: bashi.Combination):
         if combination[ALPAKA_ACC_ONEAPI_CPU_ENABLE].version == ON_VER:
             job_body["variables"]["APCI_ONEAPI_TARGET"] = "cpu"
         if combination[ALPAKA_ACC_ONEAPI_GPU_ENABLE].version == ON_VER:
-            job_body["variables"]["APCI_ONEAPI_TARGET"] = "gpu"
+            job_body["variables"]["APCI_ONEAPI_TARGET"] = "intel_gpu"
 
 
 @typechecked
