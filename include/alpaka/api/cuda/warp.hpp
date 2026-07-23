@@ -31,7 +31,7 @@ namespace alpaka::onAcc::warp::internal
         {
             unsigned lIdx;
 #    if ALPAKA_COMP_NVCC
-            asm volatile("mov.u32 %0, %laneid;" : "=r"(lIdx));
+            asm volatile("mov.u32 %0, %%laneid;" : "=r"(lIdx));
 #    else
             asm("mov.u32 %0, %%laneid;" : "=r"(lIdx));
 #    endif
