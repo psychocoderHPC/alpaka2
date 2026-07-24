@@ -6,6 +6,7 @@ Utils for the job-generator
 
 import argparse
 import os
+import sys
 
 import termcolor
 from typeguard import typechecked
@@ -18,7 +19,7 @@ def print_warn(msg: str):
     Args:
         msg (str): warning text
     """
-    print(termcolor.colored(f"[WARNING]: {msg}", "yellow"))
+    print(termcolor.colored(f"[WARNING]: {msg}", "yellow"), file=sys.stderr)
 
 
 def get_filter_name(args: argparse.Namespace) -> str:
