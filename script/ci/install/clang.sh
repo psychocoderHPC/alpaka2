@@ -24,11 +24,6 @@ fi
 
 script_msg "Install Clang"
 
-#TODO(SimeonEhrig): remove this statement, if ppa's are fixed in alpaka-group-container
-if [[ -f "/etc/apt/sources.list.d/llvm.list" ]]; then
-    sudo rm /etc/apt/sources.list.d/llvm.list
-fi
-
 # If HIP is enabled, the clang compiler is handled by the rocm.sh script
 if [[ "$compiler_name" == "clang" && "$APCI_HIP" == 0 ]]; then
     if agc-manager -e "clang@${compiler_version}"; then
