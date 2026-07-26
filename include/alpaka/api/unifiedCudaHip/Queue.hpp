@@ -144,11 +144,23 @@ namespace alpaka::onHost
              * native CUDA/HIP queue. There is no need to call this method before enqueuing because the queues are
              * in-order queues and even if another thread is enqueued something before the order is guaranteed.
              */
-            void conditionalWait() const noexcept
+            void conditionalWait() const
             {
                 if(m_isBlocking)
                 {
                     ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::streamSynchronize(getNativeHandle()));
+                }
+            }
+
+            /** Waits until the event is complete if the queue is blocking.
+             *
+             * For a non-blocking queue this operation is a no-Op.
+             */
+            void conditionalWait([[maybe_unused]] typename ApiInterface::Event_t nativeEvent) const
+            {
+                if(m_isBlocking)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::eventSynchronize(nativeEvent));
                 }
             }
 
@@ -198,7 +210,7 @@ namespace alpaka::onHost
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
                     ApiInterface::streamWaitEvent(getNativeHandle(), internal::getNativeHandle(event), 0));
-
+                // Wait for the stream only, the event should be finished after the stream operation is finished.
                 conditionalWait();
             }
 
@@ -460,11 +472,12 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event + onHost::logger::queue);
                 using ApiInterface = typename unifiedCudaHip::Queue<T_Device>::ApiInterface;
+                typename ApiInterface::Event_t nativeEvent = internal::getNativeHandle(event);
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
-                    ApiInterface::eventRecord(event.getNativeHandle(), queue.getNativeHandle()));
+                    ApiInterface::eventRecord(nativeEvent, queue.getNativeHandle()));
 
-                queue.conditionalWait();
+                queue.conditionalWait(nativeEvent);
             }
         };
 
@@ -1040,8 +1053,8 @@ namespace alpaka::onHost
                 auto deleter
                     = [ptr, sharedStream = queue.m_SharedStream, devIdx = onHost::getNativeHandle(deviceDependency)]()
                 {
-                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::setDevice(devIdx));
-                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(ApiInterface, ApiInterface::setDevice(devIdx));
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK_NOEXCEPT(
                         ApiInterface,
                         ApiInterface::freeAsync(toVoidPtr(ptr), sharedStream->getStream()));
                 };
