@@ -152,6 +152,18 @@ namespace alpaka::onHost
                 }
             }
 
+            /** Waits until the event is complete if the queue is blocking.
+             *
+             * For a non-blocking queue this operation is a no-Op.
+             */
+            void conditionalWait([[maybe_unused]] typename ApiInterface::Event_t nativeEvent) const noexcept
+            {
+                if(m_isBlocking)
+                {
+                    ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(ApiInterface, ApiInterface::eventSynchronize(nativeEvent));
+                }
+            }
+
             friend struct alpaka::internal::GetName;
 
             std::string getName() const
@@ -198,7 +210,7 @@ namespace alpaka::onHost
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
                     ApiInterface::streamWaitEvent(getNativeHandle(), internal::getNativeHandle(event), 0));
-
+                // Wait for the stream only, the event should be finished after the stream operation is finished.
                 conditionalWait();
             }
 
@@ -460,11 +472,12 @@ namespace alpaka::onHost
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event + onHost::logger::queue);
                 using ApiInterface = typename unifiedCudaHip::Queue<T_Device>::ApiInterface;
+                typename ApiInterface::Event_t nativeEvent = internal::getNativeHandle(event);
                 ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
                     ApiInterface,
-                    ApiInterface::eventRecord(event.getNativeHandle(), queue.getNativeHandle()));
+                    ApiInterface::eventRecord(nativeEvent, queue.getNativeHandle()));
 
-                queue.conditionalWait();
+                queue.conditionalWait(nativeEvent);
             }
         };
 
