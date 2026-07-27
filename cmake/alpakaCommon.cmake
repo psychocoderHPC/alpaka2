@@ -91,6 +91,11 @@ option(alpaka_DEP_HIP "Enable the HIP as dependency, allows the usage of api::Hi
 option(alpaka_DEP_OMP "Enable the OpenMP as dependency, allows the usage of exec::cpuOmpBlocks" ON)
 option(alpaka_DEP_TBB "Enable the Intel oneTBB dependency, allows the usage of exec::cpuTbbBlocks" OFF)
 option(alpaka_DEP_ONEAPI "Enable the Intel oneAPI SYCL dependency, allows using exec::oneApi" OFF)
+option(
+    alpaka_LANGUAGE_SEPARATION
+    "Enable that CXX files for CUDA and HIP will be copied to an unique folder and compiled from there, instead of using the original file."
+    ON
+)
 
 set(alpaka_DEP_HWLOC
     "AUTO"

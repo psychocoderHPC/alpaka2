@@ -98,7 +98,7 @@ function(copy_with_structure SRC_FILE api_name OUT_VAR)
     # Query all properties actually set on the original file
     get_source_file_property(props ${SRC_FILE} PROPERTY_LIST)
 
-    # Copy properties ove rthe the destination file
+    # Copy properties over the the destination file
     if(props)
         foreach(prop IN LISTS props)
             get_source_file_property(val ${SRC_FILE} ${prop})
@@ -160,7 +160,10 @@ function(alpaka_internal_finalize target)
     ##
     ##  For CUDA and HIP the source files need to be copied to a different location in the build tree because it is not possible to set two languages for a single source file.
     ##  File properties are globally visible, so we cannot just set the LANGUAGE property to CUDA or HIP for the original source file.
-    ##  For the target the original file list is copied. Files which need to be compiled with CUDA or HIP will be replaced by the copied file, all other files remain unchanged.
+    ##  For the target the original file list is copied.
+    ##  Files which need to be compiled with CUDA or HIP will be replaced by the copied file, all other files remain unchanged.
+    ##  The copy of files will only be executed in cases where CUDA and HIP backend is activated together.
+    ##  If only CUA or HIP is active the original file will be used.
     get_target_property(_file_list ${target} SOURCES)
     set(_new_file_list ${_file_list})
     foreach(_file ${_file_list})
@@ -175,10 +178,17 @@ function(alpaka_internal_finalize target)
                 OR (${_file} MATCHES "\\.cc$")
                 OR (${_file} MATCHES "\\.cu$")
             )
-                copy_with_structure(${_file} "cuda" COPIED_FILE)
-                set_source_files_properties(${COPIED_FILE} PROPERTIES LANGUAGE CUDA)
-                list(REMOVE_ITEM _new_file_list ${_file})
-                list(APPEND _new_file_list ${COPIED_FILE})
+                if(alpaka_LANGUAGE_SEPARATION)
+                    copy_with_structure(${_file} "cuda" COPIED_FILE)
+                    set_source_files_properties(${COPIED_FILE} PROPERTIES LANGUAGE CUDA)
+                    list(REMOVE_ITEM _new_file_list ${_file})
+                    list(APPEND _new_file_list ${COPIED_FILE})
+                    # Update the list of files for the target
+                    set_property(TARGET ${target} PROPERTY SOURCES ${_new_file_list})
+                else()
+                    # We do not need to copy the files because the user explicitly ask to use the original CXX file.
+                    set_source_files_properties(${_file} PROPERTIES LANGUAGE CUDA)
+                endif()
             endif()
         endif()
         if(NOT index_hip EQUAL -1)
@@ -188,15 +198,20 @@ function(alpaka_internal_finalize target)
                 OR (${_file} MATCHES "\\.cc$")
                 OR (${_file} MATCHES "\\.hip$")
             )
-                copy_with_structure(${_file} "hip" COPIED_FILE)
-                set_source_files_properties(${COPIED_FILE} PROPERTIES LANGUAGE HIP)
-                list(REMOVE_ITEM _new_file_list ${_file})
-                list(APPEND _new_file_list ${COPIED_FILE})
+                if(alpaka_LANGUAGE_SEPARATION)
+                    copy_with_structure(${_file} "hip" COPIED_FILE)
+                    set_source_files_properties(${COPIED_FILE} PROPERTIES LANGUAGE HIP)
+                    list(REMOVE_ITEM _new_file_list ${_file})
+                    list(APPEND _new_file_list ${COPIED_FILE})
+                    # Update the list of files for the target
+                    set_property(TARGET ${target} PROPERTY SOURCES ${_new_file_list})
+                else()
+                    # We do not need to copy the files because the user explicitly ask to use the original CXX file.
+                    set_source_files_properties(${_file} PROPERTIES LANGUAGE HIP)
+                endif()
             endif()
         endif()
     endforeach()
-    # Update the list of files for the target
-    set_property(TARGET ${target} PROPERTY SOURCES ${_new_file_list})
 
     ### Set target properties
     ##
