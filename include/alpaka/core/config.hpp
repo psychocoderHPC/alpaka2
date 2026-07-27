@@ -215,7 +215,7 @@
 
 // Intel LLVM compiler detection
 #if !defined(ALPAKA_COMP_ICPX)
-#    if defined(SYCL_LANGUAGE_VERSION) && defined(__INTEL_LLVM_COMPILER)
+#    if defined(__INTEL_LLVM_COMPILER)
 // The version string for icpx 2023.1.0 is 20230100. In Boost.Predef this becomes (53,1,0).
 #        define ALPAKA_COMP_ICPX ALPAKA_YYYYMMDD_TO_VERSION(__INTEL_LLVM_COMPILER)
 #    else
@@ -268,7 +268,7 @@
 #    else
 #        define ALPAKA_LANG_SYCL ALPAKA_VERSION_NUMBER_NOT_AVAILABLE
 #    endif
-#    if (ALPAKA_COMP_ICPX)
+#    if (ALPAKA_COMP_ICPX) && defined(SYCL_LANGUAGE_VERSION)
 // ONE API must be detected via the ICPX compiler see
 // https://www.intel.com/content/www/us/en/docs/dpcpp-cpp-compiler/developer-guide-reference/2023-2/use-predefined-macros-to-specify-intel-compilers.html
 #        define ALPAKA_LANG_ONEAPI ALPAKA_COMP_ICPX
