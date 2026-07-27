@@ -162,8 +162,8 @@ function(alpaka_internal_finalize target)
     ##  File properties are globally visible, so we cannot just set the LANGUAGE property to CUDA or HIP for the original source file.
     ##  For the target the original file list is copied.
     ##  Files which need to be compiled with CUDA or HIP will be replaced by the copied file, all other files remain unchanged.
-    ##  The copy of files will only be executed in cases where CUDA and HIP backend is activated together.
-    ##  If only CUA or HIP is active the original file will be used.
+    ##  When language separation is enabled, files compiled with language CUDA or HIP are copied to separate build-tree locations; otherwise original files
+    ##  are retained.
     get_target_property(_file_list ${target} SOURCES)
     set(_new_file_list ${_file_list})
     foreach(_file ${_file_list})

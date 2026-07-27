@@ -93,7 +93,7 @@ option(alpaka_DEP_TBB "Enable the Intel oneTBB dependency, allows the usage of e
 option(alpaka_DEP_ONEAPI "Enable the Intel oneAPI SYCL dependency, allows using exec::oneApi" OFF)
 option(
     alpaka_LANGUAGE_SEPARATION
-    "Enable that CXX files for CUDA and HIP will be copied to an unique folder and compiled from there, instead of using the original file."
+    "Enable copying C++ source files used for CUDA/HIP compilation to a unique folder and compiled from there, instead of using the original file."
     ON
 )
 

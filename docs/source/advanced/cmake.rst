@@ -166,6 +166,8 @@ Arguments
      In the default case where the option is set to ``ON`` one target is compiled with the native CXX compiler and the other with the CUDA/HIP compiler.
      CUDA/HIP compiler have sometimes problems to compile any C++ code, therefor try to avoid setting this option to ``OFF`` because you lose the possibility to root heterogeneous code to the native CXX compiler.
 
+     **Attention:** Only when this option is enabled can the same source code file be compiled and linked for multiple APIs (CUDA, HIP, ...) within the same build.
+
 Host
 ^^^^
 
