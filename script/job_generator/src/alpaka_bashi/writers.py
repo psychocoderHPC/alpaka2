@@ -13,7 +13,7 @@ import yaml
 from typeguard import typechecked
 
 from alpaka_bashi.globals import CI_PIPELINE_NAME, CI_PIPELINE_SPECIAL, get_version_aliases
-from alpaka_bashi.jobs import get_dummy_job_yaml, get_job_configuration, get_special_jobs
+from alpaka_bashi.jobs import WaveSize, get_dummy_job_yaml, get_job_configuration, get_special_jobs
 from alpaka_bashi.utils import get_filter_name
 
 
@@ -70,7 +70,7 @@ def write_single_file_job_configuration(
 
 def write_multiple_file_job_configuration(
     pipelines: dict[bashi.ValueVersion, bashi.CombinationList],
-    wave_sizes: dict[bashi.ValueVersion, int],
+    wave_sizes: dict[bashi.ValueVersion, WaveSize],
     args: argparse.Namespace,
 ):
     """Write generated GitLab CI yaml code to different files.

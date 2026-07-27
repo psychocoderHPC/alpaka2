@@ -4,7 +4,7 @@ SPDX-License-Identifier: MPL-2.0
 Verify generated combinations.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import bashi
 from bashi.globals import (

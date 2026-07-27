@@ -4,7 +4,9 @@ SPDX-License-Identifier: MPL-2.0
 Generate GitLab CI jobs for a given combination
 """
 
+import math
 import re
+from dataclasses import dataclass
 from typing import Any
 
 import bashi
@@ -21,13 +23,59 @@ from alpaka_bashi.jobs_builder.santizer import SanitizerType, get_sanitizer_job
 from alpaka_bashi.versions import get_used_compiler_versions
 
 
+@dataclass
+class WaveSize:
+    """Size of a wave. Depending the total number of jobs per wave, the size can be between size and size + extension.
+
+    Members:
+        - size (int): minium size of a wave
+        - extension (int): the maximum number
+    """
+
+    size: int
+    extension: int
+
+
+def get_final_wave_sizes(
+    combination_list: bashi.CombinationList, wave_sizes: dict[bashi.ValueVersion, WaveSize] | None = None
+) -> dict[bashi.ValueVersion, int]:
+    """Calculate the finale size of each wave. The finale size is between WaveSize.size and
+    WaveSize.size + WaveSize.extension. If a wave size of the size WaveSize.size + WaveSize.extension will remove the
+    last stage, all jobs are equal distributed on the N-1 stages. Therefore the function calculates the new wave size.
+    """
+
+    final_wave_sizes: dict[bashi.ValueVersion, int] = {}
+    if wave_sizes is None:
+        return final_wave_sizes
+
+    for wave_ver in wave_sizes:
+        final_wave_sizes[wave_ver] = 0
+
+    for comb in combination_list:
+        if comb[CI_PIPELINE_NAME].version in wave_sizes:
+            final_wave_sizes[comb[CI_PIPELINE_NAME].version] += 1
+
+    for wave_ver, number in final_wave_sizes.items():
+        number_stages = int(number / wave_sizes[wave_ver].size)
+        number_of_jobs_in_last_stage = number % wave_sizes[wave_ver].size
+
+        final_wave_sizes[wave_ver] = wave_sizes[wave_ver].size
+
+        if number_of_jobs_in_last_stage < number_stages * wave_sizes[wave_ver].extension:
+            final_wave_sizes[wave_ver] += math.ceil(
+                (number_stages - 1 * wave_sizes[wave_ver].extension) / number_of_jobs_in_last_stage
+            )
+
+    return final_wave_sizes
+
+
 @typechecked
 def get_job_configuration(
     combination_list: bashi.CombinationList,
     container_version: str,
     image_check: bool,
     stages: bool,
-    wave_sizes: dict[bashi.ValueVersion, int] | None = None,
+    wave_sizes: dict[bashi.ValueVersion, WaveSize] | None = None,
 ) -> dict[str, Any]:
     """Generate for each combination a GitLab CI yaml.
 
@@ -50,6 +98,8 @@ def get_job_configuration(
         jobs["stages"] = []
 
     stage_job_counter: dict[bashi.ValueVersion, int] = {}
+    final_wave_sizes: dict[bashi.ValueVersion, int] = get_final_wave_sizes(combination_list, wave_sizes)
+
     if wave_sizes is not None:
         for wave_ver in wave_sizes:
             stage_job_counter[wave_ver] = 0
@@ -63,7 +113,7 @@ def get_job_configuration(
 
             if wave_sizes is not None and wave_ver in stage_job_counter:
                 # dived number of already generated jobs by the wave size and round down.
-                stage_name += f"_stage{int(stage_job_counter[wave_ver] / wave_sizes[wave_ver])}"
+                stage_name += f"_stage{int(stage_job_counter[wave_ver] / final_wave_sizes[wave_ver])}"
                 stage_job_counter[wave_ver] += 1
 
             if stage_name not in jobs["stages"]:

@@ -4,8 +4,6 @@ SPDX-License-Identifier: MPL-2.0
 Distribute Jobs to pipelines and reorder it.
 """
 
-from typing import Dict
-
 import bashi
 
 from alpaka_bashi.globals import CI_PIPELINE_NAME, CI_PIPELINE_NAME_MAPPING
@@ -13,7 +11,7 @@ from alpaka_bashi.globals import CI_PIPELINE_NAME, CI_PIPELINE_NAME_MAPPING
 
 def distribute_to_pipelines(
     combinations: bashi.CombinationList,
-) -> Dict[bashi.ValueVersion, bashi.CombinationList]:
+) -> dict[bashi.ValueVersion, bashi.CombinationList]:
     """Distribute the combinations depending on the CI_PIPELINE_NAME value-version to different CI
     pipelines.
 
@@ -24,7 +22,7 @@ def distribute_to_pipelines(
         Dict[bashi.ValueVersion, bashi.CombinationList]: The key is the name of the CI pipeline, the
         values are all jobs of it.
     """
-    waves: Dict[bashi.ValueVersion, bashi.CombinationList] = {}
+    waves: dict[bashi.ValueVersion, bashi.CombinationList] = {}
     for wave in CI_PIPELINE_NAME_MAPPING.values():
         waves[wave] = []
 

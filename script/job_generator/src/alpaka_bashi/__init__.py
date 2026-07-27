@@ -20,6 +20,7 @@ from alpaka_bashi.globals import (
     HWLOC,
     get_version_aliases,
 )
+from alpaka_bashi.jobs import WaveSize
 from alpaka_bashi.pipeline import distribute_to_pipelines
 from alpaka_bashi.utils import get_filter_name
 from alpaka_bashi.verify import verify
@@ -44,6 +45,7 @@ __all__ = [
     "CMAKE_RELEASE_WITH_DEBUG_INFO",
     "CMAKE_RELEASE_WITH_DEBUG_INFO_VER",
     "HWLOC",
+    "WaveSize",
     "distribute_to_pipelines",
     "get_filter_name",
     "verify",

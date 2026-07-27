@@ -39,7 +39,7 @@ def main():
             parameter
             for parameter in bashi.get_parameter_value_matrix(
                 software_versions=alpaka_bashi.get_software_versions_for_alpaka()
-            ).keys()
+            )
             if parameter not in row
         ]
 

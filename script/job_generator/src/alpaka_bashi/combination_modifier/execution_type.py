@@ -152,8 +152,8 @@ def find_latest_cuda_sdk_minor_versions(
                 versions[compiler_name].append(cuda_version)
 
     # make CUDA version unique
-    for compiler_name in versions:
-        versions[compiler_name] = list(set(versions[compiler_name]))
+    for compiler_name, compiler_versions in versions.items():
+        versions[compiler_name] = list(set(compiler_versions))
 
     return versions
 
