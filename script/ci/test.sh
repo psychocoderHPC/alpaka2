@@ -43,9 +43,10 @@ if [[ "${APCI_RUN_CTEST}" == "ON" ]]; then
         "$(echo_if_not_empty_and_set TSAN_OPTIONS)" \
         "$(echo_if_not_empty_and_set LSAN_OPTIONS)" \
         "$(echo_if_not_empty_and_set UBSAN_OPTIONS)" \
-        "${APCI_CMAKE_BIN_PATH}/ctest" \
+        "AMD_LOG_LEVEL=4 ${APCI_CMAKE_BIN_PATH}/ctest" \
         "--test-dir /build --output-on-failure"
 
+    export AMD_LOG_LEVEL=4
     "${APCI_CMAKE_BIN_PATH}/ctest" --test-dir /build --output-on-failure
 else
     echo_yellow "Skip running ctest"
