@@ -28,6 +28,7 @@
 
 #    include "alpaka/core/ApiCudaRt.hpp"
 
+#    include <chrono>
 #    include <cstdint>
 #    include <sstream>
 
@@ -41,7 +42,10 @@ namespace alpaka::onHost
             using ApiInterface = typename T_Device::ApiInterface;
 
         public:
-            Event(internal::concepts::DeviceHandle auto device, uint32_t const idx)
+            Event(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                alpaka::concepts::Timing auto timingMode)
                 : m_device(std::move(device))
                 , m_idx(idx)
             {
@@ -65,7 +69,9 @@ namespace alpaka::onHost
                     ApiInterface,
                     ApiInterface::eventCreateWithFlags(
                         &m_nativeEvent,
-                        ApiInterface::eventDefault | ApiInterface::eventDisableTiming));
+                        timingMode == timing::enabled
+                            ? ApiInterface::eventDefault
+                            : ApiInterface::eventDefault | ApiInterface::eventDisableTiming));
             }
 
             ~Event()
@@ -154,10 +160,30 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::GetDevice;
 
+            template<typename, typename>
+            friend struct onHost::internal::GetElapsedTime::Op;
+
             friend struct alpaka::internal::GetApi;
         };
 
     } // namespace unifiedCudaHip
+
+    template<typename T_Device>
+    struct internal::GetElapsedTime::Op<unifiedCudaHip::Event<T_Device>, unifiedCudaHip::Event<T_Device>>
+    {
+        auto operator()(unifiedCudaHip::Event<T_Device>& start, unifiedCudaHip::Event<T_Device>& end) const
+            -> std::chrono::duration<double>
+        {
+            start.wait();
+            end.wait();
+            auto milliseconds = 0.0F;
+            using ApiInterface = typename T_Device::ApiInterface;
+            ALPAKA_UNIFORM_CUDA_HIP_RT_CHECK(
+                ApiInterface,
+                ApiInterface::eventElapsedTime(&milliseconds, start.getNativeHandle(), end.getNativeHandle()));
+            return std::chrono::duration<double, std::milli>{static_cast<double>(milliseconds)};
+        }
+    };
 } // namespace alpaka::onHost
 
 namespace alpaka::internal

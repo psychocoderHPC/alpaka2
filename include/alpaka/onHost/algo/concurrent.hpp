@@ -41,9 +41,13 @@ namespace alpaka::onHost
      *
      * @{
      */
-    template<typename T_DataType, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename T_DataType,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline void concurrent(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         alpaka::concepts::Executor auto const exec,
         alpaka::concepts::VectorOrScalar auto const& extents,
         auto&& fn,
@@ -66,9 +70,13 @@ namespace alpaka::onHost
      * An available default executor will be selected automatically. The default executor is an executor with most
      * parallelism/performance.
      */
-    template<typename T_DataType, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename T_DataType,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline void concurrent(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents,
         auto&& fn,
         alpaka::concepts::IDataSource auto&&... inOut)

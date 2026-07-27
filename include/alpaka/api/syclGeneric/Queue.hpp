@@ -175,11 +175,16 @@ namespace alpaka::onHost
 
 
         public:
-            Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, bool isBlocking)
+            Queue(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                bool isBlocking,
+                alpaka::concepts::Timing auto timingMode)
                 : m_device(std::move(device))
                 , m_SharedNativeQueue{std::make_shared<NativeQueue>(
                       onHost::getNativeHandle(m_device).first,
-                      onHost::getNativeHandle(m_device).second)}
+                      onHost::getNativeHandle(m_device).second,
+                      timingMode)}
                 , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>()}
                 , m_idx(idx)
                 , m_isBlocking(isBlocking)
@@ -309,8 +314,17 @@ namespace alpaka::onHost
              */
             struct NativeQueue
             {
-                NativeQueue(sycl::device device, sycl::context context)
+                NativeQueue(sycl::device device, sycl::context context, timing::Disabled)
                     : m_queue(context, device, {sycl::property::queue::in_order{}})
+                {
+                    ALPAKA_LOG_FUNCTION(onHost::logger::queue);
+                }
+
+                NativeQueue(sycl::device device, sycl::context context, timing::Enabled)
+                    : m_queue(
+                          context,
+                          device,
+                          {sycl::property::queue::in_order{}, sycl::property::queue::enable_profiling{}})
                 {
                     ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 }

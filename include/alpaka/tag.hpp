@@ -111,6 +111,69 @@ namespace alpaka
         constexpr auto nonBlocking = NonBlocking{};
     } // namespace queueKind
 
+    namespace timing
+    {
+        namespace detail
+        {
+            struct TimingBase
+            {
+            };
+        } // namespace detail
+
+        namespace trait
+        {
+            template<typename T_Timing>
+            struct IsTiming : std::is_base_of<detail::TimingBase, T_Timing>
+            {
+            };
+        } // namespace trait
+
+        template<typename T_Timing>
+        constexpr bool isTiming_v = trait::IsTiming<T_Timing>::value;
+    } // namespace timing
+
+    namespace concepts
+    {
+        /** Concept to check if a type selects whether timing is enabled. */
+        template<typename T_Timing>
+        concept Timing = timing::isTiming_v<T_Timing>;
+    } // namespace concepts
+
+    namespace timing
+    {
+        constexpr bool operator==(alpaka::concepts::Timing auto lhs, alpaka::concepts::Timing auto rhs)
+        {
+            return std::is_same_v<ALPAKA_TYPEOF(lhs), ALPAKA_TYPEOF(rhs)>;
+        }
+
+        constexpr bool operator!=(alpaka::concepts::Timing auto lhs, alpaka::concepts::Timing auto rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        /** Backend timing information is available. */
+        struct Enabled : detail::TimingBase
+        {
+            static std::string getName()
+            {
+                return "Enabled";
+            }
+        };
+
+        constexpr auto enabled = Enabled{};
+
+        /** Backend timing information is not requested. */
+        struct Disabled : detail::TimingBase
+        {
+            static std::string getName()
+            {
+                return "Disabled";
+            }
+        };
+
+        constexpr auto disabled = Disabled{};
+    } // namespace timing
+
     namespace deviceKind
     {
         namespace detail

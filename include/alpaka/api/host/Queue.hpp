@@ -318,6 +318,8 @@ namespace alpaka::onHost
                         // Nothing to do if it has been re-enqueued to a later position in the queue.
                         if(enqueueCount == event.m_enqueueCount)
                         {
+                            if(event.m_timingEnabled)
+                                event.m_timestamp = std::chrono::steady_clock::now();
                             event.m_LastReadyEnqueueCount = std::max(enqueueCount, event.m_LastReadyEnqueueCount);
                         }
                         // apply a fulfilled future
@@ -332,11 +334,14 @@ namespace alpaka::onHost
                         event.m_future = queue.submit(
                             [sharedEvent, enqueueCount]() mutable
                             {
+                                auto const timestamp = std::chrono::steady_clock::now();
                                 std::unique_lock<std::mutex> lk2(sharedEvent->m_mutex);
 
                                 // Nothing to do if it has been re-enqueued to a later position in the queue.
                                 if(enqueueCount == sharedEvent->m_enqueueCount)
                                 {
+                                    if(sharedEvent->m_timingEnabled)
+                                        sharedEvent->m_timestamp = timestamp;
                                     sharedEvent->m_LastReadyEnqueueCount
                                         = std::max(enqueueCount, sharedEvent->m_LastReadyEnqueueCount);
                                 }

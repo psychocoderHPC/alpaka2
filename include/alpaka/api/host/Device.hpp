@@ -140,7 +140,7 @@ namespace alpaka::onHost
 
             friend struct internal::MakeQueue;
 
-            Handle<cpu::Queue<Device>> makeQueue(alpaka::concepts::QueueKind auto kind)
+            Handle<cpu::Queue<Device>> makeQueue(alpaka::concepts::QueueKind auto kind, alpaka::concepts::Timing auto)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 static_assert(
@@ -168,12 +168,12 @@ namespace alpaka::onHost
 
             friend struct internal::MakeEvent;
 
-            Handle<cpu::Event<Device>> makeEvent()
+            Handle<cpu::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
             {
                 ALPAKA_LOG_FUNCTION(alpaka::onHost::logger::event);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{queuesGuard};
-                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), events.size());
+                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), events.size(), timingMode);
 
                 events.emplace_back(newEvent);
                 return newEvent;

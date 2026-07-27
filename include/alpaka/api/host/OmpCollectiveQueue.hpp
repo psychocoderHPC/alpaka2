@@ -312,10 +312,10 @@ namespace alpaka::onHost
             /** @} */
         } // namespace omp
 
-        template<typename T_Platform>
-        struct MakeQueue::Op<cpu::Device<T_Platform>, alpaka::queueKind::OmpCollective>
+        template<typename T_Platform, alpaka::concepts::Timing T_Timing>
+        struct MakeQueue::Op<cpu::Device<T_Platform>, alpaka::queueKind::OmpCollective, T_Timing>
         {
-            auto operator()(cpu::Device<T_Platform>& device, alpaka::queueKind::OmpCollective) const
+            auto operator()(cpu::Device<T_Platform>& device, alpaka::queueKind::OmpCollective, T_Timing) const
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 auto queueHandle = device.getSharedPtr();

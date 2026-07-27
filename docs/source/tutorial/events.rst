@@ -37,6 +37,29 @@ It is possible that ``queue1`` increments the value ``valueA`` before ``valueA``
     :end-before: END-TUTORIAL-event
     :dedent:
 
+Measuring Queued Work
+---------------------
+
+Timing is an explicit queue capability and is disabled by default. Events can independently be constructed with
+``timing::enabled`` or ``timing::disabled``; ``queue.makeEvent()`` is also available as a convenience that inherits the
+queue's capability. A timing-enabled event can only be enqueued on a timing-enabled queue. This rule is the same for
+every API, even where a native backend would technically allow a timed event on an ordinary queue.
+
+The elapsed time is obtained from backend event information. CUDA and HIP use native event timestamps, SYCL uses
+profiling timestamps from its profiling-enabled queue, and the host backend records a monotonic timestamp when each
+event marker is reached.
+
+  .. literalinclude:: ../../snippets/example/165_eventTiming.cpp
+    :language: cpp
+    :start-after: BEGIN-TUTORIAL-eventTiming
+    :end-before: END-TUTORIAL-eventTiming
+    :dedent:
+
+``onHost::getElapsedTime()`` returns a ``std::chrono::duration<double>``. The measured interval excludes the timing
+markers themselves and includes all queue work between them. Consequently, a host task placed between the markers is
+part of the queue elapsed time even though it is not GPU-active time. The result is always calculated as
+``end - start``. If the end marker is reached before the start marker, the returned duration is negative.
+
 Complete Source File
 --------------------
 

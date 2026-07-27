@@ -89,30 +89,69 @@ namespace alpaka::onHost
          * Running tasks from different tasks sequentially is valid behavior. Enqueuing into two individual queues only
          * signifies that the tasks are independent of each other and their order of execution is independent.
          *
-         * @param kind
-         *   Blocking behaviour:
-         *    - queueKind::nonBlocking (default): enqueue returns immediately; completion of the enqueued operation
-         * must be ensured via onHost::wait(queue) or by enqueuing dependent operations onto the same queue.
-         *    - queueKind::blocking: each enqueue only returns after the operation is complete and its effects are
-         * host-visible.
+         * By default, the queue is non-blocking and timing is disabled. It accepts synchronization-only events, which
+         * do not provide timing information.
          *
          * @return A onHost::Queue that tasks and memory operations can be enqueued on.
          */
-        auto makeQueue(alpaka::concepts::QueueKind auto kind)
-        {
-            return Queue{
-                internal::MakeQueue::Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(kind)>{}(*m_device.get(), kind),
-                kind};
-        }
-
         auto makeQueue()
         {
             return makeQueue(queueKind::nonBlocking);
         }
 
+        /** @copydoc makeQueue()
+         *
+         * @param kind
+         *   Blocking behaviour:
+         *    - queueKind::nonBlocking: enqueue returns immediately; completion of the enqueued operation
+         * must be ensured via onHost::wait(queue) or by enqueuing dependent operations onto the same queue.
+         *    - queueKind::blocking: each enqueue only returns after the operation is complete and its effects are
+         * host-visible.
+         */
+        auto makeQueue(alpaka::concepts::QueueKind auto kind)
+        {
+            return makeQueue(kind, timing::disabled);
+        }
+
+        /** @copydoc makeQueue(alpaka::concepts::QueueKind auto kind)
+         *
+         * @param timingMode Specifies whether the queue supports timing-enabled events.
+         */
+        auto makeQueue(alpaka::concepts::QueueKind auto kind, alpaka::concepts::Timing auto timingMode)
+        {
+            return Queue{
+                internal::MakeQueue::
+                    Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(kind), ALPAKA_TYPEOF(timingMode)>{}(
+                        *m_device.get(),
+                        kind,
+                        timingMode),
+                kind,
+                timingMode};
+        }
+
+        /** Create an event with an explicit timing capability.
+         *
+         * Timing-enabled events can only be enqueued on timing-enabled queues.
+         *
+         * @param timingMode Specifies whether the event records timing information.
+         */
+        auto makeEvent(alpaka::concepts::Timing auto timingMode)
+        {
+            return Event{
+                internal::MakeEvent::Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(timingMode)>{}(
+                    *m_device.get(),
+                    timingMode),
+                timingMode};
+        }
+
+        /** Create a synchronization-only event.
+         *
+         * Timing support is by default disabled:
+         *
+         */
         auto makeEvent()
         {
-            return Event{internal::MakeEvent::Op<std::decay_t<decltype(*m_device.get())>>{}(*m_device.get())};
+            return makeEvent(timing::disabled);
         }
 
         /** Blocks the caller until the given handle executes all work
@@ -219,9 +258,13 @@ namespace alpaka::onHost
      * @param queue queue handle
      * @param extents number of elements for each dimension
      */
-    template<typename T_Type, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename T_Type,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline auto allocUnified(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents)
     {
         Vec const extentsVec = extents;
@@ -260,9 +303,13 @@ namespace alpaka::onHost
      * @param queue queue handle
      * @param extents number of elements for each dimension
      */
-    template<typename T_Type, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename T_Type,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline auto allocMapped(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents)
     {
         return allocMapped<T_Type>(queue.getDevice(), extents);
@@ -309,8 +356,10 @@ namespace alpaka::onHost
      *
      * @param queue queue handle
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
-    inline bool isDataAccessible(Queue<T_Device, T_QueueKind> const& queue, alpaka::concepts::IView auto const& view)
+    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
+    inline bool isDataAccessible(
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        alpaka::concepts::IView auto const& view)
     {
         return internal::IsDataAccessible::FirstPath<ALPAKA_TYPEOF(*queue.getDevice().get()), ALPAKA_TYPEOF(view)>{}(
                    *queue.getDevice().get(),

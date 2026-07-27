@@ -21,6 +21,8 @@
 
 #    include <sycl/sycl.hpp>
 
+#    include <chrono>
+
 namespace alpaka::onHost
 {
     namespace syclGeneric
@@ -32,7 +34,7 @@ namespace alpaka::onHost
             friend struct alpaka::internal::GetApi;
 
         public:
-            Event(internal::concepts::DeviceHandle auto device, uint32_t const idx)
+            Event(internal::concepts::DeviceHandle auto device, uint32_t const idx, alpaka::concepts::Timing auto)
                 : m_device(std::move(device))
                 , m_idx(idx)
             {
@@ -119,6 +121,9 @@ namespace alpaka::onHost
             friend struct internal::WaitFor;
             friend struct internal::Wait;
 
+            template<typename, typename>
+            friend struct internal::GetElapsedTime::Op;
+
             void setEvent(sycl::event const& event)
             {
                 std::unique_lock<std::shared_mutex> lock{m_eventGuard};
@@ -142,6 +147,27 @@ namespace alpaka::onHost
 
 
     } // namespace syclGeneric
+
+    template<typename T_Device>
+    struct internal::GetElapsedTime::Op<syclGeneric::Event<T_Device>, syclGeneric::Event<T_Device>>
+    {
+        auto operator()(syclGeneric::Event<T_Device>& start, syclGeneric::Event<T_Device>& end) const
+            -> std::chrono::duration<double>
+        {
+            start.wait();
+            end.wait();
+            if(&start == &end)
+                return std::chrono::duration<double>::zero();
+
+            auto const startEnd
+                = start.getEvent().template get_profiling_info<sycl::info::event_profiling::command_end>();
+            auto const endStart
+                = end.getEvent().template get_profiling_info<sycl::info::event_profiling::command_start>();
+            if(endStart < startEnd)
+                return -std::chrono::duration<double, std::nano>{startEnd - endStart};
+            return std::chrono::duration<double, std::nano>{endStart - startEnd};
+        }
+    };
 } // namespace alpaka::onHost
 
 namespace alpaka::internal

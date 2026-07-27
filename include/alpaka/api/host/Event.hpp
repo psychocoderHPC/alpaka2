@@ -12,6 +12,7 @@
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/logger/logger.hpp"
 
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <future>
@@ -25,9 +26,13 @@ namespace alpaka::onHost
         struct Event : std::enable_shared_from_this<Event<T_Device>>
         {
         public:
-            Event(internal::concepts::DeviceHandle auto device, uint32_t const idx)
+            Event(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                alpaka::concepts::Timing auto timingMode)
                 : m_device(std::move(device))
                 , m_idx(idx)
+                , m_timingEnabled(timingMode == timing::enabled)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event);
             }
@@ -69,6 +74,8 @@ namespace alpaka::onHost
             //!< (not enqueued or already completed). If m_enqueueCount ==
             //!< m_LastReadyEnqueueCount, the event is currently not enqueued
             std::size_t m_LastReadyEnqueueCount = 0u;
+            bool m_timingEnabled = false;
+            std::chrono::steady_clock::time_point m_timestamp;
 
             friend struct alpaka::internal::GetName;
 
@@ -127,6 +134,8 @@ namespace alpaka::onHost
 
             friend struct internal::WaitFor;
             friend struct internal::Wait;
+            template<typename, typename>
+            friend struct internal::GetElapsedTime::Op;
 
             void wait()
             {
@@ -145,7 +154,34 @@ namespace alpaka::onHost
 
             friend struct alpaka::internal::GetApi;
         };
+
     } // namespace cpu
+
+    template<typename T_Device>
+    struct internal::GetElapsedTime::Op<cpu::Event<T_Device>, cpu::Event<T_Device>>
+    {
+        auto operator()(cpu::Event<T_Device>& start, cpu::Event<T_Device>& end) const -> std::chrono::duration<double>
+        {
+            start.wait();
+            end.wait();
+            if(&start == &end)
+            {
+                std::lock_guard<std::mutex> lock{start.m_mutex};
+                if(start.m_enqueueCount == 0u)
+                    throw std::logic_error{"Elapsed time requires recorded events"};
+                if(!start.m_timingEnabled)
+                    throw std::logic_error{"Elapsed time requires timing-enabled events"};
+                return std::chrono::duration<double>::zero();
+            }
+
+            std::scoped_lock lock{start.m_mutex, end.m_mutex};
+            if(start.m_enqueueCount == 0u || end.m_enqueueCount == 0u)
+                throw std::logic_error{"Elapsed time requires recorded events"};
+            if(!start.m_timingEnabled || !end.m_timingEnabled)
+                throw std::logic_error{"Elapsed time requires timing-enabled events"};
+            return end.m_timestamp - start.m_timestamp;
+        }
+    };
 } // namespace alpaka::onHost
 
 namespace alpaka::internal

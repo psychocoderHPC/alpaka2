@@ -54,7 +54,9 @@ namespace alpaka::onHost
                 return this->shared_from_this();
             }
 
-            [[nodiscard]] Handle<syclGeneric::Queue<Device>> makeQueue(alpaka::concepts::QueueKind auto kind)
+            [[nodiscard]] Handle<syclGeneric::Queue<Device>> makeQueue(
+                alpaka::concepts::QueueKind auto kind,
+                alpaka::concepts::Timing auto timingMode)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue + onHost::logger::device);
                 static_assert(
@@ -64,8 +66,11 @@ namespace alpaka::onHost
                 std::lock_guard<std::mutex> lk{m_writeGuard};
 
                 constexpr bool isBlocking = kind == queueKind::blocking;
-                auto newQueue
-                    = std::make_shared<syclGeneric::Queue<Device>>(std::move(thisHandle), queues.size(), isBlocking);
+                auto newQueue = std::make_shared<syclGeneric::Queue<Device>>(
+                    std::move(thisHandle),
+                    queues.size(),
+                    isBlocking,
+                    timingMode);
 
                 queues.emplace_back(newQueue);
                 return newQueue;
@@ -97,12 +102,13 @@ namespace alpaka::onHost
         private:
             friend struct internal::MakeEvent;
 
-            Handle<syclGeneric::Event<Device>> makeEvent()
+            Handle<syclGeneric::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event + onHost::logger::device);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
-                auto newEvent = std::make_shared<syclGeneric::Event<Device>>(std::move(thisHandle), events.size());
+                auto newEvent
+                    = std::make_shared<syclGeneric::Event<Device>>(std::move(thisHandle), events.size(), timingMode);
 
                 events.emplace_back(newEvent);
                 return newEvent;

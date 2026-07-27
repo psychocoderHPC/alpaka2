@@ -173,6 +173,11 @@ namespace alpaka
             return ::hipEventDestroy(event);
         }
 
+        static inline Error_t eventElapsedTime(float* milliseconds, Event_t start, Event_t end)
+        {
+            return ::hipEventElapsedTime(milliseconds, start, end);
+        }
+
         static inline Error_t eventQuery(Event_t event)
         {
             return ::hipEventQuery(event);

@@ -10,6 +10,8 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <future>
+
 /** @file
  *
  * This tests evaluated if events in a queue follows a defined behaviour. Events used to describe dependencies
@@ -33,6 +35,9 @@ using namespace alpaka;
 using namespace alpaka::test::event;
 
 using TestApis = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
+
+template<typename T_Queue, typename T_Event>
+concept CanEnqueueEvent = requires(T_Queue const& queue, T_Event const& event) { queue.enqueue(event); };
 
 /** This test takes care that kernel in different queues can run concurrent and if we can communicate between host and
  * the device via mapped memory. Even if the concurrent queue test says true it could be that kernels can run under the
@@ -66,6 +71,128 @@ TEMPLATE_LIST_TEST_CASE("event creation and enqueue", "", TestApis)
     queue.enqueue(ev);
     onHost::wait(ev);
     CHECK(ev.isComplete() == true);
+}
+
+struct EmptyTimingKernel
+{
+    ALPAKA_FN_ACC void operator()(onAcc::concepts::Acc auto const&) const
+    {
+    }
+};
+
+TEMPLATE_LIST_TEST_CASE("timing-enabled events measure queued work", "", TestApis)
+{
+    auto [device, executor] = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
+    auto queue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto untimedQueue = device.makeQueue();
+    auto start = device.makeEvent(timing::enabled);
+    auto end = device.makeEvent(timing::enabled);
+    auto untimedEvent = device.makeEvent(timing::disabled);
+    onHost::concepts::FrameSpec auto const frameSpec = onHost::getFrameSpec(device, executor, Vec{1u});
+
+    static_assert(ALPAKA_TYPEOF(queue.getTiming()){} == timing::enabled);
+    static_assert(ALPAKA_TYPEOF(start.getTiming()){} == timing::enabled);
+    static_assert(ALPAKA_TYPEOF(untimedEvent.getTiming()){} == timing::disabled);
+    static_assert(!CanEnqueueEvent<ALPAKA_TYPEOF(untimedQueue), ALPAKA_TYPEOF(start)>);
+
+    queue.enqueue(start);
+    queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
+    queue.enqueue(end);
+
+    auto const elapsed = onHost::getElapsedTime(start, end);
+    CHECK(elapsed >= std::chrono::duration<double>::zero());
+}
+
+TEMPLATE_LIST_TEST_CASE("elapsed-time query waits for both events", "", TestApis)
+{
+    // This test makes the end timing event finish before the start event by using two separate queues.
+    onHost::Device device = test::getDeviceOrSkipTest(TestType::makeDict());
+    auto startQueue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto endQueue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto start = device.makeEvent(timing::enabled);
+    auto end = device.makeEvent(timing::enabled);
+
+    std::promise<void> releaseStartPromise;
+    auto releaseStart = releaseStartPromise.get_future().share();
+    startQueue.enqueueHostFn([releaseStart]() { releaseStart.wait(); });
+    startQueue.enqueue(start);
+    endQueue.enqueue(end);
+    // This ensures that the end event completes before getElapsedTime is called.
+    onHost::wait(end);
+
+    std::promise<void> elapsedStartedPromise;
+    auto elapsedStarted = elapsedStartedPromise.get_future();
+    auto elapsedFuture = std::async(
+        std::launch::async,
+        [&]()
+        {
+            elapsedStartedPromise.set_value();
+            return onHost::getElapsedTime(start, end);
+        });
+    elapsedStarted.wait();
+
+    // The start queue is blocked, so getElapsedTime should remain blocked in the asynchronous task.
+    auto const elapsedStatus = elapsedFuture.wait_for(std::chrono::milliseconds{100});
+    CHECK(elapsedStatus == std::future_status::timeout);
+
+    // Release the start queue task.
+    releaseStartPromise.set_value();
+    // Since the start event is no longer blocked, getElapsedTime should continue and return the measurement.
+    auto const elapsed = elapsedFuture.get();
+    CHECK(alpaka::math::abs(elapsed) >= std::chrono::milliseconds{100});
+}
+
+TEST_CASE("host elapsed-time query rejects unrecorded events", "")
+{
+    auto device = onHost::makeHostDevice();
+    auto queue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto recorded = device.makeEvent(timing::enabled);
+    auto unrecorded = device.makeEvent(timing::enabled);
+
+    queue.enqueue(recorded);
+    onHost::wait(recorded);
+
+    CHECK_THROWS_AS(onHost::getElapsedTime(unrecorded, recorded), std::logic_error);
+    CHECK_THROWS_AS(onHost::getElapsedTime(recorded, unrecorded), std::logic_error);
+    CHECK_THROWS_AS(onHost::getElapsedTime(unrecorded, unrecorded), std::logic_error);
+}
+
+TEMPLATE_LIST_TEST_CASE("queue-created timing-enabled events measure queued work", "", TestApis)
+{
+    auto [device, executor] = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
+    auto queue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto start = queue.makeEvent();
+    auto end = queue.makeEvent();
+    onHost::concepts::FrameSpec auto const frameSpec = onHost::getFrameSpec(device, executor, Vec{1u});
+
+    static_assert(ALPAKA_TYPEOF(start.getTiming()){} == timing::enabled);
+    static_assert(ALPAKA_TYPEOF(end.getTiming()){} == timing::enabled);
+
+    queue.enqueue(start);
+    queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
+    queue.enqueue(end);
+
+    auto const elapsed = onHost::getElapsedTime(start, end);
+    CHECK(elapsed >= std::chrono::duration<double>::zero());
+}
+
+TEMPLATE_LIST_TEST_CASE("timing-enabled events include host tasks", "", TestApis)
+{
+    auto [device, executor] = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
+    auto queue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
+    auto start = device.makeEvent(timing::enabled);
+    auto end = device.makeEvent(timing::enabled);
+    onHost::concepts::FrameSpec auto const frameSpec = onHost::getFrameSpec(device, executor, Vec{1u});
+    constexpr auto hostTaskDuration = std::chrono::seconds{1};
+
+    queue.enqueue(start);
+    queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
+    queue.enqueueHostFn([hostTaskDuration]() { std::this_thread::sleep_for(hostTaskDuration); });
+    queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
+    queue.enqueue(end);
+
+    auto const elapsed = onHost::getElapsedTime(start, end);
+    CHECK(elapsed > hostTaskDuration);
 }
 
 TEMPLATE_LIST_TEST_CASE("basic queue wait for event", "", TestApis)

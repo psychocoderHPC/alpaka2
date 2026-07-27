@@ -99,26 +99,32 @@ namespace alpaka::onHost
 
         struct MakeQueue
         {
-            template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+            template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
             struct Op
             {
-                auto operator()(T_Device& device, T_QueueKind) const
+                auto operator()(T_Device& device, T_QueueKind queueKind, T_Timing timing) const
                 {
-                    return device.makeQueue(T_QueueKind{});
+                    return device.makeQueue(queueKind, timing);
                 }
             };
         };
 
         struct MakeEvent
         {
-            template<typename T_Device>
+            template<typename T_Device, alpaka::concepts::Timing T_Timing>
             struct Op
             {
-                auto operator()(T_Device& device) const
+                auto operator()(T_Device& device, T_Timing timing) const
                 {
-                    return device.makeEvent();
+                    return device.makeEvent(timing);
                 }
             };
+        };
+
+        struct GetElapsedTime
+        {
+            template<typename T_StartEvent, typename T_EndEvent>
+            struct Op;
         };
 
         struct Wait

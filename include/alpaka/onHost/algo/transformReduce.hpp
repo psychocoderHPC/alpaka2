@@ -56,9 +56,13 @@ namespace alpaka::onHost
      *
      * @{
      */
-    template<typename DataType, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename DataType,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline void transformReduce(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         alpaka::concepts::Executor auto const exec,
         DataType const& neutralElement,
         alpaka::concepts::IMdSpan auto out,
@@ -93,9 +97,13 @@ namespace alpaka::onHost
      * An available default executor will be selected automatically. The default executor is the executor with the most
      * parallelism/performance.
      */
-    template<typename DataType, typename T_Device, alpaka::concepts::QueueKind T_QueueKind>
+    template<
+        typename DataType,
+        typename T_Device,
+        alpaka::concepts::QueueKind T_QueueKind,
+        alpaka::concepts::Timing T_Timing>
     inline void transformReduce(
-        Queue<T_Device, T_QueueKind> const& queue,
+        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
         DataType const& neutralElement,
         alpaka::concepts::IMdSpan auto out,
         auto&& binaryReduceFn,

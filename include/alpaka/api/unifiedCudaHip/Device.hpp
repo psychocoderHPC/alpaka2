@@ -106,7 +106,9 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::MakeQueue;
 
-            Handle<unifiedCudaHip::Queue<Device>> makeQueue(alpaka::concepts::QueueKind auto kind)
+            Handle<unifiedCudaHip::Queue<Device>> makeQueue(
+                alpaka::concepts::QueueKind auto kind,
+                alpaka::concepts::Timing auto)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 static_assert(
@@ -127,12 +129,15 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::MakeEvent;
 
-            Handle<unifiedCudaHip::Event<Device>> makeEvent()
+            Handle<unifiedCudaHip::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
-                auto newEvent = std::make_shared<unifiedCudaHip::Event<Device>>(std::move(thisHandle), events.size());
+                auto newEvent = std::make_shared<unifiedCudaHip::Event<Device>>(
+                    std::move(thisHandle),
+                    events.size(),
+                    timingMode);
 
                 events.emplace_back(newEvent);
                 return newEvent;

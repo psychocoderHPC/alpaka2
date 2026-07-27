@@ -18,7 +18,7 @@ namespace alpaka::onHost
         template<typename T>
         concept Device = requires(T device) {
             { alpaka::internal::GetName::Op<T>{}(device) } -> std::convertible_to<std::string>;
-            { internal::MakeEvent::Op<T>{}(device) };
+            { internal::MakeEvent::Op<T, timing::Disabled>{}(device, timing::disabled) };
             { internal::GetNativeHandle::Op<T>{}(device) };
             { internal::GetDeviceProperties::Op<T>{}(device) };
         };
