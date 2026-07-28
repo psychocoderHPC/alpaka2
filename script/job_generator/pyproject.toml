@@ -25,7 +25,7 @@ dependencies = [
 
 [project.scripts]
 # creates a python script named bashi-validate
-# in principal, the script does the following: from bashi.validate import main; main()
+# in principal, the script does the following: from apps.validate import main; main()
 alpaka-validate = "apps.validate:main"
 job-generator = "apps.job_generator:main"
 

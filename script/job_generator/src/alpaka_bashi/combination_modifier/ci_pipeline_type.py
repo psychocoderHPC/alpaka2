@@ -62,11 +62,11 @@ def add_ci_pipeline_type(combination_list: bashi.CombinationList) -> bashi.Combi
                 and comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_RUNTIME_VER
             ):
                 comb[CI_PIPELINE_NAME] = bashi.ParameterValue(CI_PIPELINE_NAME, CI_PIPELINE_RUNTIME_CPU_VER)
-            if (
-                comb[ALPAKA_ACC_ONEAPI_GPU_ENABLE].version == ON_VER
-                and comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_COMPILE_ONLY_VER
-            ):
-                comb[CI_PIPELINE_NAME] = bashi.ParameterValue(CI_PIPELINE_NAME, CI_PIPELINE_COMPILE_ONLY_VER)
+            if comb[ALPAKA_ACC_ONEAPI_GPU_ENABLE].version == ON_VER:
+                if comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_COMPILE_ONLY_VER:
+                    comb[CI_PIPELINE_NAME] = bashi.ParameterValue(CI_PIPELINE_NAME, CI_PIPELINE_COMPILE_ONLY_VER)
+                if comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_RUNTIME_VER:
+                    comb[CI_PIPELINE_NAME] = bashi.ParameterValue(CI_PIPELINE_NAME, CI_PIPELINE_RUNTIME_GPU_VER)
             if (
                 comb[ALPAKA_ACC_CPU_B_TBB_T_SEQ_ENABLE].version == ON_VER
                 and comb[JOB_EXECUTION_TYPE].version == JOB_EXECUTION_RUNTIME_VER

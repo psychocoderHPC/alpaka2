@@ -19,7 +19,7 @@ from alpaka_bashi.ci_yaml.names import get_job_name
 from alpaka_bashi.globals import CI_PIPELINE_NAME, get_version_aliases
 from alpaka_bashi.jobs_builder.default import construct_job_yaml
 from alpaka_bashi.jobs_builder.emulated_simd import get_emulated_simd_job
-from alpaka_bashi.jobs_builder.santizer import SanitizerType, get_sanitizer_job
+from alpaka_bashi.jobs_builder.sanitizer import SanitizerType, get_sanitizer_job
 from alpaka_bashi.versions import get_used_compiler_versions
 
 
@@ -40,8 +40,9 @@ def get_final_wave_sizes(
     combination_list: bashi.CombinationList, wave_sizes: dict[bashi.ValueVersion, WaveSize] | None = None
 ) -> dict[bashi.ValueVersion, int]:
     """Calculate the finale size of each wave. The finale size is between WaveSize.size and
-    WaveSize.size + WaveSize.extension. If a wave size of the size WaveSize.size + WaveSize.extension will remove the
-    last stage, all jobs are equal distributed on the N-1 stages. Therefore the function calculates the new wave size.
+    WaveSize.size + WaveSize.extension. If using size + extension removes the last stage,
+    distribute all jobs evenly over the remaining stages. Therefore the function calculates the new
+    wave size.
     """
 
     final_wave_sizes: dict[bashi.ValueVersion, int] = {}
@@ -56,15 +57,16 @@ def get_final_wave_sizes(
             final_wave_sizes[comb[CI_PIPELINE_NAME].version] += 1
 
     for wave_ver, number in final_wave_sizes.items():
-        number_stages = int(number / wave_sizes[wave_ver].size)
+        number_stages = math.ceil(number / wave_sizes[wave_ver].size)
         number_of_jobs_in_last_stage = number % wave_sizes[wave_ver].size
 
         final_wave_sizes[wave_ver] = wave_sizes[wave_ver].size
+        number_reduced_stages = number_stages - 1
+        number_of_extension_places = number_reduced_stages * wave_sizes[wave_ver].extension
 
-        if number_of_jobs_in_last_stage < number_stages * wave_sizes[wave_ver].extension:
-            final_wave_sizes[wave_ver] += math.ceil(
-                (number_stages - 1 * wave_sizes[wave_ver].extension) / number_of_jobs_in_last_stage
-            )
+        if 0 < number_of_jobs_in_last_stage < number_of_extension_places:
+            required_places_per_wave = math.ceil(number_of_jobs_in_last_stage / number_reduced_stages)
+            final_wave_sizes[wave_ver] += required_places_per_wave
 
     return final_wave_sizes
 
