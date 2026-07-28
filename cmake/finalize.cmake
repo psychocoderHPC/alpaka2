@@ -6,51 +6,98 @@
 ### Provide the alpaka target names linked to a target
 ##
 ## All targets will recursively be resolved to the actual targets linked to it.
-## target names are: ALPAKA, CUDA, HIP, ONEAPI, HEADERS, HOST
+## Output names are: ALPAKA, CUDA, HIP, ONEAPI, HEADERS, HOST
 ##
-## The output will be appended to the list variable provided as out_var.
-function(alpaka_get_targets_recursive target out_var)
-    get_target_property(libs_linked ${target} LINK_LIBRARIES)
-    get_target_property(libs_linked_interface ${target} INTERFACE_LINK_LIBRARIES)
-    set(libs "${libs_linked_interface};${libs_linked}")
+## processed_targets_var:
+##   Name of a list variable containing targets that were already processed.
+##   The updated list is returned through the same variable.
+##
+## out_var:
+##   The detected alpaka target names are appended to this list variable.
+function(alpaka_get_targets_recursive target processed_targets_var out_var)
+    set(processed_targets "${${processed_targets_var}}")
+    set(alpaka_target_desc "${${out_var}}")
 
-    foreach(lib ${libs})
-        # we need to check all sub target in case alpaka is a transitive linked target
-        if(TARGET ${lib})
-            ## start with an empty list
-            set(sub_targets "")
-            alpaka_get_targets_recursive(${lib} sub_targets)
-            list(APPEND alpaka_target_desc ${sub_targets})
-        endif()
-        # check if one of the following alpaka targets is linked
-        if(lib MATCHES "alpaka::alpaka|^alpaka$")
-            list(APPEND alpaka_target_desc "ALPAKA")
-        elseif(lib MATCHES "alpaka_target_cuda|alpaka::cuda")
-            list(APPEND alpaka_target_desc "CUDA")
-        elseif(lib MATCHES "alpaka_target_hip|alpaka::hip")
-            list(APPEND alpaka_target_desc "HIP")
-        elseif(lib MATCHES "alpaka_target_oneapi|alpaka::oneapi")
-            list(APPEND alpaka_target_desc "ONEAPI")
-        elseif(lib MATCHES "alpaka_target_host|alpaka::host")
-            list(APPEND alpaka_target_desc "HOST")
-        elseif(lib MATCHES "alpaka_target_headers|alpaka::headers")
-            list(APPEND alpaka_target_desc "HEADERS")
-        endif()
-    endforeach()
+    # Stop recursion if this target was already visited. This also breaks
+    # dependency cycles such as libA -> libB -> libA.
+    if(NOT target IN_LIST processed_targets)
+        # Mark the target as processed before following its dependencies.
+        list(APPEND processed_targets "${target}")
 
+        get_target_property(libs_linked "${target}" LINK_LIBRARIES)
+        get_target_property(libs_linked_interface "${target}" INTERFACE_LINK_LIBRARIES)
+
+        # get_target_property() returns <variable>-NOTFOUND when the property is not set. Do not treat that value
+        # as a linked library.
+        if(NOT libs_linked)
+            set(libs_linked "")
+        endif()
+
+        if(NOT libs_linked_interface)
+            set(libs_linked_interface "")
+        endif()
+
+        set(libs "")
+        list(APPEND libs ${libs_linked_interface} ${libs_linked})
+
+        foreach(lib IN LISTS libs)
+            # Check all linked targets in case alpaka is linked transitively.
+            if(TARGET "${lib}")
+                # Use a temporary variable so the recursive call can extend the processed
+                # target list and return it to this scope.
+                set(sub_targets "")
+
+                # Pass the current processed-target list into the recursive call.
+                set(sub_processed_targets "${processed_targets}")
+                alpaka_get_targets_recursive(
+                        "${lib}"
+                        sub_processed_targets
+                        sub_targets
+                )
+
+                # Propagate all targets visited by the recursive call.
+                set(processed_targets "${sub_processed_targets}")
+                list(APPEND alpaka_target_desc ${sub_targets})
+            endif()
+
+            # Check whether one of the following alpaka targets is linked.
+            if(lib MATCHES "alpaka::alpaka|^alpaka$")
+                list(APPEND alpaka_target_desc "ALPAKA")
+            elseif(lib MATCHES "alpaka_target_cuda|alpaka::cuda")
+                list(APPEND alpaka_target_desc "CUDA")
+            elseif(lib MATCHES "alpaka_target_hip|alpaka::hip")
+                list(APPEND alpaka_target_desc "HIP")
+            elseif(lib MATCHES "alpaka_target_oneapi|alpaka::oneapi")
+                list(APPEND alpaka_target_desc "ONEAPI")
+            elseif(lib MATCHES "alpaka_target_host|alpaka::host")
+                list(APPEND alpaka_target_desc "HOST")
+            elseif(lib MATCHES "alpaka_target_headers|alpaka::headers")
+                list(APPEND alpaka_target_desc "HEADERS")
+            endif()
+        endforeach()
+    endif()
+
+    list(REMOVE_DUPLICATES processed_targets)
     list(REMOVE_DUPLICATES alpaka_target_desc)
-    # Return the list via the output variable
-    set(${out_var} ${alpaka_target_desc} PARENT_SCOPE)
+
+    # Return both updated lists to the caller.
+    set(${processed_targets_var} "${processed_targets}" PARENT_SCOPE)
+    set(${out_var} "${alpaka_target_desc}" PARENT_SCOPE)
 endfunction()
 
 ### Provide the alpaka target names linked to a target
 ##
 ## out_var will contain a list of alpaka target names linked to the target.
 function(alpaka_get_targets target out_var)
-    alpaka_get_targets_recursive(${target} alpaka_target_desc)
-    message(DEBUG "alpaka targets for '${target}': ${alpaka_target_desc}")
-    # Return the list via the output variable
-    set(${out_var} ${alpaka_target_desc} PARENT_SCOPE)
+    set(processed_targets "")
+    set(alpaka_target_desc "")
+
+    alpaka_get_targets_recursive("${target}" processed_targets alpaka_target_desc)
+
+    message(DEBUG "alpaka targets for '${target}': ${alpaka_target_desc}; " "processed targets: ${processed_targets}")
+
+    # Return the list via the output variable.
+    set(${out_var} "${alpaka_target_desc}" PARENT_SCOPE)
 endfunction()
 
 ### Copy a source file to the build tree
@@ -113,8 +160,8 @@ function(copy_with_structure SRC_FILE api_name OUT_VAR)
 endfunction()
 
 function(alpaka_internal_finalize target)
-    # Decide backend based on linked alpaka target
-    list(REMOVE_DUPLICATES alpaka_target_list)
+    # List of alpaka target descriptions found within CMake targets linked to the input target of this function call.
+    set(alpaka_target_list "")
     alpaka_get_targets(${target} alpaka_target_list)
 
     if(NOT alpaka_target_list)
