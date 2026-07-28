@@ -300,6 +300,22 @@ if(NOT _alpaka_TARGETS_EXTENDED)
         message(STATUS "std::simd disabled, emulated SIMD is used")
         target_compile_definitions(alpaka_target_host INTERFACE ALPAKA_DISABLE_STD_SIMD)
     endif()
+
+    option(alpaka_PARALLEL_MEMCPY_HOST_AS_DEFAULT "Enable parallel memcpy for CPU backends as default politics" OFF)
+    if(alpaka_PARALLEL_MEMCPY_HOST_AS_DEFAULT)
+        add_compile_definitions(ALPAKA_PARALLEL_MEMCPY_HOST_AS_DEFAULT=true)
+        message(
+            STATUS
+            "Parallel memcpy for CPU backend: ENABLED (default memcpy politics, can be override whith env var or using dedicated API)"
+        )
+    else()
+        add_compile_definitions(ALPAKA_PARALLEL_MEMCPY_HOST_AS_DEFAULT=false)
+        message(
+            STATUS
+            "Parallel memcpy for CPU backend: DISABLED (can be enabled via ALPAKA_MEMCPY_MODE env var at runtime or using dedicated API)"
+        )
+    endif()
+
     # These options are used in the alpaka_finalize call
     option(alpaka_ASAN "Enable/Disable linking the address sanitizer for cpu targets" OFF)
     option(alpaka_TSAN "Enable/Disable linking the thread sanitizer for cpu targets" OFF)
