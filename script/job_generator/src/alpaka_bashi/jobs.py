@@ -14,10 +14,10 @@ import packaging.version
 from bashi.globals import CLANG, GCC
 from typeguard import typechecked
 
-from alpaka_bashi.ci_yaml.misc import get_dummy_job
 from alpaka_bashi.ci_yaml.names import get_job_name
 from alpaka_bashi.globals import CI_PIPELINE_NAME, get_version_aliases
 from alpaka_bashi.jobs_builder.default import construct_job_yaml
+from alpaka_bashi.jobs_builder.dummy import get_dummy_job
 from alpaka_bashi.jobs_builder.emulated_simd import get_emulated_simd_job
 from alpaka_bashi.jobs_builder.sanitizer import SanitizerType, get_sanitizer_job
 from alpaka_bashi.versions import get_used_compiler_versions
@@ -178,6 +178,9 @@ def get_special_jobs(
             for job_name, job_body in special_jobs.items()
             if compiled_regex.match(job_name) or job_name == "stages"
         }
+
+    if len(special_jobs) == 0 or (len(special_jobs) == 1 and "stages" in special_jobs):
+        special_jobs = get_dummy_job_yaml(stage_name)
 
     return special_jobs
 
