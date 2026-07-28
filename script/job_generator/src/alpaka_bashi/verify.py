@@ -13,8 +13,6 @@ from bashi.globals import (
     CLANG,
     DEVICE_COMPILER,
     GCC,
-    HOST_COMPILER,
-    NVCC,
     OFF,
     ON,
 )
@@ -51,31 +49,6 @@ def remove_disabled_serial_and_openmp_backend(
         value_version1=OFF,
         parameter2=ALPAKA_ACC_CPU_B_OMP2_T_SEQ_ENABLE,
         value_version2=ON,
-    )
-
-
-def remove_nvcc_clang_combinations(
-    parameter_value_pairs: list[bashi.ParameterValuePair],
-    removed_parameter_value_pairs: list[bashi.ParameterValuePair],
-):
-    """Remove all parameter-value-pairs which are related to the combinations nvcc + clang host
-    compiler."""
-    bashi.remove_parameter_value_pairs_ranges(
-        parameter_value_pairs,
-        removed_parameter_value_pairs,
-        parameter1=HOST_COMPILER,
-        value_name1=CLANG,
-        parameter2=DEVICE_COMPILER,
-        value_name2=NVCC,
-    )
-
-    bashi.remove_parameter_value_pairs_ranges(
-        parameter_value_pairs,
-        removed_parameter_value_pairs,
-        parameter1=HOST_COMPILER,
-        value_name1=CLANG,
-        parameter2=ALPAKA_ACC_CPU_B_SEQ_T_SEQ_ENABLE,
-        value_max_version2=OFF,
     )
 
 
@@ -116,8 +89,6 @@ def verify(
 
     remove_disabled_serial_backend_for_gcc_and_clang(expected_param_val_tuple, unexpected_param_val_tuple)
     remove_disabled_serial_and_openmp_backend(expected_param_val_tuple, unexpected_param_val_tuple)
-    # TODO: Remove me, if nvcc + clang is enabled
-    remove_nvcc_clang_combinations(expected_param_val_tuple, unexpected_param_val_tuple)
 
     expected_param_val_okay = bashi.check_parameter_value_pair_in_combination_list(
         combination_list, expected_param_val_tuple
