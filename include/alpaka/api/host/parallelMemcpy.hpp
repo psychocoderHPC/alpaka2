@@ -17,6 +17,43 @@
 
 namespace alpaka::onHost
 {
+    namespace cpu
+    {
+        template<typename T_Device>
+        struct Queue; // Forward declaration
+    } // namespace cpu
+
+    namespace config
+    {
+        // Forward declaration
+        class MemcpyConfig;
+
+        /** Type trait: Check if a queue type supports memcpy configuration
+         *
+         * This trait is false for all queue types by default.
+         * It is specialized to true for CPU queues.
+         *
+         * Usage in templates:
+         * @code
+         *   if constexpr(hasMemcpyConfig<MyQueueType>) {
+         *       // This branch only compiles for CPU queues
+         *       queue.getMemcpyConfig().setMode(...);
+         *   }
+         * @endcode
+         *
+         */
+        template<typename T_Queue>
+        inline constexpr bool hasMemcpyConfig = false;
+
+        /** Specialization: CPU queues support memcpy configuration
+         *
+         * This trait is specialized to true only for alpaka::onHost::cpu::Queue types.
+         * All other queue types have the default value of false.
+         */
+        template<typename T_Device>
+        inline constexpr bool hasMemcpyConfig<cpu::Queue<T_Device>> = true;
+    } // namespace config
+
     namespace internal::detail
     {
         /** Half open byte range [begin, end) a single thread is responsible for */
