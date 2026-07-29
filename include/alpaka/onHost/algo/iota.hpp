@@ -26,14 +26,10 @@ namespace alpaka::onHost
      * kind of alpaka View/MdSpan is supported.
      * @{
      */
-    template<
-        typename T_DataType,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_DataType, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     requires(std::is_fundamental_v<T_DataType>)
     inline void iota(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         alpaka::concepts::Executor auto const exec,
         T_DataType const& initValue,
         alpaka::concepts::IMdSpan auto&& out0,
@@ -67,14 +63,10 @@ namespace alpaka::onHost
      * An available default executor will be selected automatically. The default executor is the executor with the most
      * parallelism/performance.
      */
-    template<
-        typename T_DataType,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_DataType, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     requires(std::is_fundamental_v<T_DataType>)
     inline void iota(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         T_DataType const& initValue,
         alpaka::concepts::IMdSpan auto&& out0,
         alpaka::concepts::IMdSpan auto&&... outOther)

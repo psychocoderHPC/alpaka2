@@ -43,8 +43,13 @@ namespace alpaka
          * The queue can only be used if the dependency OpenMP is available, e.g. by setting the CMake option
          * ALPAKA_DEP_OMP=ON or using the required compiler flags to activate OpenMP.
          */
-        struct OmpCollective : detail::QueueKindBase
+        struct OmpCollective : category::QueueKind
         {
+            static constexpr auto isBlocking()
+            {
+                return true;
+            }
+
             static std::string getName()
             {
                 return "OmpCollective";
@@ -127,8 +132,12 @@ namespace alpaka::onHost
         struct OmpCollectiveQueue : std::enable_shared_from_this<OmpCollectiveQueue<T_Device>>
         {
         public:
-            OmpCollectiveQueue(internal::concepts::DeviceHandle auto device, uint32_t const idx, uint32_t numIdx)
-                : parentQueue(std::make_shared<Queue<T_Device>>(std::move(device), idx, numIdx, true))
+            OmpCollectiveQueue(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                uint32_t numIdx,
+                alpaka::concepts::QueuePolicyList auto const policies)
+                : parentQueue(std::make_shared<Queue<T_Device>>(std::move(device), idx, numIdx, policies))
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
             }
@@ -312,10 +321,11 @@ namespace alpaka::onHost
             /** @} */
         } // namespace omp
 
-        template<typename T_Platform, alpaka::concepts::Timing T_Timing>
-        struct MakeQueue::Op<cpu::Device<T_Platform>, alpaka::queueKind::OmpCollective, T_Timing>
+        template<typename T_Platform, alpaka::concepts::QueuePolicyList T_QueuePolicyList>
+        requires(T_QueuePolicyList::getQueueKind() == queueKind::ompCollective)
+        struct MakeQueue::Op<cpu::Device<T_Platform>, T_QueuePolicyList>
         {
-            auto operator()(cpu::Device<T_Platform>& device, alpaka::queueKind::OmpCollective, T_Timing) const
+            auto operator()(cpu::Device<T_Platform>& device, T_QueuePolicyList queuePolicies) const
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
                 auto queueHandle = device.getSharedPtr();
@@ -324,7 +334,8 @@ namespace alpaka::onHost
                 auto newQueue = std::make_shared<cpu::OmpCollectiveQueue<cpu::Device<T_Platform>>>(
                     std::move(queueHandle),
                     device.queueWaitFns.size(),
-                    device.m_cpuGroupIdx);
+                    device.m_cpuGroupIdx,
+                    queuePolicies);
 
                 std::weak_ptr<cpu::OmpCollectiveQueue<cpu::Device<T_Platform>>> weakPtrToQueue = newQueue;
                 device.queueWaitFns.emplace_back(

@@ -12,6 +12,31 @@ using namespace alpaka;
 
 using TestApis = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
 
+/** Test-only tag verifying that applications can register additional queue policies. */
+struct TestQueuePolicy
+{
+};
+
+template<>
+struct alpaka::trait::IsQueuePolicy<TestQueuePolicy> : std::true_type
+{
+};
+
+static_assert(alpaka::concepts::QueuePolicy<TestQueuePolicy>);
+
+constexpr auto defaultQueuePolicies = onHost::QueuePolicyList{};
+static_assert(alpaka::concepts::QueuePolicyList<decltype(defaultQueuePolicies)>);
+static_assert(defaultQueuePolicies.getQueueKind() == queueKind::nonBlocking);
+static_assert(defaultQueuePolicies.getTiming() == timing::disabled);
+
+constexpr auto testQueuePolicies = onHost::QueuePolicyList{queueKind::blocking, timing::enabled, TestQueuePolicy{}};
+static_assert(alpaka::concepts::QueuePolicyList<decltype(testQueuePolicies)>);
+static_assert(!alpaka::concepts::QueuePolicyList<TestQueuePolicy>);
+static_assert(testQueuePolicies.getQueueKind() == queueKind::blocking);
+static_assert(testQueuePolicies.getTiming() == timing::enabled);
+static_assert(testQueuePolicies.hasPolicy(TestQueuePolicy{}));
+static_assert(!testQueuePolicies.hasPolicy(queueKind::nonBlocking));
+
 struct NoArgumentsKernel
 {
     ALPAKA_FN_ACC void operator()(onAcc::concepts::Acc auto const&) const

@@ -11,6 +11,7 @@
 #include "alpaka/onHost/DeviceProperties.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"
 #include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/ThreadSpec.hpp"
 #include "alpaka/tag.hpp"
 
@@ -99,12 +100,12 @@ namespace alpaka::onHost
 
         struct MakeQueue
         {
-            template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
+            template<typename T_Device, alpaka::concepts::QueuePolicyList T_QueuePolicyList>
             struct Op
             {
-                auto operator()(T_Device& device, T_QueueKind queueKind, T_Timing timing) const
+                auto operator()(T_Device& device, T_QueuePolicyList const& policies) const
                 {
-                    return device.makeQueue(queueKind, timing);
+                    return device.makeQueue(policies);
                 }
             };
         };
@@ -266,6 +267,24 @@ namespace alpaka::onHost
                 queue,
                 launchCfg,
                 kernelBundle);
+        }
+
+        struct IsBlocking
+        {
+            template<::alpaka::concepts::QueueKind T>
+            struct Op
+            {
+                constexpr bool operator()(T const&) const
+                {
+                    return T::isBlocking();
+                }
+            };
+        };
+
+        template<::alpaka::concepts::QueueKind T>
+        constexpr bool isBlocking(T const& policy)
+        {
+            return IsBlocking::Op<ALPAKA_TYPEOF(policy)>{}(policy);
         }
 
         struct AdjustThreadSpec

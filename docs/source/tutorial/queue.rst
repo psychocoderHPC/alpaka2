@@ -27,7 +27,8 @@ Here is a small example for a *blocking* queue:
     :dedent:
 
 The use of a *non-blocking* queue requires explicit synchronization before accessing the modified data, otherwise a data race will occur.
-If you do not pass ``queueKind`` as an argument, you will get a *non-blocking* queue.
+Queue configuration is passed as ``onHost::QueuePolicyList``. If the policy list does not contain a queue-kind
+policy, or if you call ``makeQueue()`` without policies, you will get a *non-blocking* queue.
 
   .. literalinclude:: ../../snippets/example/030_queue.cpp
     :language: cpp

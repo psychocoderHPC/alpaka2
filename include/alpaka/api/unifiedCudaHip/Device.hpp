@@ -106,22 +106,14 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::MakeQueue;
 
-            Handle<unifiedCudaHip::Queue<Device>> makeQueue(
-                alpaka::concepts::QueueKind auto kind,
-                alpaka::concepts::Timing auto)
+            Handle<unifiedCudaHip::Queue<Device>> makeQueue(alpaka::concepts::QueuePolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                static_assert(
-                    kind == queueKind::blocking || kind == queueKind::nonBlocking,
-                    "Unsupported queue kind.");
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
 
-                constexpr bool isBlocking = kind == queueKind::blocking;
-                auto newQueue = std::make_shared<unifiedCudaHip::Queue<Device>>(
-                    std::move(thisHandle),
-                    queues.size(),
-                    isBlocking);
+                auto newQueue
+                    = std::make_shared<unifiedCudaHip::Queue<Device>>(std::move(thisHandle), queues.size(), policies);
 
                 queues.emplace_back(newQueue);
                 return newQueue;

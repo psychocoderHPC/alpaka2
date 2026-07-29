@@ -11,6 +11,7 @@
 #include "alpaka/interface.hpp"
 #include "alpaka/internal/interface.hpp"
 #include "alpaka/onAcc/Acc.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/concepts.hpp"
 #include "alpaka/onHost/interface.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
@@ -178,16 +179,15 @@ namespace alpaka::onHost
             Queue(
                 internal::concepts::DeviceHandle auto device,
                 uint32_t const idx,
-                bool isBlocking,
-                alpaka::concepts::Timing auto timingMode)
+                alpaka::concepts::QueuePolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_SharedNativeQueue{std::make_shared<NativeQueue>(
                       onHost::getNativeHandle(m_device).first,
                       onHost::getNativeHandle(m_device).second,
-                      timingMode)}
+                      policies.getTiming())}
                 , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>()}
                 , m_idx(idx)
-                , m_isBlocking(isBlocking)
+                , m_isBlocking(internal::isBlocking(policies.getQueueKind()))
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
             }

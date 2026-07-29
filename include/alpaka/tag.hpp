@@ -15,6 +15,23 @@
 
 namespace alpaka
 {
+    namespace category
+    {
+        /** Category tag for queue-kind policies. */
+        struct QueueKind
+        {
+            template<typename T_Policy>
+            constexpr bool operator()(T_Policy) const;
+        };
+
+        /** Category tag for timing policies. */
+        struct Timing
+        {
+            template<typename T_Policy>
+            constexpr bool operator()(T_Policy) const;
+        };
+    } // namespace category
+
     namespace object
     {
         struct Api
@@ -44,17 +61,10 @@ namespace alpaka
 
     namespace queueKind
     {
-        namespace detail
-        {
-            struct QueueKindBase
-            {
-            };
-        } // namespace detail
-
         namespace trait
         {
             template<typename T_QueueKind>
-            struct IsQueueKind : std::is_base_of<detail::QueueKindBase, T_QueueKind>
+            struct IsQueueKind : std::is_base_of<category::QueueKind, T_QueueKind>
             {
             };
         } // namespace trait
@@ -88,8 +98,13 @@ namespace alpaka
 
         /** Queue should block during the task execution
          */
-        struct Blocking : detail::QueueKindBase
+        struct Blocking : category::QueueKind
         {
+            static constexpr bool isBlocking()
+            {
+                return true;
+            }
+
             static std::string getName()
             {
                 return "Blocking";
@@ -100,8 +115,13 @@ namespace alpaka
 
         /** Queue should process task asynchronously
          */
-        struct NonBlocking : detail::QueueKindBase
+        struct NonBlocking : category::QueueKind
         {
+            static constexpr bool isBlocking()
+            {
+                return false;
+            }
+
             static std::string getName()
             {
                 return "NonBlocking";
@@ -113,17 +133,10 @@ namespace alpaka
 
     namespace timing
     {
-        namespace detail
-        {
-            struct TimingBase
-            {
-            };
-        } // namespace detail
-
         namespace trait
         {
             template<typename T_Timing>
-            struct IsTiming : std::is_base_of<detail::TimingBase, T_Timing>
+            struct IsTiming : std::is_base_of<category::Timing, T_Timing>
             {
             };
         } // namespace trait
@@ -152,7 +165,7 @@ namespace alpaka
         }
 
         /** Backend timing information is available. */
-        struct Enabled : detail::TimingBase
+        struct Enabled : category::Timing
         {
             static std::string getName()
             {
@@ -163,7 +176,7 @@ namespace alpaka
         constexpr auto enabled = Enabled{};
 
         /** Backend timing information is not requested. */
-        struct Disabled : detail::TimingBase
+        struct Disabled : category::Timing
         {
             static std::string getName()
             {
@@ -358,4 +371,19 @@ namespace alpaka
         alpaka::unused(exec);
         return exec::isSeqExecutor_v<T_Exec>;
     }
+
+    namespace category
+    {
+        template<typename T_Policy>
+        constexpr bool QueueKind::operator()(T_Policy) const
+        {
+            return alpaka::concepts::QueueKind<T_Policy>;
+        }
+
+        template<typename T_Policy>
+        constexpr bool Timing::operator()(T_Policy) const
+        {
+            return alpaka::concepts::Timing<T_Policy>;
+        }
+    } // namespace category
 } // namespace alpaka

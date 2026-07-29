@@ -23,6 +23,7 @@
 #include "alpaka/onAcc/internal/globalMem.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"
 #include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/interface.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/mem/SharedBuffer.hpp"
@@ -46,12 +47,15 @@ namespace alpaka::onHost
             using ApiInterface = typename T_Device::ApiInterface;
 
         public:
-            Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, bool isBlocking)
+            Queue(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                alpaka::concepts::QueuePolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>()}
                 , m_SharedStream{std::make_shared<Stream>(m_device)}
                 , m_idx(idx)
-                , m_isBlocking(isBlocking)
+                , m_isBlocking(internal::isBlocking(policies.getQueueKind()))
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
             }

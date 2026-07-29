@@ -140,21 +140,17 @@ namespace alpaka::onHost
 
             friend struct internal::MakeQueue;
 
-            Handle<cpu::Queue<Device>> makeQueue(alpaka::concepts::QueueKind auto kind, alpaka::concepts::Timing auto)
+            Handle<cpu::Queue<Device>> makeQueue(alpaka::concepts::QueuePolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                static_assert(
-                    kind == queueKind::blocking || kind == queueKind::nonBlocking,
-                    "Unsupported queue kind.");
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{queuesGuard};
 
-                constexpr bool isBlocking = kind == queueKind::blocking;
                 auto newQueue = std::make_shared<cpu::Queue<Device>>(
                     std::move(thisHandle),
                     queueWaitFns.size(),
                     m_cpuGroupIdx,
-                    isBlocking);
+                    policies);
 
                 std::weak_ptr<cpu::Queue<Device>> weakPtrToQueue = newQueue;
                 queueWaitFns.emplace_back(

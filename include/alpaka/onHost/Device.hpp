@@ -8,6 +8,7 @@
 #include "alpaka/interface.hpp"
 #include "alpaka/onHost/Event.hpp"
 #include "alpaka/onHost/Queue.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/concepts.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/tag.hpp"
@@ -96,37 +97,38 @@ namespace alpaka::onHost
          */
         auto makeQueue()
         {
-            return makeQueue(queueKind::nonBlocking);
+            return makeQueue(QueuePolicyList{});
         }
 
         /** @copydoc makeQueue()
          *
-         * @param kind
-         *   Blocking behaviour:
+         * @param firstPolicy First queue construction policy.
+         * @param policies Additional queue construction policies.
+         */
+        template<alpaka::concepts::QueuePolicy T_FirstPolicy, alpaka::concepts::QueuePolicy... T_Policies>
+        auto makeQueue(T_FirstPolicy firstPolicy, T_Policies... policies)
+        {
+            return makeQueue(QueuePolicyList{firstPolicy, policies...});
+        }
+
+        /** @copydoc makeQueue()
+         *
+         * @param policies Queue construction policies. Supported policies are:
+         *   - Blocking behaviour:
          *    - queueKind::nonBlocking: enqueue returns immediately; completion of the enqueued operation
          * must be ensured via onHost::wait(queue) or by enqueuing dependent operations onto the same queue.
          *    - queueKind::blocking: each enqueue only returns after the operation is complete and its effects are
          * host-visible.
+         *   - timing::disabled or timing::enabled: whether the queue supports timing-enabled events.
          */
-        auto makeQueue(alpaka::concepts::QueueKind auto kind)
-        {
-            return makeQueue(kind, timing::disabled);
-        }
-
-        /** @copydoc makeQueue(alpaka::concepts::QueueKind auto kind)
-         *
-         * @param timingMode Specifies whether the queue supports timing-enabled events.
-         */
-        auto makeQueue(alpaka::concepts::QueueKind auto kind, alpaka::concepts::Timing auto timingMode)
+        template<alpaka::concepts::QueuePolicy... T_Policies>
+        auto makeQueue(QueuePolicyList<T_Policies...> const& policies)
         {
             return Queue{
-                internal::MakeQueue::
-                    Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(kind), ALPAKA_TYPEOF(timingMode)>{}(
-                        *m_device.get(),
-                        kind,
-                        timingMode),
-                kind,
-                timingMode};
+                internal::MakeQueue::Op<ALPAKA_TYPEOF(*m_device.get()), QueuePolicyList<T_Policies...>>{}(
+                    *m_device.get(),
+                    policies),
+                policies};
         }
 
         /** Create an event with an explicit timing capability.
@@ -188,18 +190,6 @@ namespace alpaka::onHost
         }
     };
 
-    namespace concepts
-    {
-        /** @brief Concept to check if something is a device.
-         *
-         * @details
-         * This concept checks for specializations of alpaka::onHost::Device. For more information on devices in
-         * alpaka, refer to the class documentation.
-         */
-        template<typename T_Device>
-        concept Device = alpaka::concepts::SpecializationOf<T_Device, onHost::Device>;
-    } // namespace concepts
-
     template<typename T_Device>
     Device(Handle<T_Device>&&) -> Device<
         ALPAKA_TYPEOF(alpaka::internal::getApi(std::declval<T_Device>())),
@@ -258,13 +248,9 @@ namespace alpaka::onHost
      * @param queue queue handle
      * @param extents number of elements for each dimension
      */
-    template<
-        typename T_Type,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_Type, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline auto allocUnified(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents)
     {
         Vec const extentsVec = extents;
@@ -303,13 +289,9 @@ namespace alpaka::onHost
      * @param queue queue handle
      * @param extents number of elements for each dimension
      */
-    template<
-        typename T_Type,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_Type, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline auto allocMapped(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents)
     {
         return allocMapped<T_Type>(queue.getDevice(), extents);
@@ -356,10 +338,8 @@ namespace alpaka::onHost
      *
      * @param queue queue handle
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
-    inline bool isDataAccessible(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
-        alpaka::concepts::IView auto const& view)
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
+    inline bool isDataAccessible(Queue<T_Device, T_Policies> const& queue, alpaka::concepts::IView auto const& view)
     {
         return internal::IsDataAccessible::FirstPath<ALPAKA_TYPEOF(*queue.getDevice().get()), ALPAKA_TYPEOF(view)>{}(
                    *queue.getDevice().get(),

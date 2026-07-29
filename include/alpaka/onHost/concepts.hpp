@@ -7,12 +7,17 @@
 #include "alpaka/concepts.hpp"
 #include "alpaka/internal/interface.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
+#include "alpaka/utility.hpp"
 
 #include <concepts>
 #include <string>
 
 namespace alpaka::onHost
 {
+    // forward declaration to make the Device concept available without include cycles
+    template<alpaka::concepts::Api T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
+    struct Device;
+
     namespace internal::concepts
     {
         template<typename T>
@@ -55,6 +60,10 @@ namespace alpaka::onHost
 
     namespace concepts
     {
+        /** A specialization of onHost::Device. */
+        template<typename T_Device>
+        concept Device = alpaka::concepts::SpecializationOf<T_Device, onHost::Device>;
+
         template<typename T>
         concept NameHandle = requires(T t) {
             typename T::element_type;

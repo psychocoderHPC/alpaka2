@@ -180,7 +180,7 @@ TEMPLATE_LIST_TEST_CASE("OmpCollectiveQueue", "[queue][OmpCollectiveQueue]", Tes
     auto deviceExec = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
     onHost::Device device = test::getDevice(deviceExec);
     concepts::Executor auto exec = test::getExecutor(deviceExec);
-    onHost::Queue queue = device.makeQueue(queueKind::ompCollective);
+    onHost::Queue queue = device.makeQueue(::alpaka::queueKind::ompCollective);
 
     auto extents = std::make_tuple(
         // 1D

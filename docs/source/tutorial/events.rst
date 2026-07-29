@@ -40,10 +40,11 @@ It is possible that ``queue1`` increments the value ``valueA`` before ``valueA``
 Measuring Queued Work
 ---------------------
 
-Timing is an explicit queue capability and is disabled by default. Events can independently be constructed with
-``timing::enabled`` or ``timing::disabled``; ``queue.makeEvent()`` is also available as a convenience that inherits the
-queue's capability. A timing-enabled event can only be enqueued on a timing-enabled queue. This rule is the same for
-every API, even where a native backend would technically allow a timed event on an ordinary queue.
+Timing is an explicit queue capability and is disabled by default. Enable it by adding ``timing::enabled`` to the
+``onHost::QueuePolicyList`` passed to ``makeQueue``. Events can independently be constructed with ``timing::enabled``
+or ``timing::disabled``; ``queue.makeEvent()`` is also available as a convenience that inherits the queue's capability.
+A timing-enabled event can only be enqueued on a timing-enabled queue. This rule is the same for every API, even where
+a native backend would technically allow a timed event on an ordinary queue.
 
 The elapsed time is obtained from backend event information. CUDA and HIP use native event timestamps, SYCL uses
 profiling timestamps from its profiling-enabled queue, and the host backend records a monotonic timestamp when each

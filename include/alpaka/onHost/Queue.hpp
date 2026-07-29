@@ -9,9 +9,11 @@
 #include "alpaka/executor.hpp"
 #include "alpaka/onHost/Event.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/concepts.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/trait.hpp"
+#include "alpaka/tag.hpp"
 
 #include <memory>
 
@@ -20,40 +22,34 @@ namespace alpaka::onHost
     template<alpaka::concepts::Api T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
     struct Device;
 
-    template<
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing = timing::Disabled>
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies = QueuePolicyList<>>
     struct Queue;
 
     template<
         alpaka::concepts::Api T_Api,
         alpaka::concepts::DeviceKind T_DeviceKind,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
-    struct Queue<Device<T_Api, T_DeviceKind>, T_QueueKind, T_Timing>
+        alpaka::concepts::QueuePolicyList T_Policies>
+    struct Queue<Device<T_Api, T_DeviceKind>, T_Policies>
     {
     private:
         using DeviceInterface = Device<T_Api, T_DeviceKind>;
+        using Policies = T_Policies;
+        using Timing = ALPAKA_TYPEOF(std::declval<Policies>().getTiming());
         using QueueHandle = ALPAKA_TYPEOF(
-            internal::MakeQueue::Op<ALPAKA_TYPEOF(*std::declval<DeviceInterface>().get()), T_QueueKind, T_Timing>{}(
+            internal::MakeQueue::Op<ALPAKA_TYPEOF(*std::declval<DeviceInterface>().get()), T_Policies>{}(
                 *std::declval<DeviceInterface>().get(),
-                T_QueueKind{},
-                T_Timing{}));
+                std::declval<Policies const&>()));
 
         QueueHandle m_queue;
+        [[no_unique_address]] Policies m_policies;
 
     public:
         using element_type = typename QueueHandle::element_type;
 
         template<typename T_Queue>
-        Queue(Handle<T_Queue>&& queue, T_QueueKind, T_Timing) : m_queue{std::forward<Handle<T_Queue>>(queue)}
-        {
-        }
-
-        template<typename T_Queue>
-        Queue(Handle<T_Queue>&& queue, T_QueueKind) requires std::same_as<T_Timing, timing::Disabled>
-            : Queue{std::forward<Handle<T_Queue>>(queue), T_QueueKind{}, timing::disabled}
+        Queue(Handle<T_Queue>&& queue, Policies const& policies)
+            : m_queue{std::forward<Handle<T_Queue>>(queue)}
+            , m_policies{policies}
         {
         }
 
@@ -69,12 +65,12 @@ namespace alpaka::onHost
 
         constexpr alpaka::concepts::QueueKind auto getQueueKind() const
         {
-            return T_QueueKind{};
+            return m_policies.getQueueKind();
         }
 
         constexpr alpaka::concepts::Timing auto getTiming() const
         {
-            return T_Timing{};
+            return m_policies.getTiming();
         }
 
         constexpr alpaka::concepts::DeviceKind auto getDeviceKind() const
@@ -124,7 +120,7 @@ namespace alpaka::onHost
         auto makeEvent() const
         {
             auto device = getDevice();
-            return device.makeEvent(T_Timing{});
+            return device.makeEvent(getTiming());
         }
 
         /** Enqueue a kernel functor to a queue.
@@ -234,7 +230,7 @@ namespace alpaka::onHost
          * @param event Event that is to be enqueue in the queue of operations.
          */
         template<alpaka::concepts::Timing T_EventTiming>
-        requires(std::same_as<T_EventTiming, timing::Disabled> || std::same_as<T_Timing, timing::Enabled>)
+        requires(std::same_as<T_EventTiming, timing::Disabled> || std::same_as<Timing, timing::Enabled>)
         void enqueue(Event<Device<T_Api, T_DeviceKind>, T_EventTiming> const& event) const
         {
             internal::Enqueue::Event<ALPAKA_TYPEOF(*m_queue.get()), ALPAKA_TYPEOF(*event.get())>{}(
@@ -267,20 +263,12 @@ namespace alpaka::onHost
         }
     };
 
-    template<typename T_Queue, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
-    Queue(Handle<T_Queue>&&, T_QueueKind, T_Timing) -> Queue<
+    template<typename T_Queue, alpaka::concepts::QueuePolicyList T_Policies>
+    Queue(Handle<T_Queue>&&, T_Policies const&) -> Queue<
         Device<
             ALPAKA_TYPEOF(alpaka::internal::getApi(std::declval<T_Queue>())),
             ALPAKA_TYPEOF(alpaka::internal::getDeviceKind(std::declval<T_Queue>()))>,
-        T_QueueKind,
-        T_Timing>;
-
-    template<typename T_Queue, alpaka::concepts::QueueKind T_QueueKind>
-    Queue(Handle<T_Queue>&&, T_QueueKind) -> Queue<
-        Device<
-            ALPAKA_TYPEOF(alpaka::internal::getApi(std::declval<T_Queue>())),
-            ALPAKA_TYPEOF(alpaka::internal::getDeviceKind(std::declval<T_Queue>()))>,
-        T_QueueKind>;
+        T_Policies>;
 
     /** @{
      * @name Memory modifiers
@@ -295,8 +283,8 @@ namespace alpaka::onHost
      * @param[in,out] dest can be a container/view where the data should be written to
      * @param[in] source can be a container/view from which the data will be copied
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
-    inline void memcpy(Queue<T_Device, T_QueueKind, T_Timing> const& queue, auto&& dest, auto const& source)
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
+    inline void memcpy(Queue<T_Device, T_Policies> const& queue, auto&& dest, auto const& source)
     {
         memcpy(queue, ALPAKA_FORWARD(dest), source, internal::getExtents(dest));
     }
@@ -308,9 +296,9 @@ namespace alpaka::onHost
      * @param[in] source can be a container/view from which the data will be copied
      * @param extents M-dimensional data extents in elements, can be smaller than the container capacity
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline void memcpy(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         auto&& dest,
         auto const& source,
         alpaka::concepts::VectorOrScalar auto const& extents)
@@ -329,14 +317,9 @@ namespace alpaka::onHost
      * @param[in,out] dest must be device global memory on the device of the queue the data should be written to
      * @param[in] source can be a container/view or host accessible pointer from which the data will be copied
      */
-    template<
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing,
-        typename T_Storage,
-        typename T>
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies, typename T_Storage, typename T>
     inline void memcpy(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         onAcc::internal::GlobalDeviceMemoryWrapper<T_Storage, T> dest,
         auto&& source)
     {
@@ -352,14 +335,9 @@ namespace alpaka::onHost
      * @param[in,out] dest can be a container/view or host accessible pointer the data should be written to
      * @param[in] source must be device global memory on the device of the queue from which the data will be copied
      */
-    template<
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing,
-        typename T_Storage,
-        typename T>
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies, typename T_Storage, typename T>
     inline void memcpy(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         auto&& dest,
         onAcc::internal::GlobalDeviceMemoryWrapper<T_Storage, T> source)
     {
@@ -377,8 +355,8 @@ namespace alpaka::onHost
      * is finished.
      * @param byteValue value to be written to each byte
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
-    inline void memset(Queue<T_Device, T_QueueKind, T_Timing> const& queue, auto&& dest, uint8_t byteValue)
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
+    inline void memset(Queue<T_Device, T_Policies> const& queue, auto&& dest, uint8_t byteValue)
     {
         memset(queue, ALPAKA_FORWARD(dest), byteValue, internal::getExtents(dest));
     }
@@ -392,9 +370,9 @@ namespace alpaka::onHost
      * @param byteValue value to be written to each byte
      * @param extents M-dimensional data extents in elements, can be smaller than the container capacity
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline void memset(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         auto&& dest,
         uint8_t byteValue,
         alpaka::concepts::VectorOrScalar auto const& extents)
@@ -414,12 +392,8 @@ namespace alpaka::onHost
      * is finished.
      * @param elementValue value to be written to each element
      */
-    template<
-        typename T_Value,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
-    inline void fill(Queue<T_Device, T_QueueKind, T_Timing> const& queue, auto&& dest, T_Value elementValue) requires(
+    template<typename T_Value, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
+    inline void fill(Queue<T_Device, T_Policies> const& queue, auto&& dest, T_Value elementValue) requires(
         std::same_as<alpaka::trait::GetValueType_t<ALPAKA_TYPEOF(dest)>, T_Value>
         && std::same_as<ALPAKA_TYPEOF(alpaka::internal::getApi(queue)), ALPAKA_TYPEOF(alpaka::internal::getApi(dest))>)
     {
@@ -436,13 +410,9 @@ namespace alpaka::onHost
      * @param extents M-dimensional data extents in elements, can be smaller than the container capacity
      */
 
-    template<
-        typename T_Value,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_Value, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline void fill(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         auto&& dest,
         T_Value elementValue,
         alpaka::concepts::VectorOrScalar auto const& extents)
@@ -486,13 +456,9 @@ namespace alpaka::onHost
      * memory is destroyed. The deallocation is asynchronous performed in the queue which is used for the
      * allocation.
      */
-    template<
-        typename T_Type,
-        typename T_Device,
-        alpaka::concepts::QueueKind T_QueueKind,
-        alpaka::concepts::Timing T_Timing>
+    template<typename T_Type, typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
     inline auto allocDeferred(
-        Queue<T_Device, T_QueueKind, T_Timing> const& queue,
+        Queue<T_Device, T_Policies> const& queue,
         alpaka::concepts::VectorOrScalar auto const& extents)
     {
         Vec const extentsVec = extents;
@@ -520,8 +486,8 @@ namespace alpaka::onHost
      * memory is destroyed. The deallocation is asynchronous performed in the queue which is used for the
      * allocation.
      */
-    template<typename T_Device, alpaka::concepts::QueueKind T_QueueKind, alpaka::concepts::Timing T_Timing>
-    inline auto allocLikeDeferred(Queue<T_Device, T_QueueKind, T_Timing> const& queue, auto const& view)
+    template<typename T_Device, alpaka::concepts::QueuePolicyList T_Policies>
+    inline auto allocLikeDeferred(Queue<T_Device, T_Policies> const& queue, auto const& view)
     {
         return allocDeferred<alpaka::trait::GetValueType_t<ALPAKA_TYPEOF(view)>>(queue, internal::getExtents(view));
     }

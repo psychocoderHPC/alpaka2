@@ -19,6 +19,7 @@
 #include "alpaka/onAcc/internal/globalMem.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"
 #include "alpaka/onHost/Handle.hpp"
+#include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/interface.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/mem/SharedBuffer.hpp"
@@ -26,7 +27,6 @@
 #include <cstdint>
 #include <cstring>
 #include <future>
-#include <sstream>
 
 namespace alpaka::onHost
 {
@@ -36,12 +36,16 @@ namespace alpaka::onHost
         struct Queue : std::enable_shared_from_this<Queue<T_Device>>
         {
         public:
-            Queue(internal::concepts::DeviceHandle auto device, uint32_t const idx, uint32_t numIdx, bool isBlocking)
+            Queue(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                uint32_t numIdx,
+                alpaka::concepts::QueuePolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_sharedCallbackThread{std::make_shared<alpaka::core::CallbackThread>(numIdx)}
                 , m_idx(idx)
                 , m_numaIdx(numIdx)
-                , m_isBlocking(isBlocking)
+                , m_isBlocking(internal::isBlocking(policies.getQueueKind()))
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
             }

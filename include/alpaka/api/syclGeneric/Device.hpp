@@ -55,22 +55,14 @@ namespace alpaka::onHost
             }
 
             [[nodiscard]] Handle<syclGeneric::Queue<Device>> makeQueue(
-                alpaka::concepts::QueueKind auto kind,
-                alpaka::concepts::Timing auto timingMode)
+                alpaka::concepts::QueuePolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue + onHost::logger::device);
-                static_assert(
-                    kind == queueKind::blocking || kind == queueKind::nonBlocking,
-                    "Unsupported queue kind.");
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
 
-                constexpr bool isBlocking = kind == queueKind::blocking;
-                auto newQueue = std::make_shared<syclGeneric::Queue<Device>>(
-                    std::move(thisHandle),
-                    queues.size(),
-                    isBlocking,
-                    timingMode);
+                auto newQueue
+                    = std::make_shared<syclGeneric::Queue<Device>>(std::move(thisHandle), queues.size(), policies);
 
                 queues.emplace_back(newQueue);
                 return newQueue;
