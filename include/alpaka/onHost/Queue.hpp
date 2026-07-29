@@ -177,6 +177,11 @@ namespace alpaka::onHost
          * lead into deadlocks. Do NOT capture @see MangedView because view actions could perform blocking operations
          * e.g. onHost::wait() in the destructor which could lead to deadlocks too.
          *
+         * @attention A host function must not block internally, while waiting for another host function,
+         * even if that function is enqueued on a different queue.
+         * Some backends may not guarantee concurrent progress on host tasks from different queues.
+         * Violating this requirement can therefore lead to deadlocks, for example with oneAPI/SYCL.
+         *
          * @param task Task to be executed on the host side.
          */
         void enqueueHostFn(auto const& task) const
@@ -193,6 +198,11 @@ namespace alpaka::onHost
          * @attention Deferred tasks are not synchronized by `wait()`.
          * A subsequent `wait()` on the queue does not guarantee that enqueued
          * deferred host tasks have completed their execution.
+         *
+         * @attention A host function must not block internally, while waiting for another host function,
+         * even if that function is enqueued on a different queue.
+         * Some backends may not guarantee concurrent progress on host tasks from different queues.
+         * Violating this requirement can therefore lead to deadlocks, for example with oneAPI/SYCL.
          *
          * @param task Task to be executed asynchronously on the host side.
          */

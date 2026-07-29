@@ -1,7 +1,7 @@
 /* Copyright 2023 Axel Hübl, Benjamin Worpitz, Bernhard Manfred Gruber, Jan Stephan, René Widera
  * SPDX-License-Identifier: MPL-2.0
  */
-
+#include "alpaka/api/host/OmpCollectiveQueue.hpp"
 #include "eventHelper.hpp"
 
 #include <alpaka/alpaka.hpp>
@@ -10,7 +10,10 @@
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <atomic>
+#include <chrono>
 #include <future>
+#include <thread>
 
 /** @file
  *
@@ -35,6 +38,16 @@ using namespace alpaka;
 using namespace alpaka::test::event;
 
 using TestApis = std::decay_t<decltype(onHost::allBackends(onHost::enabledDeviceSpecs, exec::enabledExecutors))>;
+
+static constexpr auto optionalQueueKind =
+#if ALPAKA_OMP
+    std::tuple{queueKind::ompCollective};
+#else
+    std::tuple{};
+#endif
+
+static constexpr auto testQueueKinds
+    = std::tuple_cat(std::tuple{queueKind::blocking, queueKind::nonBlocking}, optionalQueueKind);
 
 template<typename T_Queue, typename T_Event>
 concept CanEnqueueEvent = requires(T_Queue const& queue, T_Event const& event) { queue.enqueue(event); };
@@ -211,6 +224,165 @@ TEMPLATE_LIST_TEST_CASE("basic queue wait for event", "", TestApis)
     queue1.waitFor(ev);
     onHost::wait(queue1);
     CHECK(ev.isComplete() == true);
+}
+
+TEMPLATE_LIST_TEST_CASE("wait for event enqueued concurrently on a queue with a long-running host task", "", TestApis)
+{
+    auto testSingleQueueKind = [&](auto queueKind)
+    {
+        DYNAMIC_SECTION("Ran with the following queueKind: " << alpaka::onHost::getName(queueKind))
+        {
+            onHost::Device device = test::getDeviceOrSkipTest(TestType::makeDict());
+
+            onHost::Queue producerQueue = device.makeQueue(queueKind);
+            onHost::Queue consumerQueue = device.makeQueue(queueKind);
+            onHost::Event event = device.makeEvent();
+            std::atomic_bool hostTaskDoneSignal = false;
+            std::promise<void> hostTaskStartSignalPromise;
+            auto hostTaskStartSignalFuture = hostTaskStartSignalPromise.get_future();
+            std::jthread hostTaskEnqueueThread(
+                [&]
+                {
+                    producerQueue.enqueueHostFn(
+                        [&]
+                        {
+                            // signal to the outside host thread, that the enqueued host function has started
+                            hostTaskStartSignalPromise.set_value();
+                            // some duration of waiting say 100ms sleep
+                            // set some boolean global flag
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+                            hostTaskDoneSignal.store(true);
+                        });
+                });
+            // make sure that the long-running task was actually started
+            hostTaskStartSignalFuture.wait();
+            // if the implementation is correct the producerQueue has to block until hostTaskDoneSignal is true
+            producerQueue.enqueue(event);
+            consumerQueue.waitFor(event);
+            onHost::wait(consumerQueue);
+            REQUIRE(hostTaskDoneSignal.load());
+        }
+        return 0;
+    };
+    onHost::executeForEach(testSingleQueueKind, testQueueKinds);
+}
+
+TEMPLATE_LIST_TEST_CASE("wait for event preserves consumer queue order", "", TestApis)
+{
+    onHost::Device device = test::getDeviceOrSkipTest(TestType::makeDict());
+    INFO(device.getApi().getName() << " on " << device.getName());
+
+    bool hasConcurrentKernelQueues = checkIfDeviceCanExecuteEventTests(device);
+    if(!hasConcurrentKernelQueues)
+    {
+        /* We cannot execute the event tests with OneApi on Intel GPU because the emulated kernel trigger via another
+         * kernel in a separate queue. The second reason is that kernel, memory operation enqueued in different queues
+         * will not run out of order which is assumed for some of the tests.
+         */
+        SKIP(
+            "Event tests can not be executed with " << device.getName()
+                                                    << " because the device does not support concurrent queues.");
+    }
+    if(device.getApi() == api::oneApi && device.getDeviceKind() == deviceKind::intelGpu)
+    {
+        SKIP("Skip test for " << device.getName() << " because the test is typically deadlocking.");
+    }
+
+    auto testSingleQueueKind = [&](auto queueKind)
+    {
+        DYNAMIC_SECTION("Ran with the following queueKind: " << alpaka::onHost::getName(queueKind))
+        {
+            onHost::Queue producerQueue = device.makeQueue(queueKind::nonBlocking);
+            onHost::Queue consumerQueue = device.makeQueue(queueKind);
+
+            auto produceKernel = TriggerKernel{device};
+            onHost::Event event = device.makeEvent();
+
+            std::promise<void> releaseEventPromise;
+            auto releaseEventFuture = releaseEventPromise.get_future().share();
+            // producer queue must be non-blocking
+            produceKernel.submit(producerQueue);
+
+            producerQueue.enqueue(event);
+
+            std::atomic_bool consumerTaskDoneSignal = false;
+            std::promise<void> consumerTaskStartSignalPromise;
+            auto consumerTaskStartSignalFuture = consumerTaskStartSignalPromise.get_future();
+            std::jthread consumerTaskEnqueueThread(
+                [&]
+                {
+                    consumerQueue.enqueueHostFn(
+                        [&]
+                        {
+                            consumerTaskStartSignalPromise.set_value();
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+                            consumerTaskDoneSignal.store(true);
+                        });
+                });
+
+            consumerTaskStartSignalFuture.wait();
+            std::jthread eventReleaseThread(
+                [&]
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10u));
+                    produceKernel.trigger();
+                });
+
+            // Waiting for the event must not overtake the consumer queue's preceding host task.
+            consumerQueue.waitFor(event);
+            if constexpr(queueKind.isBlocking())
+                REQUIRE(consumerTaskDoneSignal.load());
+            else
+            {
+                std::promise<bool> observerTaskResultPromise;
+                auto observerTaskResultFuture = observerTaskResultPromise.get_future();
+                consumerQueue.enqueueHostFn([&]
+                                            { observerTaskResultPromise.set_value(consumerTaskDoneSignal.load()); });
+                REQUIRE(observerTaskResultFuture.get());
+            }
+        }
+        return 0;
+    };
+    onHost::executeForEach(testSingleQueueKind, testQueueKinds);
+}
+
+TEMPLATE_LIST_TEST_CASE("deferred host task preserves queue order", "", TestApis)
+{
+    auto testSingleQueueKind = [&](auto queueKind)
+    {
+        DYNAMIC_SECTION("Ran with the following queueKind: " << alpaka::onHost::getName(queueKind))
+        {
+            onHost::Device device = test::getDeviceOrSkipTest(TestType::makeDict());
+            onHost::Queue queue = device.makeQueue(queueKind);
+
+            std::atomic_bool hostTaskDoneSignal = false;
+            std::promise<void> hostTaskStartSignalPromise;
+            auto hostTaskStartSignalFuture = hostTaskStartSignalPromise.get_future();
+            std::jthread hostTaskEnqueueThread(
+                [&]
+                {
+                    queue.enqueueHostFn(
+                        [&]
+                        {
+                            // Ensure that the deferred task is enqueued while this task is still running.
+                            hostTaskStartSignalPromise.set_value();
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100u));
+                            hostTaskDoneSignal.store(true);
+                        });
+                });
+
+            hostTaskStartSignalFuture.wait();
+            std::promise<bool> deferredTaskResultPromise;
+            auto deferredTaskResultFuture = deferredTaskResultPromise.get_future();
+            // A deferred host task may execute after later queue operations, but never before an earlier task.
+            // In particular, a blocking queue must finish the running task before submitting this callback.
+            queue.enqueueHostFnDeferred([&] { deferredTaskResultPromise.set_value(hostTaskDoneSignal.load()); });
+
+            REQUIRE(deferredTaskResultFuture.get());
+        }
+        return 0;
+    };
+    onHost::executeForEach(testSingleQueueKind, testQueueKinds);
 }
 
 TEMPLATE_LIST_TEST_CASE("test trigger event", "", TestApis)

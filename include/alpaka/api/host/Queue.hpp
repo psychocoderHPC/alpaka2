@@ -218,7 +218,16 @@ namespace alpaka::onHost
             void enqueueHostFnDeferred(auto const& task)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
-                m_sharedCallbackThread->submit(task);
+                if(m_isBlocking)
+                {
+                    // a blocking queue must acquire this lock to ensure that all pending host tasks have finished
+                    std::lock_guard lock(m_mutex);
+                    m_sharedCallbackThread->submit(task);
+                }
+                else
+                {
+                    m_sharedCallbackThread->submit(task);
+                }
             }
 
             void enqueueNativeFn(auto const& fn)
@@ -268,7 +277,7 @@ namespace alpaka::onHost
                 }
             }
 
-            friend struct onHost::internal::GetDevice;
+            friend struct internal::GetDevice;
 
             friend struct internal::Wait;
             friend struct internal::WaitFor;
@@ -308,7 +317,8 @@ namespace alpaka::onHost
                 // open a scope to avoid logging during we hold the lock for this class
                 {
                     // Setting the event state (e.g. the future) and enqueuing it has to be atomic.
-                    std::lock_guard<std::mutex> lk(event.m_mutex);
+                    std::lock_guard<std::mutex> eventLock(event.m_mutex);
+
 
                     ++event.m_enqueueCount;
 
@@ -319,6 +329,10 @@ namespace alpaka::onHost
                      */
                     if(queue.m_isBlocking)
                     {
+                        /* a blocking queue must acquire this lock to ensure that all pending host tasks
+                         * have finished
+                         */
+                        std::lock_guard<std::mutex> queueLock(queue.m_mutex);
                         // Nothing to do if it has been re-enqueued to a later position in the queue.
                         if(enqueueCount == event.m_enqueueCount)
                         {
@@ -364,7 +378,7 @@ namespace alpaka::onHost
                 // open a scope to avoid logging during we hold the lock for this class
                 {
                     // Setting the event state and enqueuing it has to be atomic.
-                    std::unique_lock<std::mutex> lk(event.m_mutex);
+                    std::unique_lock<std::mutex> eventLock(event.m_mutex);
 
                     if(!event.isReady())
                     {
@@ -373,8 +387,12 @@ namespace alpaka::onHost
                          */
                         if(queue.m_isBlocking)
                         {
+                            /* a blocking queue must acquire this lock to ensure that all pending host tasks
+                             * have finished
+                             */
+                            std::lock_guard<std::mutex> queueLock(queue.m_mutex);
                             std::shared_future sFuture = event.m_future;
-                            lk.unlock();
+                            eventLock.unlock();
                             sFuture.get();
                         }
                         else
@@ -383,7 +401,7 @@ namespace alpaka::onHost
                             auto oldFuture = event.m_future;
 
                             // unlock here to avoid keeping the look during the maybe expensive enqueue of the task
-                            lk.unlock();
+                            eventLock.unlock();
                             // Enqueue a task that waits for the given future of the event.
                             queue.submit([sharedEvent, oldFuture]() { oldFuture.get(); });
                         }

@@ -128,7 +128,7 @@ namespace alpaka::core
 
         bool isEmpty() const
         {
-            std::unique_lock<std::mutex> lock{m_state->m_mutex};
+            std::unique_lock lock{m_state->m_mutex};
             return m_state->m_tasks.empty();
         }
 
