@@ -306,13 +306,13 @@ if(NOT _alpaka_TARGETS_EXTENDED)
         add_compile_definitions(ALPAKA_PARALLEL_MEMCPY_HOST_AS_DEFAULT=true)
         message(
             STATUS
-            "Parallel memcpy for CPU backend: ENABLED (default memcpy politics, can be override whith env var or using dedicated API)"
+            "Parallel memcpy for CPU backend: ENABLED (default memcpy politics, can be override with environment variables or using dedicated API)"
         )
     else()
         add_compile_definitions(ALPAKA_PARALLEL_MEMCPY_HOST_AS_DEFAULT=false)
         message(
             STATUS
-            "Parallel memcpy for CPU backend: DISABLED (can be enabled via ALPAKA_MEMCPY_MODE env var at runtime or using dedicated API)"
+            "Parallel memcpy for CPU backend: DISABLED (can be enabled via ALPAKA_MEMCPY_MODE environment variable at runtime or using dedicated API)"
         )
     endif()
 

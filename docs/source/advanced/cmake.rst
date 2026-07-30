@@ -354,6 +354,17 @@ Numa Awareness
 
      **without CMake:**  Defining the preprocessor define `ALPAKA_HOST_MEM_PINNING_CAN_FAIL` to allow that memory pinning can fail without an exception.
 
+Parallel Memcpy
+^^^^^^^^^^^^^^^
+
+``alpaka_PARALLEL_MEMCPY_HOST_AS_DEFAULT``
+  .. code-block:: markdown
+
+    Enable/Disable the usage of parallel memcpy as default behavior for memcpy.
+    Default value: false
+    Note: only Host devices is supported
+
+
 Intel oneAPI Threading Building Blocks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
