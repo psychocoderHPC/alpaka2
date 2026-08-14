@@ -37,7 +37,9 @@ void checkFrameSpec(onHost::concepts::FrameSpec auto const& frameSpec, concepts:
     {
         CHECK(numFrames[d] > ElemType{0});
         CHECK(frameExtents[d] > ElemType{0});
-        CHECK(numFrames[d] * frameExtents[d] <= extentMd[d]);
+        auto const coveredExtent = numFrames[d] * frameExtents[d];
+        CHECK(extentMd[d] <= coveredExtent);
+        CHECK(coveredExtent < extentMd[d] + frameExtents[d]);
     }
 }
 

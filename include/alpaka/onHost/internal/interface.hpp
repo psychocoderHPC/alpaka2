@@ -562,7 +562,7 @@ namespace alpaka::onHost
                 numFrameElements /= IndexType{2};
             }
 
-            ExtentVecType numFrames = divExZero(extentMd, frameExtents);
+            ExtentVecType numFrames = divCeil(extentMd, frameExtents);
             auto frameSpec = FrameSpec{numFrames, frameExtents, executor};
             return frameSpec;
         }
