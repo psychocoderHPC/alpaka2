@@ -129,14 +129,3 @@ install(DIRECTORY ${_alpaka_TESTS_DIR} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR} 
 # Files required to validate optional features std::atomic_ref and std::simd
 install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdAtomicRef.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/test)
 install(FILES "${_alpaka_FEATURE_TESTS_DIR}/StdSimd.cpp" DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/alpaka/test)
-
-# Load alpaka's languages after FetchContent_MakeAvailable()
-#
-# This macro must be called after FetchContent_MakeAvailable() used to load alpaka.
-# The reason is that this is the only way in CMake allowing alpaka to load the required languages.
-macro(alpaka_fetchcontent_finalize)
-    message(
-        WARNING
-        "alpaka_fetchcontent_finalize() is deprecated and will be removed soon. Except for removing the call to this function, no additional changes are required."
-    )
-endmacro()

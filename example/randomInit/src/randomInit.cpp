@@ -5,7 +5,6 @@
 #include "randomInitNormal.hpp"
 
 #include <alpaka/alpaka.hpp>
-#include <alpaka/onHost/example/executors.hpp>
 #include <alpaka/onHost/executeForEach.hpp>
 
 #include <cmath>
