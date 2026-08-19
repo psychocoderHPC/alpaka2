@@ -302,7 +302,7 @@ namespace alpaka::test::event
             for(uint32_t i = 0; i < repeat; ++i)
             {
                 result = m_postEvent.isComplete();
-                if(repeat == false)
+                if(result == false)
                     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
                 else
                     break;
