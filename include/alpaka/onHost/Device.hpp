@@ -7,6 +7,7 @@
 #include "Handle.hpp"
 #include "alpaka/interface.hpp"
 #include "alpaka/onHost/Event.hpp"
+#include "alpaka/onHost/EventPolicyList.hpp"
 #include "alpaka/onHost/Queue.hpp"
 #include "alpaka/onHost/QueuePolicyList.hpp"
 #include "alpaka/onHost/concepts.hpp"
@@ -105,8 +106,7 @@ namespace alpaka::onHost
          * @param firstPolicy First queue construction policy.
          * @param policies Additional queue construction policies.
          */
-        template<alpaka::concepts::QueuePolicy T_FirstPolicy, alpaka::concepts::QueuePolicy... T_Policies>
-        auto makeQueue(T_FirstPolicy firstPolicy, T_Policies... policies)
+        auto makeQueue(alpaka::concepts::QueuePolicy auto firstPolicy, alpaka::concepts::QueuePolicy auto... policies)
         {
             return makeQueue(QueuePolicyList{firstPolicy, policies...});
         }
@@ -121,39 +121,46 @@ namespace alpaka::onHost
          * host-visible.
          *   - timing::disabled or timing::enabled: whether the queue supports timing-enabled events.
          */
-        template<alpaka::concepts::QueuePolicy... T_Policies>
-        auto makeQueue(QueuePolicyList<T_Policies...> const& policies)
+        auto makeQueue(alpaka::concepts::QueuePolicyList auto const& policies)
         {
             return Queue{
-                internal::MakeQueue::Op<ALPAKA_TYPEOF(*m_device.get()), QueuePolicyList<T_Policies...>>{}(
+                internal::MakeQueue::Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(policies)>{}(
                     *m_device.get(),
                     policies),
                 policies};
         }
 
-        /** Create an event with an explicit timing capability.
+        /** Create an event for this device.
          *
-         * Timing-enabled events can only be enqueued on timing-enabled queues.
-         *
-         * @param timingMode Specifies whether the event records timing information.
-         */
-        auto makeEvent(alpaka::concepts::Timing auto timingMode)
-        {
-            return Event{
-                internal::MakeEvent::Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(timingMode)>{}(
-                    *m_device.get(),
-                    timingMode),
-                timingMode};
-        }
-
-        /** Create a synchronization-only event.
-         *
-         * Timing support is by default disabled:
-         *
+         * @return An event that can be used to synchronize multiple queues.
          */
         auto makeEvent()
         {
-            return makeEvent(timing::disabled);
+            return makeEvent(EventPolicyList{});
+        }
+
+        /** @copydoc makeEvent()
+         *
+         * @param firstPolicy First event construction policy.
+         * @param policies Additional event construction policies.
+         */
+        auto makeEvent(alpaka::concepts::EventPolicy auto firstPolicy, alpaka::concepts::EventPolicy auto... policies)
+        {
+            return makeEvent(EventPolicyList{firstPolicy, policies...});
+        }
+
+        /** @copydoc makeEvent()
+         *
+         * @param policies Event construction policies. Supported policies are:
+         *   - timing::disabled or timing::enabled: whether the event records timing information.
+         */
+        auto makeEvent(alpaka::concepts::EventPolicyList auto const& policies)
+        {
+            return Event{
+                internal::MakeEvent::Op<ALPAKA_TYPEOF(*m_device.get()), ALPAKA_TYPEOF(policies)>{}(
+                    *m_device.get(),
+                    policies),
+                policies};
         }
 
         /** Blocks the caller until the given handle executes all work

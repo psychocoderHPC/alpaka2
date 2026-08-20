@@ -9,6 +9,7 @@
 #include "alpaka/core/DictTraits.hpp"
 #include "alpaka/core/common.hpp"
 #include "alpaka/onHost/DeviceProperties.hpp"
+#include "alpaka/onHost/EventPolicyList.hpp"
 #include "alpaka/onHost/FrameSpec.hpp"
 #include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/QueuePolicyList.hpp"
@@ -112,12 +113,12 @@ namespace alpaka::onHost
 
         struct MakeEvent
         {
-            template<typename T_Device, alpaka::concepts::Timing T_Timing>
+            template<typename T_Device, alpaka::concepts::EventPolicyList T_EventPolicyList>
             struct Op
             {
-                auto operator()(T_Device& device, T_Timing timing) const
+                auto operator()(T_Device& device, T_EventPolicyList const& policies) const
                 {
-                    return device.makeEvent(timing);
+                    return device.makeEvent(policies);
                 }
             };
         };

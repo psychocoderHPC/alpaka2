@@ -114,13 +114,16 @@ namespace alpaka::onHost
 
         /** Create an event carrying this queue's timing capability.
          *
+         * @param policies Additional event policies.
+         *
          * An event created by a timing-enabled queue can only be enqueued on
          * another timing-enabled queue.
          */
-        auto makeEvent() const
+        template<alpaka::concepts::EventPolicy... T_EventPolicies>
+        requires(!(alpaka::concepts::Timing<T_EventPolicies> || ...))
+        auto makeEvent(T_EventPolicies... policies) const
         {
-            auto device = getDevice();
-            return device.makeEvent(getTiming());
+            return getDevice().makeEvent(EventPolicyList{getTiming(), policies...});
         }
 
         /** Enqueue a kernel functor to a queue.
@@ -239,9 +242,11 @@ namespace alpaka::onHost
          *
          * @param event Event that is to be enqueue in the queue of operations.
          */
-        template<alpaka::concepts::Timing T_EventTiming>
-        requires(std::same_as<T_EventTiming, timing::Disabled> || std::same_as<Timing, timing::Enabled>)
-        void enqueue(Event<Device<T_Api, T_DeviceKind>, T_EventTiming> const& event) const
+        template<alpaka::concepts::EventPolicyList T_EventPolicies>
+        requires(
+            std::same_as<ALPAKA_TYPEOF(T_EventPolicies::getTiming()), timing::Disabled>
+            || std::same_as<Timing, timing::Enabled>)
+        void enqueue(Event<Device<T_Api, T_DeviceKind>, T_EventPolicies> const& event) const
         {
             internal::Enqueue::Event<ALPAKA_TYPEOF(*m_queue.get()), ALPAKA_TYPEOF(*event.get())>{}(
                 *m_queue.get(),
@@ -252,8 +257,8 @@ namespace alpaka::onHost
          *
          * The caller will be blocked until all previously queued operations have been completed.
          */
-        template<alpaka::concepts::Timing T_EventTiming>
-        void waitFor(Event<Device<T_Api, T_DeviceKind>, T_EventTiming> const& event) const
+        template<alpaka::concepts::EventPolicyList T_EventPolicies>
+        void waitFor(Event<Device<T_Api, T_DeviceKind>, T_EventPolicies> const& event) const
         {
             internal::waitFor(*m_queue.get(), *event.get());
         }

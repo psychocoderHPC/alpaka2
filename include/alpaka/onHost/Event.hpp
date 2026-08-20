@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "Handle.hpp"
 #include "alpaka/api/trait.hpp"
+#include "alpaka/onHost/EventPolicyList.hpp"
+#include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 
 #include <chrono>
@@ -17,32 +18,32 @@ namespace alpaka::onHost
     template<alpaka::concepts::Api T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
     struct Device;
 
-    template<typename T_Device, alpaka::concepts::Timing T_Timing = timing::Disabled>
+    template<typename T_Device, alpaka::concepts::EventPolicyList T_EventPolicyList = EventPolicyList<>>
     struct Event;
 
-    template<alpaka::concepts::Api T_Api, alpaka::concepts::DeviceKind T_DeviceKind, alpaka::concepts::Timing T_Timing>
-    struct Event<Device<T_Api, T_DeviceKind>, T_Timing>
+    template<
+        alpaka::concepts::Api T_Api,
+        alpaka::concepts::DeviceKind T_DeviceKind,
+        alpaka::concepts::EventPolicyList T_EventPolicyList>
+    struct Event<Device<T_Api, T_DeviceKind>, T_EventPolicyList>
     {
     private:
         using DeviceInterface = Device<T_Api, T_DeviceKind>;
         using EventHandle = ALPAKA_TYPEOF(
-            internal::MakeEvent::Op<ALPAKA_TYPEOF(*std::declval<DeviceInterface>().get()), T_Timing>{}(
+            internal::MakeEvent::Op<ALPAKA_TYPEOF(*std::declval<DeviceInterface>().get()), T_EventPolicyList>{}(
                 *std::declval<DeviceInterface>().get(),
-                T_Timing{}));
+                std::declval<T_EventPolicyList const&>()));
 
         EventHandle m_event;
+        [[no_unique_address]] T_EventPolicyList m_policies;
 
     public:
         using element_type = typename EventHandle::element_type;
 
         template<typename T_Event>
-        Event(Handle<T_Event>&& event, T_Timing) : m_event{std::forward<Handle<T_Event>>(event)}
-        {
-        }
-
-        template<typename T_Event>
-        Event(Handle<T_Event>&& event) requires std::same_as<T_Timing, timing::Disabled>
-            : Event{std::forward<Handle<T_Event>>(event), timing::disabled}
+        Event(Handle<T_Event>&& event, T_EventPolicyList const& policies)
+            : m_event{std::forward<Handle<T_Event>>(event)}
+            , m_policies{policies}
         {
         }
 
@@ -56,12 +57,17 @@ namespace alpaka::onHost
             return alpaka::internal::getApi(*m_event.get());
         }
 
-        constexpr alpaka::concepts::Timing auto getTiming() const
+        constexpr T_EventPolicyList const& getPolicyList() const
         {
-            return T_Timing{};
+            return m_policies;
         }
 
-        std::string getName() const
+        constexpr alpaka::concepts::Timing auto getTiming() const
+        {
+            return m_policies.getTiming();
+        }
+
+        [[nodiscard]] std::string getName() const
         {
             return alpaka::internal::GetName::Op<std::decay_t<decltype(*m_event.get())>>{}(*m_event.get());
         }
@@ -92,21 +98,16 @@ namespace alpaka::onHost
 
         bool isComplete() const
         {
-            return alpaka::onHost::internal::isEventComplete(*m_event.get());
+            return internal::isEventComplete(*m_event.get());
         }
     };
 
-    template<typename T_Event, alpaka::concepts::Timing T_Timing>
-    Event(Handle<T_Event>&&, T_Timing) -> Event<
+    template<typename T_Event, alpaka::concepts::EventPolicyList T_EventPolicyList>
+    Event(Handle<T_Event>&&, T_EventPolicyList) -> Event<
         Device<
             ALPAKA_TYPEOF(alpaka::internal::getApi(std::declval<T_Event>())),
             ALPAKA_TYPEOF(alpaka::internal::getDeviceKind(std::declval<T_Event>()))>,
-        T_Timing>;
-
-    template<typename T_Event>
-    Event(Handle<T_Event>&&) -> Event<Device<
-        ALPAKA_TYPEOF(alpaka::internal::getApi(std::declval<T_Event>())),
-        ALPAKA_TYPEOF(alpaka::internal::getDeviceKind(std::declval<T_Event>()))>>;
+        T_EventPolicyList>;
 
     /** Return the elapsed time between two timing-enabled queue markers.
      *
@@ -116,10 +117,17 @@ namespace alpaka::onHost
      * not need to be chronologically ordered; the duration is negative if the end
      * marker is reached before the start marker.
      */
-    template<alpaka::concepts::Api T_Api, alpaka::concepts::DeviceKind T_DeviceKind>
+    template<
+        alpaka::concepts::Api T_Api,
+        alpaka::concepts::DeviceKind T_DeviceKind,
+        alpaka::concepts::EventPolicyList T_StartPolicies,
+        alpaka::concepts::EventPolicyList T_EndPolicies>
+    requires(
+        std::same_as<ALPAKA_TYPEOF(T_StartPolicies::getTiming()), timing::Enabled>
+        && std::same_as<ALPAKA_TYPEOF(T_EndPolicies::getTiming()), timing::Enabled>)
     auto getElapsedTime(
-        Event<Device<T_Api, T_DeviceKind>, timing::Enabled> const& start,
-        Event<Device<T_Api, T_DeviceKind>, timing::Enabled> const& end) -> std::chrono::duration<double>
+        Event<Device<T_Api, T_DeviceKind>, T_StartPolicies> const& start,
+        Event<Device<T_Api, T_DeviceKind>, T_EndPolicies> const& end) -> std::chrono::duration<double>
     {
         if(start.getDevice() != end.getDevice())
             throw std::invalid_argument{"Elapsed time requires events from the same device"};

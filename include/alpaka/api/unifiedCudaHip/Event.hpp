@@ -45,7 +45,7 @@ namespace alpaka::onHost
             Event(
                 internal::concepts::DeviceHandle auto device,
                 uint32_t const idx,
-                alpaka::concepts::Timing auto timingMode)
+                alpaka::concepts::EventPolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_idx(idx)
             {
@@ -69,7 +69,7 @@ namespace alpaka::onHost
                     ApiInterface,
                     ApiInterface::eventCreateWithFlags(
                         &m_nativeEvent,
-                        timingMode == timing::enabled
+                        policies.getTiming() == timing::enabled
                             ? ApiInterface::eventDefault
                             : ApiInterface::eventDefault | ApiInterface::eventDisableTiming));
             }

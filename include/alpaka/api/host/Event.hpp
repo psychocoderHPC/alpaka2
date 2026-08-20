@@ -8,6 +8,7 @@
 #include "alpaka/api/host/Api.hpp"
 #include "alpaka/interface.hpp"
 #include "alpaka/internal/interface.hpp"
+#include "alpaka/onHost/EventPolicyList.hpp"
 #include "alpaka/onHost/Handle.hpp"
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/logger/logger.hpp"
@@ -29,10 +30,10 @@ namespace alpaka::onHost
             Event(
                 internal::concepts::DeviceHandle auto device,
                 uint32_t const idx,
-                alpaka::concepts::Timing auto timingMode)
+                alpaka::concepts::EventPolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_idx(idx)
-                , m_timingEnabled(timingMode == timing::enabled)
+                , m_timingEnabled(policies.getTiming() == timing::enabled)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event);
             }

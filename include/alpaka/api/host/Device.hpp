@@ -164,12 +164,12 @@ namespace alpaka::onHost
 
             friend struct internal::MakeEvent;
 
-            Handle<cpu::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
+            Handle<cpu::Event<Device>> makeEvent(alpaka::concepts::EventPolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(alpaka::onHost::logger::event);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{queuesGuard};
-                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), events.size(), timingMode);
+                auto newEvent = std::make_shared<cpu::Event<Device>>(std::move(thisHandle), events.size(), policies);
 
                 events.emplace_back(newEvent);
                 return newEvent;

@@ -34,7 +34,10 @@ namespace alpaka::onHost
             friend struct alpaka::internal::GetApi;
 
         public:
-            Event(internal::concepts::DeviceHandle auto device, uint32_t const idx, alpaka::concepts::Timing auto)
+            Event(
+                internal::concepts::DeviceHandle auto device,
+                uint32_t const idx,
+                [[maybe_unused]] alpaka::concepts::EventPolicyList auto const& policies)
                 : m_device(std::move(device))
                 , m_idx(idx)
             {

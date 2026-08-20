@@ -49,8 +49,42 @@ static constexpr auto optionalQueueKind =
 static constexpr auto testQueueKinds
     = std::tuple_cat(std::tuple{queueKind::blocking, queueKind::nonBlocking}, optionalQueueKind);
 
+struct TestEventPolicy
+{
+};
+
+template<>
+struct alpaka::trait::IsEventPolicy<TestEventPolicy> : std::true_type
+{
+};
+
+static_assert(alpaka::concepts::EventPolicy<timing::Enabled>);
+static_assert(alpaka::concepts::QueuePolicy<timing::Enabled>);
+static_assert(alpaka::concepts::Policy<timing::Enabled>);
+static_assert(alpaka::concepts::Policy<TestEventPolicy>);
+
+template<typename... T_Policies>
+concept CanInstantiatePolicyList = requires { typename PolicyList<T_Policies...>; };
+
+static_assert(CanInstantiatePolicyList<>);
+static_assert(!CanInstantiatePolicyList<TestEventPolicy, TestEventPolicy>);
+
+constexpr auto defaultEventPolicies = onHost::EventPolicyList{};
+static_assert(alpaka::concepts::EventPolicyList<decltype(defaultEventPolicies)>);
+static_assert(defaultEventPolicies.getTiming() == timing::disabled);
+
+constexpr auto testEventPolicies = onHost::EventPolicyList{timing::enabled, TestEventPolicy{}};
+static_assert(alpaka::concepts::EventPolicyList<decltype(testEventPolicies)>);
+static_assert(!alpaka::concepts::EventPolicyList<TestEventPolicy>);
+static_assert(testEventPolicies.getTiming() == timing::enabled);
+static_assert(testEventPolicies.hasPolicy(TestEventPolicy{}));
+static_assert(!testEventPolicies.hasPolicy(timing::disabled));
+
 template<typename T_Queue, typename T_Event>
 concept CanEnqueueEvent = requires(T_Queue const& queue, T_Event const& event) { queue.enqueue(event); };
+
+template<typename T_Queue, typename... T_Policies>
+concept CanMakeEvent = requires(T_Queue const& queue, T_Policies... policies) { queue.makeEvent(policies...); };
 
 /** This test takes care that kernel in different queues can run concurrent and if we can communicate between host and
  * the device via mapped memory. Even if the concurrent queue test says true it could be that kernels can run under the
@@ -80,7 +114,8 @@ TEMPLATE_LIST_TEST_CASE("event creation and enqueue", "", TestApis)
     onHost::Device device = test::getDeviceOrSkipTest(TestType::makeDict());
 
     onHost::Queue queue = device.makeQueue();
-    onHost::Event ev = device.makeEvent();
+    onHost::Event ev = device.makeEvent(onHost::EventPolicyList{TestEventPolicy{}});
+    CHECK(ev.getPolicyList().hasPolicy(TestEventPolicy{}));
     queue.enqueue(ev);
     onHost::wait(ev);
     CHECK(ev.isComplete() == true);
@@ -107,6 +142,8 @@ TEMPLATE_LIST_TEST_CASE("timing-enabled events measure queued work", "", TestApi
     static_assert(ALPAKA_TYPEOF(start.getTiming()){} == timing::enabled);
     static_assert(ALPAKA_TYPEOF(untimedEvent.getTiming()){} == timing::disabled);
     static_assert(!CanEnqueueEvent<ALPAKA_TYPEOF(untimedQueue), ALPAKA_TYPEOF(start)>);
+    static_assert(!CanMakeEvent<ALPAKA_TYPEOF(queue), timing::Enabled>);
+    static_assert(!CanMakeEvent<ALPAKA_TYPEOF(queue), timing::Disabled>);
 
     queue.enqueue(start);
     queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
@@ -174,12 +211,13 @@ TEMPLATE_LIST_TEST_CASE("queue-created timing-enabled events measure queued work
 {
     auto [device, executor] = test::getDeviceExecutorOrSkipTest(TestType::makeDict());
     auto queue = device.makeQueue(queueKind::nonBlocking, timing::enabled);
-    auto start = queue.makeEvent();
+    auto start = queue.makeEvent(TestEventPolicy{});
     auto end = queue.makeEvent();
     onHost::concepts::FrameSpec auto const frameSpec = onHost::getFrameSpec(device, executor, Vec{1u});
 
     static_assert(ALPAKA_TYPEOF(start.getTiming()){} == timing::enabled);
     static_assert(ALPAKA_TYPEOF(end.getTiming()){} == timing::enabled);
+    CHECK(start.getPolicyList().hasPolicy(TestEventPolicy{}));
 
     queue.enqueue(start);
     queue.enqueue(frameSpec, KernelBundle{EmptyTimingKernel{}});
@@ -292,8 +330,8 @@ TEMPLATE_LIST_TEST_CASE("wait for event preserves consumer queue order", "", Tes
     {
         DYNAMIC_SECTION("Ran with the following queueKind: " << alpaka::onHost::getName(queueKind))
         {
-            onHost::Queue producerQueue = device.makeQueue(queueKind::nonBlocking);
-            onHost::Queue consumerQueue = device.makeQueue(queueKind);
+            alpaka::onHost::Queue producerQueue = device.makeQueue(queueKind::nonBlocking);
+            alpaka::onHost::Queue consumerQueue = device.makeQueue(queueKind);
 
             auto produceKernel = TriggerKernel{device};
             onHost::Event event = device.makeEvent();

@@ -121,15 +121,13 @@ namespace alpaka::onHost
 
             friend struct onHost::internal::MakeEvent;
 
-            Handle<unifiedCudaHip::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
+            Handle<unifiedCudaHip::Event<Device>> makeEvent(alpaka::concepts::EventPolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
-                auto newEvent = std::make_shared<unifiedCudaHip::Event<Device>>(
-                    std::move(thisHandle),
-                    events.size(),
-                    timingMode);
+                auto newEvent
+                    = std::make_shared<unifiedCudaHip::Event<Device>>(std::move(thisHandle), events.size(), policies);
 
                 events.emplace_back(newEvent);
                 return newEvent;

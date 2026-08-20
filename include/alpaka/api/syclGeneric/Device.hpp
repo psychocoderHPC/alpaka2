@@ -94,13 +94,13 @@ namespace alpaka::onHost
         private:
             friend struct internal::MakeEvent;
 
-            Handle<syclGeneric::Event<Device>> makeEvent(alpaka::concepts::Timing auto timingMode)
+            Handle<syclGeneric::Event<Device>> makeEvent(alpaka::concepts::EventPolicyList auto const& policies)
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::event + onHost::logger::device);
                 auto thisHandle = this->getSharedPtr();
                 std::lock_guard<std::mutex> lk{m_writeGuard};
                 auto newEvent
-                    = std::make_shared<syclGeneric::Event<Device>>(std::move(thisHandle), events.size(), timingMode);
+                    = std::make_shared<syclGeneric::Event<Device>>(std::move(thisHandle), events.size(), policies);
 
                 events.emplace_back(newEvent);
                 return newEvent;

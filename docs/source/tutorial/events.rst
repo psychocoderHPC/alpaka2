@@ -41,8 +41,11 @@ Measuring Queued Work
 ---------------------
 
 Timing is an explicit queue capability and is disabled by default. Enable it by adding ``timing::enabled`` to the
-``onHost::QueuePolicyList`` passed to ``makeQueue``. Events can independently be constructed with ``timing::enabled``
-or ``timing::disabled``; ``queue.makeEvent()`` is also available as a convenience that inherits the queue's capability.
+``onHost::QueuePolicyList`` passed to ``makeQueue``. Events use ``onHost::EventPolicyList`` and can independently be
+constructed with ``timing::enabled`` or ``timing::disabled``. Passing an individual policy directly is shorthand for
+constructing the corresponding policy list. ``queue.makeEvent()`` inherits the queue's timing capability and accepts
+additional non-timing event policies.
+
 A timing-enabled event can only be enqueued on a timing-enabled queue. This rule is the same for every API, even where
 a native backend would technically allow a timed event on an ordinary queue.
 

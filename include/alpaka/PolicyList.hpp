@@ -5,6 +5,7 @@
 #pragma once
 
 #include "alpaka/core/common.hpp"
+#include "alpaka/meta/Set.hpp"
 #include "alpaka/meta/TypeListOps.hpp"
 #include "alpaka/meta/filter.hpp"
 #include "alpaka/unused.hpp"
@@ -49,6 +50,7 @@ namespace alpaka
      * @tparam T_Policies Registered policy tag types contained in the bundle.
      */
     template<concepts::Policy... T_Policies>
+    requires(meta::IsParameterPackSet<std::remove_cvref_t<T_Policies>...>::value)
     struct PolicyList
     {
     protected:
