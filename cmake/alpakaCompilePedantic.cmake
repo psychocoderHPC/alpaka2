@@ -8,6 +8,9 @@
 #-------------------------------------------------------------------------------
 
 if(TARGET alpaka_target_cuda)
+    alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wall>")
+    alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wextra>")
+
     if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
         alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--Wreorder>")
         alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:--Wdefault-stream-launch>")
@@ -21,11 +24,20 @@ if(TARGET alpaka_target_cuda)
                 "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-pedantic>"
                 "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcompiler -Wno-pedantic>"
         )
-        alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wall>")
-        alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wextra>")
         if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 12.8)
             # avoid `declared with greater visibility than the type of its field` with nvcc 12.8+
             alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wno-attributes>")
+        endif()
+    elseif(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
+        alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wpedantic>")
+        alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Werror>")
+
+        # disable warning: 'CUDA version X.Y is only partially supported'
+        alpaka_set_compiler_options(DEVICE target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Wno-unknown-cuda-version>")
+
+        # disable the warning/error: error: '__COUNTER__' is a C2y extension [-Werror,-Wc2y-extensions]
+        if(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL "22.0")
+            alpaka_set_compiler_options(HOST target alpaka_target_cuda "$<$<COMPILE_LANGUAGE:CUDA>:-Wno-c2y-extensions>")
         endif()
     endif()
 endif()

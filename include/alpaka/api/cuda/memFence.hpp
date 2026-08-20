@@ -237,8 +237,10 @@ namespace alpaka::onAcc::internalCompute
     requires std::same_as<T_Api, api::Cuda>
     struct MemoryFence::Op<T_Api, T_Scope, T_Order>
     {
-        ALPAKA_FN_ACC constexpr void operator()(onAcc::concepts::Acc auto const&, T_Scope const, T_Order const order)
-            const
+        ALPAKA_FN_ACC constexpr void operator()(
+            onAcc::concepts::Acc auto const&,
+            T_Scope const,
+            [[maybe_unused]] T_Order const order) const
         {
             // Host pass is not allowed.
 #    if ALPAKA_ARCH_PTX

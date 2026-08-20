@@ -57,7 +57,7 @@ namespace tutorial
     template<typename T_DeviceKind>
     ALPAKA_FN_ACC void alpakaFnDispatch(
         VectorAdd::Spec<api::Cuda, T_DeviceKind>,
-        onAcc::concepts::Acc auto const& acc,
+        onAcc::concepts::Acc auto const&,
         concepts::IMdSpan auto out,
         concepts::IDataSource auto const& lhs,
         concepts::IDataSource auto const& rhs)
