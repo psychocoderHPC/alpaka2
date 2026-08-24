@@ -166,10 +166,10 @@ namespace alpaka
 
     // type deduction guide
     template<typename... T_Keys, typename... T_Values>
-    ALPAKA_FN_HOST_ACC Dict(Tuple<DictEntry<T_Keys, T_Values>...> const&) -> Dict<DictEntry<T_Keys, T_Values>...>;
+    ALPAKA_FN_DG Dict(Tuple<DictEntry<T_Keys, T_Values>...> const&) -> Dict<DictEntry<T_Keys, T_Values>...>;
 
     template<typename... T_Keys, typename... T_Values>
-    ALPAKA_FN_HOST_ACC Dict(DictEntry<T_Keys, T_Values> const&...) -> Dict<DictEntry<T_Keys, T_Values>...>;
+    ALPAKA_FN_DG Dict(DictEntry<T_Keys, T_Values> const&...) -> Dict<DictEntry<T_Keys, T_Values>...>;
 } // namespace alpaka
 
 namespace std

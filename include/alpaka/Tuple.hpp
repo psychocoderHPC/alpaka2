@@ -89,7 +89,7 @@ namespace alpaka
     };
 
     template<typename... T_Args>
-    Tuple(T_Args&&...) -> Tuple<T_Args...>;
+    ALPAKA_FN_DG Tuple(T_Args&&...) -> Tuple<T_Args...>;
 
     template<size_t T_idx>
     constexpr decltype(auto) get(concepts::SpecializationOf<Tuple> auto&& t) noexcept

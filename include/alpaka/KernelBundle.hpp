@@ -152,7 +152,7 @@ namespace alpaka
     //! \return Kernel function bundle. An instance of KernelBundle which consists the kernel function object and its
     //! arguments.
     template<typename TKernelFn, typename... TArgs>
-    ALPAKA_FN_HOST KernelBundle(TKernelFn const&, TArgs&&...) -> KernelBundle<TKernelFn, TArgs...>;
+    ALPAKA_FN_DG KernelBundle(TKernelFn const&, TArgs&&...) -> KernelBundle<TKernelFn, TArgs...>;
 
     namespace trait
     {
