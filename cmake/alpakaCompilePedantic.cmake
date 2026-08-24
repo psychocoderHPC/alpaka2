@@ -47,6 +47,11 @@ if(TARGET alpaka_target_hip)
     alpaka_set_compiler_options(DEVICE target alpaka_target_hip "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-Wextra>")
     alpaka_set_compiler_options(DEVICE target alpaka_target_hip "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-Wpedantic>")
     alpaka_set_compiler_options(DEVICE target alpaka_target_hip "$<$<COMPILE_LANGUAGE:HIP>:SHELL:-Werror>")
+
+    # disable the warning/error: error: '__COUNTER__' is a C2y extension [-Werror,-Wc2y-extensions]
+    if(CMAKE_HIP_COMPILER_ID STREQUAL "Clang" AND CMAKE_HIP_COMPILER_VERSION VERSION_GREATER_EQUAL "22.0")
+        alpaka_set_compiler_options(HOST target alpaka_target_hip "$<$<COMPILE_LANGUAGE:HIP>:-Wno-c2y-extensions>")
+    endif()
 endif()
 
 if(TARGET alpaka_target_host)
@@ -63,7 +68,10 @@ if(TARGET alpaka_target_host)
     endif()
 
     # disable the warning/error: error: '__COUNTER__' is a C2y extension [-Werror,-Wc2y-extensions]
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "2026.0")
+    if(
+        (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "22.0")
+        OR (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "2026.0")
+    )
         alpaka_set_compiler_options(HOST target alpaka_target_host "$<$<COMPILE_LANG_AND_ID:CXX,IntelLLVM,Clang>:-Wno-c2y-extensions>")
     endif()
 endif()
