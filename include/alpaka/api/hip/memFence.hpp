@@ -32,18 +32,22 @@ namespace alpaka::onAcc::internalCompute
         {
             // Host pass is not allowed.
 #    if ALPAKA_ARCH_AMD
+            /* It is required to have this temporary variable else HIP 7.14 will fail to compiler with code emitting
+             * issues.
+             */
+            constexpr auto memOrder = MemOrderHip::get(order);
             if constexpr(std::is_same_v<T_Scope, scope::Block>)
             {
-                __builtin_amdgcn_fence(MemOrderHip::get(order), "workgroup");
+                __builtin_amdgcn_fence(memOrder, "workgroup");
             }
             else if constexpr(std::is_same_v<T_Scope, scope::Device>)
             {
-                __builtin_amdgcn_fence(MemOrderHip::get(order), "agent");
+                __builtin_amdgcn_fence(memOrder, "agent");
             }
             else if constexpr(std::is_same_v<T_Scope, scope::System>)
             {
                 // empty string refers to system
-                __builtin_amdgcn_fence(MemOrderHip::get(order), "");
+                __builtin_amdgcn_fence(memOrder, "");
             }
 #    endif
         }
