@@ -188,16 +188,16 @@ namespace alpaka
     } // namespace internal
 
     template<concepts::VectorOrScalar T_Extents>
-    ALPAKA_FN_HOST_ACC IdxRange(T_Extents const&) -> IdxRange<typename trait::getVec_t<T_Extents>::UniVec>;
+    ALPAKA_FN_DG IdxRange(T_Extents const&) -> IdxRange<typename trait::getVec_t<T_Extents>::UniVec>;
 
     template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End>
-    ALPAKA_FN_HOST_ACC IdxRange(T_Begin const&, T_End const&) -> IdxRange<
+    ALPAKA_FN_DG IdxRange(T_Begin const&, T_End const&) -> IdxRange<
         typename trait::getVec_t<T_Begin>::UniVec,
         typename trait::getVec_t<T_End>::UniVec,
         typename trait::getVec_t<T_End>::UniVec>;
 
     template<concepts::VectorOrScalar T_Begin, concepts::VectorOrScalar T_End, concepts::VectorOrScalar T_Stride>
-    ALPAKA_FN_HOST_ACC IdxRange(T_Begin const&, T_End const&, T_Stride const&) -> IdxRange<
+    ALPAKA_FN_DG IdxRange(T_Begin const&, T_End const&, T_Stride const&) -> IdxRange<
         typename trait::getVec_t<T_Begin>::UniVec,
         typename trait::getVec_t<T_End>::UniVec,
         typename trait::getVec_t<T_Stride>::UniVec>;

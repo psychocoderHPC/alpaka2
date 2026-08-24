@@ -423,7 +423,7 @@ namespace alpaka
 
     // type deduction guide
     template<typename T_1, typename... T_Args>
-    ALPAKA_FN_HOST_ACC SimdMask(T_1, T_Args...) -> SimdMask<T_1, uint32_t(sizeof...(T_Args) + 1u)>;
+    ALPAKA_FN_DG SimdMask(T_1, T_Args...) -> SimdMask<T_1, uint32_t(sizeof...(T_Args) + 1u)>;
 
     /** Creates a mask for the given type
      *

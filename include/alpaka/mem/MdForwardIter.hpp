@@ -55,7 +55,7 @@ namespace alpaka
     };
 
     template<alpaka::concepts::IMdSpan T_MdSpan>
-    ALPAKA_FN_HOST_ACC MdForwardIterEnd(T_MdSpan const&) -> MdForwardIterEnd<typename T_MdSpan::index_type>;
+    ALPAKA_FN_DG MdForwardIterEnd(T_MdSpan const&) -> MdForwardIterEnd<typename T_MdSpan::index_type>;
 
     template<alpaka::concepts::IMdSpan T_MdSpan>
     class MdForwardIter

@@ -14,23 +14,47 @@
 #    include <hip/hip_runtime.h>
 #endif
 
+//! Function declaration attributes to provide execution scope information
+//!
 //! All functions that can be used on an accelerator have to be attributed with ALPAKA_FN_ACC or ALPAKA_FN_HOST_ACC.
+//! Deduction guides for objects usable within a kernel should be marked ALPAKA_FN_DG.
+//! ALPAKA_FN_DG declare the guide for on host and acc usage.
 //!
 //! \code{.cpp}
-//! Usage:
-//! ALPAKA_FN_ACC
-//! auto add(std::int32_t a, std::int32_t b)
-//! -> std::int32_t;
+//! // function
+//! ALPAKA_FN_ACC std::int32_t add(std::int32_t a, std::int32_t b);
+//!
+//! // struct with deduction guide
+//! template<typename T>
+//! struct Foo
+//! {
+//!     T bar;
+//!
+//!     template<typename T_ValueType>
+//!     constexpr Foo(T_ValueType const v): bar{static_cast<T>(v)}
+//!     {}
+//! };
+//!
+//! template<typename T_ValueType>
+//! Foo(T_ValueType const) -> Foo<T_ValueType>;
 //! \endcode
 //! @{
 #if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
 #    define ALPAKA_FN_ACC __device__ __host__
 #    define ALPAKA_FN_HOST_ACC __device__ __host__
 #    define ALPAKA_FN_HOST __host__
+// Avoid warning: use of CUDA/HIP target attributes on deduction guides is deprecated; they will be rejected in a
+// future version of Clang [-Werror,-Wdeprecated-attributes]
+#    if ALPAKA_COMP_CLANG >= ALPAKA_VERSION_NUMBER(22, 1, 0)
+#        define ALPAKA_FN_DG
+#    else
+#        define ALPAKA_FN_DG __device__ __host__
+#    endif
 #else
 #    define ALPAKA_FN_ACC
 #    define ALPAKA_FN_HOST_ACC
 #    define ALPAKA_FN_HOST
+#    define ALPAKA_FN_DG
 #endif
 //! @}
 
