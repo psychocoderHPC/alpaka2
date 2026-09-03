@@ -77,6 +77,12 @@ def set_generic_variables(variables: dict[str, Any], combination: bashi.Combinat
     variables["APCI_ONEAPI_TARGET"] = "none"
     variables["APCI_SIMD"] = "DEFAULT"
 
+    # avoid that GitHub blocks git clone calls: see https://github.com/orgs/community/discussions/206581
+    variables["GIT_TERMINAL_PROMPT"] = "0"
+    variables["GIT_CONFIG_COUNT"] = "1"
+    variables["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
+    variables["GIT_CONFIG_VALUE_0"] = "Authorization: Basic ${GITHUB_AUTH_BASE64}"
+
     dependencies = ["APCI_OMP", "APCI_TBB"]
     gpu_dependencies = ["APCI_CUDA", "APCI_HIP", "APCI_ONEAPI"]
     sanitizers = ["APCI_SANITIZER_ASAN", "APCI_SANITIZER_TSAN", "APCI_SANITIZER_LSAN", "APCI_SANITIZER_UBSAN"]
