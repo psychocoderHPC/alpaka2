@@ -92,7 +92,7 @@ public:
         for(auto idxVec : onAcc::makeIdxMap(acc, onAcc::worker::threadsInGrid, IdxRange{numElements}))
         {
             size_t i = static_cast<size_t>(idxVec[0]);
-            result1D = buf1D[i] == static_cast<uint8_t>(i) ?: 0u;
+            result1D = buf1D[i] == static_cast<uint8_t>(i) ? 1u : 0u;
         }
 
         // Each thread verifies a portion of the 2D buffer
@@ -103,7 +103,7 @@ public:
             size_t y = i / extent2D.x();
             size_t x = i % extent2D.x();
 
-            result2D = buf2D[Vec{y, x}] == static_cast<uint8_t>(i) ?: 0u;
+            result2D = buf2D[Vec{y, x}] == static_cast<uint8_t>(i) ? 1u : 0u;
         }
 
         // Each thread verifies a portion of the 3D buffer
@@ -116,7 +116,7 @@ public:
             size_t x = i % extent3D.x();
             size_t y = (i / extent3D.x()) % extent3D.y();
             size_t z = i / (extent3D.x() * extent3D.y());
-            result3D = buf3D[Vec{z, y, x}] == expected ?: 0u;
+            result3D = buf3D[Vec{z, y, x}] == expected ? 1u : 0u;
         }
 
         // Use atomic operations to combine results from all threads
