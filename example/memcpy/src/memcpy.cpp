@@ -141,9 +141,10 @@ auto example(auto const deviceSpec, auto const exec, size_t numElements, size_t 
     IdxVec1D const extent1D(numElements);
 
     size_t exponent = std::countr_zero(numElements);
-    size_t Exp = exponent / 2;
-    size_t X_2d = size_t(1) << Exp;
-    size_t Y_2d = size_t(1) << Exp;
+    size_t xExp2 = exponent / 2;
+    size_t yExp2 = exponent - xExp2;
+    size_t X_2d = size_t(1) << xExp2;
+    size_t Y_2d = size_t(1) << yExp2;
     IdxVec2D const extent2D{Y_2d, X_2d};
 
     exponent = std::countr_zero(numElements);
@@ -190,9 +191,9 @@ auto example(auto const deviceSpec, auto const exec, size_t numElements, size_t 
     uint8_t* p2 = bufHost2D.data();
     uint8_t* p3 = bufHost3D.data();
 
-    fillCyclicPattern(p1, numElements); // build the pattern once
-    std::memcpy(p2, p1, numElements); // 2D buffer: identical linear layout
-    std::memcpy(p3, p1, numElements); // 3D buffer: identical linear layout
+    fillCyclicPattern(p1, bufHost1D.getExtents().product()); // build the pattern once
+    std::memcpy(p2, p1, bufHost2D.getExtents().product()); // 2D buffer: identical linear layout
+    std::memcpy(p3, p1, bufHost3D.getExtents().product()); // 3D buffer: identical linear layout
 
     // auto bufAcc1D = onHost::allocLike(devAcc, bufHost1D);
     auto bufAcc1D = onHost::alloc<Data>(devAcc, extent1D);
@@ -240,6 +241,9 @@ auto example(auto const deviceSpec, auto const exec, size_t numElements, size_t 
 
     Vec<size_t, 1u> chunkSize = 64u;
     auto range = onHost::FrameSpec{divCeil(extent1D, chunkSize), chunkSize, exec};
+    hostVerif[0] = hostVerif[1] = hostVerif[2] = 1u;
+    onHost::memcpy(queue, accVerif, hostVerif);
+    onHost::wait(queue);
 
     queue.enqueue(range, devVerify{}, bufAcc1D, bufAcc2D, bufAcc3D, extent2D, extent3D, accVerif);
     onHost::wait(queue);
@@ -315,8 +319,6 @@ auto example(auto const deviceSpec, auto const exec, size_t numElements, size_t 
     hostVerif[2] = 0u;
 
     hostVerify(bufHost1D, bufHost2D, bufHost3D, bufVerif1D, bufVerif2D, bufVerif3D, hostVerif);
-
-    fail = 0;
 
     if(!hostVerif[0])
     {
