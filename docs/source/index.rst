@@ -80,12 +80,14 @@ Individual chapters are based on the information of the chapters before.
    tutorial/warp.rst
    tutorial/kernelFn.rst
    tutorial/vendorInterop.rst
+   tutorial/parallelMemcpy.rst
 
 .. toctree::
    :caption: Advanced
    :maxdepth: 2
 
    advanced/cmake.rst
+   advanced/envvar.rst
    advanced/datastorage.rst
    advanced/benchmark.rst
    advanced/crosscompile.rst

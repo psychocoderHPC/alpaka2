@@ -6,11 +6,15 @@
 
 #include "alpaka/api/generic.hpp"
 #include "alpaka/api/host/Api.hpp"
+#include "alpaka/api/host/Config.hpp"
 #include "alpaka/api/host/Event.hpp"
 #include "alpaka/api/host/exec/OmpBlocks.hpp"
 #include "alpaka/api/host/exec/Serial.hpp"
 #include "alpaka/api/host/exec/TbbBlocks.hpp"
+#include "alpaka/api/host/hwloc/utility.hpp"
+#include "alpaka/api/host/parallelMemcpy.hpp"
 #include "alpaka/api/util.hpp"
+#include "alpaka/core/Assert.hpp"
 #include "alpaka/core/CallbackThread.hpp"
 #include "alpaka/core/alignedAlloc.hpp"
 #include "alpaka/interface.hpp"
@@ -24,9 +28,11 @@
 #include "alpaka/onHost/internal/interface.hpp"
 #include "alpaka/onHost/mem/SharedBuffer.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <future>
+#include <thread>
 
 namespace alpaka::onHost
 {
@@ -46,6 +52,7 @@ namespace alpaka::onHost
                 , m_idx(idx)
                 , m_numaIdx(numIdx)
                 , m_isBlocking(internal::isBlocking(policies.getQueueKind()))
+                , m_memcpyConfig{}
             {
                 ALPAKA_LOG_FUNCTION(onHost::logger::queue);
             }
@@ -69,6 +76,37 @@ namespace alpaka::onHost
             bool operator!=(Queue const& other) const
             {
                 return !(*this == other);
+            }
+
+            /** Get the queue's memcpy configuration (mutable)
+             *
+             * Returns a reference to this queue's memcpy configuration.
+             * This method is only available for CPU queues.
+             *
+             * The returned configuration is created once at queue initialization
+             * and reused for all memcpy operations on this queue.
+             *
+             * Thread safety: Configuration object is thread-safe internally.
+             *
+             * @return Mutable reference to this queue's memcpy configuration
+             */
+            config::MemcpyConfig& getMemcpyConfig()
+            {
+                return m_memcpyConfig;
+            }
+
+            /** Get the queue's memcpy configuration (const)
+             *
+             * Returns a const reference to this queue's memcpy configuration.
+             * This method is only available for CPU queues.
+             *
+             * Use this when you only need to read configuration values.
+             *
+             * @return Const reference to this queue's memcpy configuration
+             */
+            config::MemcpyConfig const& getMemcpyConfig() const
+            {
+                return m_memcpyConfig;
             }
 
         private:
@@ -96,6 +134,20 @@ namespace alpaka::onHost
              * For non-blocking queue @c m_workerThread is taking care of the execution order
              */
             std::mutex m_mutex;
+
+            /** Per-queue memcpy configuration
+             *
+             * This configuration object is created once per queue at initialization.
+             * It persists for the entire lifetime of the queue.
+             *
+             * Initialized from environment variables:
+             * - ALPAKA_MEMCPY_MODE
+             * - ALPAKA_MEMCPY_NUM_CORES
+             * - ALPAKA_MEMCPY_MIN_SIZE
+             *
+             * Can be modified at runtime without affecting other queues using available set* functions.
+             */
+            config::MemcpyConfig m_memcpyConfig;
 
             /** Submit a task to the queue.
              *
@@ -413,10 +465,24 @@ namespace alpaka::onHost
         template<typename T_Device, typename T_Dest, typename T_Source, typename T_Extents>
         struct Memcpy::Op<cpu::Queue<T_Device>, T_Dest, T_Source, T_Extents>
         {
-            /** Perform data copy.
+            /** Perform data copy with optional parallelization
              *
-             * To understand the usage of pitches to shift pointers within the implementation see
+             * This is the main entry point for memcpy operations on CPU queues.
+             *
+             * The copy is described in bytes, this is the unit std::memcpy operates on and the unit the work is
+             * distributed with. To understand the usage of pitches to shift pointers within the implementation see
              * https://alpaka3.readthedocs.io/en/latest/advanced/datastorage.html#pitches
+             *
+             * @param queue The CPU queue to execute the memcpy on
+             * @param dest The destination buffer (can be std::array, view, pointer, etc.)
+             * @param source The source buffer
+             * @param extents The extent (size) of the data to copy
+             *
+             * Process:
+             * 1. Get queue's memcpy configuration
+             * 2. Calculate total size in bytes
+             * 3. Check if parallel mode should be used
+             * 4. Route to either _memcpyParallel or _memcpySerial
              */
             void operator()(cpu::Queue<T_Device>& queue, auto&& dest, T_Source const& source, T_Extents const& extents)
                 const requires std::same_as<ALPAKA_TYPEOF(dest), T_Dest>
@@ -429,49 +495,231 @@ namespace alpaka::onHost
                 if(extentMd.product() == size_t{0u})
                     return;
 
+                // created once at queue initialization, reused for all memcpy calls
+                auto& queueMemcpyConfig = queue.getMemcpyConfig();
+
+                // number of bytes of a row, copied with a single std::memcpy
+                size_t const rowBytes
+                    = static_cast<size_t>(extentMd.back()) * sizeof(alpaka::trait::GetValueType_t<T_Dest>);
+
+                if constexpr(dim == 1u)
+                {
+                    // FIXME : Should we let the user change this threshold? (Currently use can tweak this value)
+                    // a one dimensional copy is a single row, no pitches required
+                    if(queueMemcpyConfig.shouldUseParallel(rowBytes))
+                        _memcpyParallel(queue, queueMemcpyConfig, ALPAKA_FORWARD(dest), source, rowBytes);
+                    else
+                        _memcpySerial(queue, ALPAKA_FORWARD(dest), source, rowBytes);
+                }
+                else
+                {
+                    // memcpy is implemented as row wise copy therefore the last dimension is not required
+                    auto rowExtents = pCast<size_t>(extentMd.eraseBack());
+
+                    if(queueMemcpyConfig.shouldUseParallel(rowExtents.product() * rowBytes))
+                        _memcpyParallelPitched(
+                            queue,
+                            queueMemcpyConfig,
+                            ALPAKA_FORWARD(dest),
+                            source,
+                            rowExtents,
+                            rowBytes);
+                    else
+                        _memcpySerialPitched(queue, ALPAKA_FORWARD(dest), source, rowExtents, rowBytes);
+                }
+            }
+
+        private:
+            /** Sequential copy of a single contiguous row using std::memcpy
+             *
+             * @param queue The queue (for submit)
+             * @param dest The destination buffer
+             * @param source The source buffer
+             * @param rowBytes Number of bytes of the row
+             */
+            static void _memcpySerial(cpu::Queue<T_Device>& queue, auto&& dest, auto const& source, size_t rowBytes)
+            {
                 /* Get all required properties outside the lambda function to not extend the life-time of the data.
                  * The life-time is not extended to have some life-time behaviours with all backends.
                  */
                 void* destPtr = toVoidPtr(alpaka::onHost::data(ALPAKA_FORWARD(dest)));
                 void const* srcPtr = toVoidPtr(alpaka::onHost::data(source));
 
-                if constexpr(dim == 1u)
-                {
-                    queue.submit(
-                        [numElementsInX = extentMd.x(), destPtr, srcPtr]()
-                        {
-                            std::memcpy(
-                                destPtr,
-                                srcPtr,
-                                numElementsInX * sizeof(alpaka::trait::GetValueType_t<T_Dest>));
-                        });
-                }
-                else
-                {
-                    // memcpy is implemented as row wise copy therefore the last dimension is not required
-                    auto destPitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(dest).eraseBack());
-                    auto sourcePitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(source).eraseBack());
+                queue.submit([rowBytes, destPtr, srcPtr]() { std::memcpy(destPtr, srcPtr, rowBytes); });
+            }
 
-                    queue.submit(
-                        [extentMd, destPtr, srcPtr, destPitchBytesWithoutColumn, sourcePitchBytesWithoutColumn]()
-                        {
-                            alpaka::concepts::Vector<size_t> auto const dstExtentWithoutColumn
-                                = pCast<size_t>(extentMd.eraseBack());
+            /** Sequential row wise copy using std::memcpy
+             *
+             * @param queue The queue (for submit)
+             * @param dest The destination buffer
+             * @param source The source buffer
+             * @param rowExtents Extents of the copy without the last dimension, its product is the number of rows
+             * @param rowBytes Number of bytes of a single row
+             */
+            static void _memcpySerialPitched(
+                cpu::Queue<T_Device>& queue,
+                auto&& dest,
+                auto const& source,
+                auto const& rowExtents,
+                size_t rowBytes)
+            {
+                /* Get all required properties outside the lambda function to not extend the life-time of the data.
+                 * The life-time is not extended to have some life-time behaviours with all backends.
+                 */
+                void* destPtr = toVoidPtr(alpaka::onHost::data(ALPAKA_FORWARD(dest)));
+                void const* srcPtr = toVoidPtr(alpaka::onHost::data(source));
+                auto destPitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(dest).eraseBack());
+                auto sourcePitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(source).eraseBack());
 
-                            meta::ndLoopIncIdx(
-                                dstExtentWithoutColumn,
-                                [&](auto const& idx)
-                                {
-                                    std::memcpy(
-                                        reinterpret_cast<std::uint8_t*>(destPtr)
-                                            + (idx * destPitchBytesWithoutColumn).sum(),
-                                        reinterpret_cast<std::uint8_t const*>(srcPtr)
-                                            + (idx * sourcePitchBytesWithoutColumn).sum(),
-                                        static_cast<size_t>(extentMd.back())
-                                            * sizeof(alpaka::trait::GetValueType_t<T_Dest>));
-                                });
-                        });
-                }
+                queue.submit(
+                    [rowExtents,
+                     destPtr,
+                     srcPtr,
+                     destPitchBytesWithoutColumn,
+                     sourcePitchBytesWithoutColumn,
+                     rowBytes]()
+                    {
+                        meta::ndLoopIncIdx(
+                            rowExtents,
+                            [&](auto const& idx)
+                            {
+                                std::memcpy(
+                                    reinterpret_cast<std::uint8_t*>(destPtr)
+                                        + (idx * destPitchBytesWithoutColumn).sum(),
+                                    reinterpret_cast<std::uint8_t const*>(srcPtr)
+                                        + (idx * sourcePitchBytesWithoutColumn).sum(),
+                                    rowBytes);
+                            });
+                    });
+            }
+
+            /** Parallel copy of a single contiguous row
+             *
+             * The bytes of the row are split into one contiguous chunk per thread, see makeThreadByteRange().
+             *
+             * @param queue The queue to enqueue the kernel
+             * @param queueMemcpyConfig The queue's configuration (for numCores)
+             * @param dest The destination buffer
+             * @param source The source buffer
+             * @param rowBytes Number of bytes of the row
+             */
+            static void _memcpyParallel(
+                cpu::Queue<T_Device>& queue,
+                config::MemcpyConfig& queueMemcpyConfig,
+                auto&& dest,
+                auto const& source,
+                size_t rowBytes)
+            {
+                /* Get all required properties outside the lambda function to not extend the life-time of the data.
+                 * The life-time is not extended to have some life-time behaviours with all backends.
+                 */
+                void* destPtr = toVoidPtr(alpaka::onHost::data(ALPAKA_FORWARD(dest)));
+                void const* srcPtr = toVoidPtr(alpaka::onHost::data(source));
+
+                auto deviceKind = alpaka::getDeviceKind(queue.m_device);
+                auto executor = onHost::defaultExecutor(queue.m_device);
+
+                uint32_t const numCores = queueMemcpyConfig.getNumCores();
+                // numa domain aware, returns zero if the number of cores can not be queried
+                uint32_t const numAvailableCores = std::max(1u, hwloc::getNumCores(queue.m_numaIdx));
+                // never use more chunks than cores, the chunk count is what the configuration limits
+                uint32_t numThreads = (numCores == 0u) ? numAvailableCores : std::min(numCores, numAvailableCores);
+                numThreads = static_cast<uint32_t>(std::min(static_cast<size_t>(numThreads), rowBytes));
+                // the kernel divides the copy by the number of threads
+                ALPAKA_ASSERT(numThreads > 0u);
+
+                auto threadSpec = onHost::ThreadSpec{Vec{numThreads}, Vec{1u}, executor};
+                auto kernelBundle = KernelBundle{detail::ParallelMemcpyKernel{}, srcPtr, destPtr, rowBytes};
+
+                /* Same layer a thread specification enqueue creates, keep in sync with cpu::Queue::enqueue().
+                 * The kernel static_asserts on 'launchedWidthFrameSpec'.
+                 */
+                queue.submit(
+                    [threadSpec,
+                     kernelBundle,
+                     deviceKind,
+                     numIdx = queue.m_numaIdx,
+                     setThreadAffinity = queue.m_isBlocking]()
+                    {
+                        auto moreLayer = Dict{
+                            DictEntry(object::launchedWidthFrameSpec, std::false_type{}),
+                            DictEntry(object::api, api::host),
+                            DictEntry(object::deviceKind, deviceKind),
+                            DictEntry(object::exec, threadSpec.getExecutor())};
+                        onAcc::Acc acc = makeAcc(threadSpec, numIdx, setThreadAffinity);
+                        acc(kernelBundle, moreLayer);
+                    });
+            }
+
+            /** Parallel row wise copy
+             *
+             * The bytes of the copy are split into one contiguous chunk per thread, see makeThreadByteRange().
+             *
+             * @param queue The queue to enqueue the kernel
+             * @param queueMemcpyConfig The queue's configuration (for numCores)
+             * @param dest The destination buffer
+             * @param source The source buffer
+             * @param rowExtents Extents of the copy without the last dimension, its product is the number of rows
+             * @param rowBytes Number of bytes of a single row
+             */
+            static void _memcpyParallelPitched(
+                cpu::Queue<T_Device>& queue,
+                config::MemcpyConfig& queueMemcpyConfig,
+                auto&& dest,
+                auto const& source,
+                auto const& rowExtents,
+                size_t rowBytes)
+            {
+                /* Get all required properties outside the lambda function to not extend the life-time of the data.
+                 * The life-time is not extended to have some life-time behaviours with all backends.
+                 */
+                void* destPtr = toVoidPtr(alpaka::onHost::data(ALPAKA_FORWARD(dest)));
+                void const* srcPtr = toVoidPtr(alpaka::onHost::data(source));
+                auto destPitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(dest).eraseBack());
+                auto sourcePitchBytesWithoutColumn = pCast<size_t>(onHost::getPitches(source).eraseBack());
+
+                auto deviceKind = alpaka::getDeviceKind(queue.m_device);
+                auto executor = onHost::defaultExecutor(queue.m_device);
+
+                uint32_t const numCores = queueMemcpyConfig.getNumCores();
+                // numa domain aware, returns zero if the number of cores can not be queried
+                uint32_t const numAvailableCores = std::max(1u, hwloc::getNumCores(queue.m_numaIdx));
+                // never use more chunks than cores, the chunk count is what the configuration limits
+                uint32_t numThreads = (numCores == 0u) ? numAvailableCores : std::min(numCores, numAvailableCores);
+                // bytes of the copy, the gaps introduced by the pitches are not part of it
+                size_t const numBytes = rowExtents.product() * rowBytes;
+                numThreads = static_cast<uint32_t>(std::min(static_cast<size_t>(numThreads), numBytes));
+                // the kernel divides the copy by the number of threads
+                ALPAKA_ASSERT(numThreads > 0u);
+
+                auto threadSpec = onHost::ThreadSpec{Vec{numThreads}, Vec{1u}, executor};
+                auto kernelBundle = KernelBundle{
+                    detail::ParallelMemcpyPitchedKernel{},
+                    srcPtr,
+                    destPtr,
+                    sourcePitchBytesWithoutColumn,
+                    destPitchBytesWithoutColumn,
+                    rowExtents,
+                    rowBytes};
+
+                /* Same layer a thread specification enqueue creates, keep in sync with cpu::Queue::enqueue().
+                 * The kernel static_asserts on 'launchedWidthFrameSpec'.
+                 */
+                queue.submit(
+                    [threadSpec,
+                     kernelBundle,
+                     deviceKind,
+                     numIdx = queue.m_numaIdx,
+                     setThreadAffinity = queue.m_isBlocking]()
+                    {
+                        auto moreLayer = Dict{
+                            DictEntry(object::launchedWidthFrameSpec, std::false_type{}),
+                            DictEntry(object::api, api::host),
+                            DictEntry(object::deviceKind, deviceKind),
+                            DictEntry(object::exec, threadSpec.getExecutor())};
+                        onAcc::Acc acc = makeAcc(threadSpec, numIdx, setThreadAffinity);
+                        acc(kernelBundle, moreLayer);
+                    });
             }
         };
 
