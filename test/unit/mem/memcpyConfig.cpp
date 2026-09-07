@@ -32,12 +32,17 @@ TEMPLATE_LIST_TEST_CASE("memcopy test", "", DeviceSpecs)
     onHost::Device device = devSelector.makeDevice(0);
     INFO(deviceSpec.getApi().getName() << " on " << device.getName());
 
+    // catch2 re-runs the test case for each section, the environment of the process is not reset in between
+    unsetenv("ALPAKA_MEMCPY_MODE");
+    unsetenv("ALPAKA_MEMCPY_NUM_CORES");
+    unsetenv("ALPAKA_MEMCPY_MIN_SIZE");
+
     SECTION("envVar memcpy Mode")
     {
         setenv("ALPAKA_MEMCPY_MODE", "parallel", 1);
         onHost::Queue queue = device.makeQueue(queueKind::blocking);
 
-        if(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
+        if constexpr(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
         {
             auto& configMemcpy = queue.get()->getMemcpyConfig();
             REQUIRE(configMemcpy.getMode() == onHost::config::MemcpyMode::parallel);
@@ -46,7 +51,7 @@ TEMPLATE_LIST_TEST_CASE("memcopy test", "", DeviceSpecs)
         setenv("ALPAKA_MEMCPY_MODE", "sequential", 1);
         queue = device.makeQueue(queueKind::blocking);
 
-        if(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
+        if constexpr(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
         {
             auto& configMemcpy = queue.get()->getMemcpyConfig();
             REQUIRE(configMemcpy.getMode() == onHost::config::MemcpyMode::sequential);
@@ -58,19 +63,19 @@ TEMPLATE_LIST_TEST_CASE("memcopy test", "", DeviceSpecs)
         setenv("ALPAKA_MEMCPY_NUM_CORES", "123", 1);
         onHost::Queue queue = device.makeQueue(queueKind::blocking);
 
-        if(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
+        if constexpr(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
         {
             auto& configMemcpy = queue.get()->getMemcpyConfig();
             REQUIRE(configMemcpy.getNumCores() == 123);
         }
     }
 
-    SECTION("envVar memcpy numCores")
+    SECTION("envVar memcpy minSize")
     {
         setenv("ALPAKA_MEMCPY_MIN_SIZE", "789", 1);
         onHost::Queue queue = device.makeQueue(queueKind::blocking);
 
-        if(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
+        if constexpr(onHost::config::hasMemcpyConfig<ALPAKA_TYPEOF(*queue.get())>)
         {
             auto& configMemcpy = queue.get()->getMemcpyConfig();
             REQUIRE(configMemcpy.getMinSizeForParallel() == 789);
