@@ -18,6 +18,16 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 load_variable_if_not_exist APCI_CMAKE_BIN_PATH
 load_variable_if_not_exist APCI_CXX_COMPILER
 
+if [[ -z "${GITHUB_AUTH_BASE64:-}" ]]; then
+    echo "ERROR: GITHUB_AUTH_BASE64 is not available in this GitLab job."
+    exit 1
+fi
+# avoid that GitHub blocks git clone calls: see https://github.com/orgs/community/discussions/206581
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+export GIT_CONFIG_VALUE_0="Authorization: Basic ${GITHUB_AUTH_BASE64}"
+export GIT_TERMINAL_PROMPT=0
+
 CMAKE_ARGS=(
     -S "${APCI_ALPAKA_ROOT}"
     -B "/build"
