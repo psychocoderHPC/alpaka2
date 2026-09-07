@@ -42,6 +42,9 @@ if(CMAKE_HIP_COMPILER)
     if(
         ${_hip_MAJOR_MINOR_VERSION} VERSION_LESS ${_alpaka_HIP_MIN_VER}
         OR ${_hip_MAJOR_MINOR_VERSION} VERSION_GREATER ${_alpaka_HIP_MAX_VER}
+        # pre-releases
+        OR ${_hip_MAJOR_MINOR_VERSION} VERSION_EQUAL "7.13"
+        OR ${_hip_MAJOR_MINOR_VERSION} VERSION_EQUAL "7.9"
     )
         message(
             WARNING

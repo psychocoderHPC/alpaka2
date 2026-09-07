@@ -26,21 +26,6 @@ GITLAB_IMAGE_CACHE: list[str] | None = None
 # is used to display missing image warning one time
 image_warning_cache: list[str] = []
 
-CUSTOM_ROCM_IMAGES: dict[str, str] = {
-    # The alpaka CI container registry does not provide a prebuilt ROCm 7.14 image yet.
-    # Use AMD's official ROCm development image directly from Docker Hub.
-    "7.14": "rocm/dev-ubuntu-24.04:7.14.0-full",
-}
-
-
-@typechecked
-def get_custom_image_name(combination: bashi.Combination) -> str | None:
-    """Return a custom CI image for combinations not covered by the alpaka CI registry."""
-    if combination[ALPAKA_ACC_GPU_HIP_ENABLE].version != OFF_VER:
-        return CUSTOM_ROCM_IMAGES.get(str(combination[DEVICE_COMPILER].version))
-
-    return None
-
 
 @typechecked
 def get_base_image(ubuntu_version) -> str:
@@ -99,10 +84,6 @@ def get_image_name(combination: bashi.Combination, container_version: str) -> st
     Returns:
         str: image name
     """
-    custom_image_name = get_custom_image_name(combination)
-    if custom_image_name is not None:
-        return custom_image_name
-
     image_name = get_base_image(combination[UBUNTU].version)
 
     cuda_ver = combination[ALPAKA_ACC_GPU_CUDA_ENABLE].version
@@ -132,9 +113,6 @@ def get_existing_image(image_name: str, combination: bashi.Combination, containe
     Returns:
         str: If image exist, return `image_name`. Otherwise return base image name.
     """
-    if image_name == get_custom_image_name(combination):
-        return image_name
-
     gitlab_images = get_images_from_registry(container_version)
     if image_name in gitlab_images:
         return image_name
