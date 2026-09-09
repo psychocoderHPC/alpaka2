@@ -36,7 +36,7 @@
 //! };
 //!
 //! template<typename T_ValueType>
-//! Foo(T_ValueType const) -> Foo<T_ValueType>;
+//! ALPAKA_FN_DG Foo(T_ValueType const) -> Foo<T_ValueType>;
 //! \endcode
 //! @{
 #if ALPAKA_LANG_CUDA || ALPAKA_LANG_HIP
