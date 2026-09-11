@@ -39,7 +39,7 @@ ALPAKA_VERSIONS: dict[str, list[str | int | float]] = {
     GCC: [12, 13, 14, 15],
     CLANG: [17, 18, 19, 20, 21],
     NVCC: [12.5, 12.6, 12.8, 12.9, 13.0, 13.1, 13.2, 13.3],
-    HIPCC: [6.3, 6.4, 7.0, 7.1, 7.2, 7.14],
+    HIPCC: [6.3, 6.4, 7.0, 7.1, 7.2, 7.14, 10.0],
     ICPX: ["2025.1", "2025.2", "2025.3", "2026.0"],
     UBUNTU: ["24.04"],
     CMAKE: ["3.25.3", "3.26.4", "3.27.9", "3.28.6", "3.29.8", "3.30.3"],
@@ -163,6 +163,7 @@ def get_alpaka_version_relation() -> bashi.VersionRelation:
     ]
     hipcc_clang_version = HIPCC_CLANG_VERSION + [
         ClangBase("7.14", "23"),
+        ClangBase("10.0", "23"),
     ]
 
     return bashi.VersionRelation(
