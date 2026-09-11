@@ -15,6 +15,11 @@ stages:
 variables:
   # container version of the generated jobs
   ALPAKA_GITLAB_CI_GENERATOR_CONTAINER_VERSION: "4.1"
+  # avoid that GitHub blocks git clone https://github.com/orgs/community/discussions/206581
+  GIT_TERMINAL_PROMPT: "0"
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader"
+  GIT_CONFIG_VALUE_0: "Authorization: Basic ${GITHUB_AUTH_BASE64}"
 
 generate:
   stage: generator
